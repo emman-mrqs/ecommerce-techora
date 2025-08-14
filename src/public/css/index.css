@@ -1,0 +1,269 @@
+
+        :root {
+            --primary-color: #000;
+            --secondary-color: #fff;
+            --accent-color: #6c757d;
+            --light-gray: #f8f9fa;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+   
+        
+        /* Hero Section */
+        .hero-section {
+            padding: 4rem 0;
+            background: white;
+        }
+        
+        .hero-content h1 {
+            font-size: 3.5rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-bottom: 1.5rem;
+        }
+        
+        .hero-content p {
+            font-size: 1.1rem;
+            color: var(--accent-color);
+            margin-bottom: 2rem;
+            line-height: 1.8;
+        }
+        
+        .btn-primary {
+            background: var(--primary-color);
+            border: var(--primary-color);
+            padding: 12px 30px;
+            font-weight: 600;
+            margin-right: 1rem;
+        }
+        
+        .btn-outline-primary {
+            color: var(--primary-color);
+            border: 2px solid var(--primary-color);
+            padding: 10px 30px;
+            font-weight: 600;
+        }
+        
+        .hero-image {
+            background: #e9ecef;
+            min-height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+        }
+        
+        .hero-image h2 {
+            font-size: 4rem;
+            color: var(--accent-color);
+            font-weight: 300;
+        }
+        
+        /* Featured Products */
+        .featured-section {
+            padding: 4rem 0;
+            background: var(--light-gray);
+        }
+        
+        .section-title {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        
+        .section-title h2 {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+        
+        .section-subtitle {
+            color: var(--accent-color);
+            font-size: 1.1rem;
+        }
+        
+        .product-card {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+            margin-bottom: 2rem;
+        }
+        
+        .product-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .product-icon {
+            font-size: 3rem;
+            margin-bottom: 1.5rem;
+            color: var(--primary-color);
+        }
+        
+        .product-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+        
+        .product-price {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+        
+        .product-rating {
+            margin-bottom: 1rem;
+        }
+        
+        .rating-stars {
+            color: #ffc107;
+        }
+        
+        /* Services Section */
+        .services-section {
+            padding: 4rem 0;
+            background: white;
+        }
+        
+        .service-item {
+            text-align: center;
+            padding: 2rem 1rem;
+        }
+        
+        .service-icon {
+            width: 60px;
+            height: 60px;
+            background: var(--primary-color);
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+        }
+        
+        .service-icon i {
+            color: white;
+            font-size: 1.5rem;
+        }
+        
+        .service-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+        
+        .service-desc {
+            color: var(--accent-color);
+            font-size: 0.95rem;
+        }
+        
+        /* Testimonials */
+        .testimonials-section {
+            padding: 4rem 0;
+            background: var(--light-gray);
+        }
+        
+        .testimonial-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+        
+        .testimonial-rating {
+            margin-bottom: 1rem;
+        }
+        
+        .testimonial-text {
+            font-style: italic;
+            margin-bottom: 1.5rem;
+            color: var(--accent-color);
+        }
+        
+        .testimonial-author {
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+        
+        /* Newsletter */
+        .newsletter-section {
+            background: var(--primary-color);
+            color: white;
+            padding: 4rem 0;
+        }
+        
+        .newsletter-content {
+            text-align: center;
+        }
+        
+        .newsletter-content h3 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+        
+        .newsletter-content p {
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+        
+        .newsletter-form {
+            max-width: 500px;
+            margin: 0 auto;
+            display: flex;
+            gap: 1rem;
+        }
+        
+        .newsletter-form input {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+        }
+        
+        .newsletter-form button {
+            background: white;
+            color: var(--primary-color);
+            border: none;
+            padding: 12px 30px;
+            border-radius: 6px;
+            font-weight: 600;
+        }
+        
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero-content h1 {
+                font-size: 2.5rem;
+            }
+            
+            .hero-image h2 {
+                font-size: 2.5rem;
+            }
+            
+            .newsletter-form {
+                flex-direction: column;
+            }
+            
+            .navbar-nav {
+                text-align: center;
+                margin-top: 1rem;
+            }
+            
+            .user-icons {
+                text-align: center;
+                margin-top: 1rem;
+            }
+        }

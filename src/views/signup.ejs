@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - Techora</title>
+    <link rel="stylesheet" href="css/signup.css">
+</head>
+<body>
+    <div class="page-wrapper">
+        <div class="signup-page">
+            <!-- Logo Section -->
+            <div class="logo-section">
+                <img src="/techora/img/logoblack.png" alt="Techora Logo">
+            </div>
+
+            <!-- Form Section -->
+            <div class="form-section">
+                <div class="form-container">
+                    <h2>Create Account</h2>
+                    <form id="signupForm">
+                        <label for="name">Full Name</label>
+                        <input type="text" id="name" placeholder="Enter your full name" required>
+
+                        <label for="email">Email</label>
+                        <input type="email" id="email" placeholder="Enter your email" required>
+
+                        <label for="password">Password</label>
+                        <div class="password-wrapper">
+                            <input type="password" id="password" placeholder="Enter your password" required>
+                            <button type="button" class="toggle-password" data-target="password">
+                                <img src="/techora/img/show.png" alt="Show Password">
+                            </button>
+                        </div>
+
+                        <label for="confirmPassword">Confirm Password</label>
+                        <div class="password-wrapper">
+                            <input type="password" id="confirmPassword" placeholder="Confirm your password" required>
+                            <button type="button" class="toggle-password" data-target="confirmPassword">
+                                <img src="/techora/img/show.png" alt="Show Password">
+                            </button>
+                        </div>
+
+                        <button type="submit" class="btn-primary">Sign Up</button>
+
+                        <div class="or-divider">OR</div>
+
+                        <button type="button" class="btn-google">
+                            <i class="bi bi-google"> Sign in with Google</i>
+                        </button>
+                    </form>
+
+                    <p class="signup-text">
+                        Already have an account? <a href="login.html">Sign In</a>
+                    </p>
+
+                    
+                </div>
+            </div>
+        </div>
+
+        
+        <%- include("partials/footer.ejs") %>
+
+    </div>
+
+    <script src="js/signup.js"></script>
+</body>
+</html>
