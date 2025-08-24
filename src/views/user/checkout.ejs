@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TECHORA - Checkout</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/checkout.css">
+</head>
+<body>
+    <nav>
+        <%- include("../partials/header.ejs") %>
+    </nav>
+
+    <div class="checkout-container">
+        <div class="container">
+            <!-- Progress Steps -->
+            <div class="progress-steps">
+                <div class="steps-container">
+                    <div class="progress-line">
+                        <div class="progress-fill" id="progress-fill"></div>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-circle active" id="step-1-circle">1</div>
+                        <div class="step-title active" id="step-1-title">Shipping Information</div>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-circle" id="step-2-circle">2</div>
+                        <div class="step-title" id="step-2-title">Payment Information</div>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-circle" id="step-3-circle">3</div>
+                        <div class="step-title" id="step-3-title">Order Review</div>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-circle" id="step-4-circle">4</div>
+                        <div class="step-title" id="step-4-title">Confirmation</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- Main Content -->
+                <div class="col-lg-8 col-md-7">
+                    <!-- Step 1: Shipping Information -->
+                    <div class="step-content active" id="step-1">
+                        <div class="checkout-card">
+                            <h3 class="card-title">SHIPPING INFORMATION</h3>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label class="form-label">First Name</label>
+                                        <input type="text" class="form-control" placeholder="Enter first name" id="firstName">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label class="form-label">Last Name</label>
+                                        <input type="text" class="form-control" placeholder="Enter last name" id="lastName">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Address</label>
+                                <input type="text" class="form-control" placeholder="Enter street address" id="address">
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label class="form-label">City</label>
+                                        <input type="text" class="form-control" placeholder="Enter city" id="city">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label class="form-label">Province</label>
+                                        <select class="form-select" id="province">
+                                            <option value="">Select Province</option>
+                                            <option value="cebu">Cebu</option>
+                                            <option value="manila">Manila</option>
+                                            <option value="davao">Davao</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label class="form-label">ZIP Code</label>
+                                        <input type="text" class="form-control" placeholder="Enter ZIP" id="zipCode">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label class="form-label">Phone</label>
+                                        <input type="tel" class="form-control" placeholder="Enter phone number" id="phone">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label class="form-label">Email</label>
+                                        <input type="email" class="form-control" placeholder="Enter email address" id="email">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="step-buttons">
+                                <button class="btn btn-primary" onclick="nextStep()">Continue to Payment</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Payment Information -->
+                    <div class="step-content" id="step-2">
+                        <div class="checkout-card">
+                            <h3 class="card-title">PAYMENT INFORMATION</h3>
+                            
+                            <div class="payment-option selected" onclick="selectPayment('paypal')">
+                                <input type="radio" name="payment" value="paypal" class="payment-radio" checked>
+                                <div class="payment-details">
+                                    <div class="payment-title">PayPal</div>
+                                    <div class="payment-desc">Pay securely with your PayPal account</div>
+                                </div>
+                                <i class="fab fa-paypal" style="font-size: 1.5rem; color: #0070ba;"></i>
+                            </div>
+
+                            <div class="payment-option" onclick="selectPayment('card')">
+                                <input type="radio" name="payment" value="card" class="payment-radio">
+                                <div class="payment-details">
+                                    <div class="payment-title">Credit/Debit Card</div>
+                                    <div class="payment-desc">Visa, MasterCard, American Express</div>
+                                </div>
+                                <i class="fas fa-credit-card" style="font-size: 1.5rem; color: var(--accent-color);"></i>
+                            </div>
+
+                            <div class="payment-option" onclick="selectPayment('cod')">
+                                <input type="radio" name="payment" value="cod" class="payment-radio">
+                                <div class="payment-details">
+                                    <div class="payment-title">Cash on Delivery (COD)</div>
+                                    <div class="payment-desc">Pay when you receive your order</div>
+                                </div>
+                                <i class="fas fa-money-bill-wave" style="font-size: 1.5rem; color: var(--success-color);"></i>
+                            </div>
+
+                            <!-- Credit Card Form (hidden by default) -->
+                            <div id="card-form" style="display: none; margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--border-color);">
+                                <div class="form-group">
+                                    <label class="form-label">Card Number</label>
+                                    <input type="text" class="form-control" placeholder="1234 5678 9012 3456" id="cardNumber">
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <div class="form-group">
+                                            <label class="form-label">Expiry Date</label>
+                                            <input type="text" class="form-control" placeholder="MM/YY" id="expiryDate">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label class="form-label">CVV</label>
+                                            <input type="text" class="form-control" placeholder="123" id="cvv">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Cardholder Name</label>
+                                    <input type="text" class="form-control" placeholder="Enter cardholder name" id="cardholderName">
+                                </div>
+                            </div>
+
+                            <div class="step-buttons">
+                                <button class="btn btn-outline" onclick="prevStep()">Back to Shipping</button>
+                                <button class="btn btn-primary" onclick="nextStep()">Review Order</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Order Review -->
+                    <div class="step-content" id="step-3">
+                        <div class="checkout-card">
+                            <h3 class="card-title">ORDER REVIEW</h3>
+                            
+                            <div class="row mb-4">
+                                <div class="col-md-6">
+                                    <h5 style="color: var(--primary-color); margin-bottom: 1rem;">Shipping Address</h5>
+                                    <div id="review-shipping" style="color: var(--accent-color); font-size: 0.9rem;">
+                                        <div>John Doe</div>
+                                        <div>123 Main Street</div>
+                                        <div>Cebu City, Cebu 6000</div>
+                                        <div>+63 912 345 6789</div>
+                                        <div>john.doe@email.com</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <h5 style="color: var(--primary-color); margin-bottom: 1rem;">Payment Method</h5>
+                                    <div id="review-payment" style="color: var(--accent-color); font-size: 0.9rem;">
+                                        <div>PayPal</div>
+                                        <div>Pay securely with your PayPal account</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <h5 style="color: var(--primary-color); margin-bottom: 1rem;">Order Items</h5>
+                            <div id="review-items">
+                                <div class="order-item">
+                                    <div class="item-image">
+                                        <i class="fas fa-headphones"></i>
+                                    </div>
+                                    <div class="item-info">
+                                        <div class="item-name">Premium Wireless Headphones</div>
+                                        <div class="item-qty">Qty: 1</div>
+                                    </div>
+                                    <div class="item-price">₱1,999</div>
+                                </div>
+                                <div class="order-item">
+                                    <div class="item-image">
+                                        <i class="fas fa-clock"></i>
+                                    </div>
+                                    <div class="item-info">
+                                        <div class="item-name">Smart Fitness Watch</div>
+                                        <div class="item-qty">Qty: 1</div>
+                                    </div>
+                                    <div class="item-price">₱3,999</div>
+                                </div>
+                            </div>
+
+                            <div class="step-buttons">
+                                <button class="btn btn-outline" onclick="prevStep()">Back to Payment</button>
+                                <button class="btn btn-primary" onclick="nextStep()">Place Order</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 4: Order Confirmation -->
+                    <div class="step-content" id="step-4">
+                        <div class="checkout-card">
+                            <div class="confirmation-icon">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <h2 class="confirmation-title">Order Confirmed!</h2>
+                            <p class="confirmation-desc">Thank you for your purchase. Your order has been successfully placed and is being processed.</p>
+                            
+                            <div class="order-details">
+                                <div class="detail-row">
+                                    <span style="font-weight: 600;">Order Number:</span>
+                                    <span>#TE2024-001234</span>
+                                </div>
+                                <div class="detail-row">
+                                    <span style="font-weight: 600;">Estimated Delivery:</span>
+                                    <span>3-5 business days</span>
+                                </div>
+                                <div class="detail-row">
+                                    <span style="font-weight: 600;">Tracking Email:</span>
+                                    <span>john.doe@email.com</span>
+                                </div>
+                            </div>
+
+                            <div class="step-buttons">
+                                <button class="btn btn-primary" onclick="continueShopping()">Continue Shopping</button>
+                                <button class="btn btn-outline" onclick="trackOrder()">Track Order</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Order Summary Sidebar -->
+                <div class="col-lg-4 col-md-5">
+                    <div class="order-summary">
+                        <h3 class="summary-title">ORDER SUMMARY</h3>
+                        
+                        <div class="order-item">
+                            <div class="item-image">
+                                <i class="fas fa-headphones"></i>
+                            </div>
+                            <div class="item-info">
+                                <div class="item-name">Premium Wireless Headphones</div>
+                                <div class="item-qty">Qty: 1</div>
+                            </div>
+                            <div class="item-price">₱1,999</div>
+                        </div>
+
+                        <div class="order-item">
+                            <div class="item-image">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="item-info">
+                                <div class="item-name">Smart Fitness Watch</div>
+                                <div class="item-qty">Qty: 1</div>
+                            </div>
+                            <div class="item-price">₱3,999</div>
+                        </div>
+                        
+                        <div class="summary-divider"></div>
+                        
+                        <div class="summary-row">
+                            <span class="summary-label">Subtotal</span>
+                            <span class="summary-value">₱5,998</span>
+                        </div>
+                        
+                        <div class="summary-row">
+                            <span class="summary-label">Shipping</span>
+                            <span class="summary-value">FREE</span>
+                        </div>
+                        
+                        <div class="summary-row">
+                            <span class="summary-label">Tax</span>
+                            <span class="summary-value">₱300</span>
+                        </div>
+                        
+                        <div class="summary-divider"></div>
+                        
+                        <div class="summary-row total-row">
+                            <span class="summary-label">Total</span>
+                            <span class="summary-value">₱6,298</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <%- include("../partials/footer.ejs") %>
+    </footer>
+
+
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/checkout.ejs"></script>
+  

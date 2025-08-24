@@ -11,7 +11,7 @@
         <div class="signup-page">
             <!-- Logo Section -->
             <div class="logo-section">
-                <img src="/techora/img/logoblack.png" alt="Techora Logo">
+                <a href="/"><img src="/techora/img/logoblack.png" alt="Techora Logo"></a>
             </div>
 
             <!-- Form Section -->
@@ -25,11 +25,15 @@
                         <label for="email">Email</label>
                         <input type="email" id="email" placeholder="Enter your email" required>
 
+                        <!-- Password Input with Bootstrap Icons -->
                         <label for="password">Password</label>
                         <div class="password-wrapper">
                             <input type="password" id="password" placeholder="Enter your password" required>
-                            <button type="button" class="toggle-password" data-target="password">
-                                <img src="/techora/img/show.png" alt="Show Password">
+                            <button 
+                                type="button" 
+                                class="toggle-password" 
+                                data-target="password">
+                                <i class="bi bi-eye-slash-fill"></i>
                             </button>
                         </div>
 
@@ -37,7 +41,7 @@
                         <div class="password-wrapper">
                             <input type="password" id="confirmPassword" placeholder="Confirm your password" required>
                             <button type="button" class="toggle-password" data-target="confirmPassword">
-                                <img src="/techora/img/show.png" alt="Show Password">
+                                <i class="bi bi-eye-slash-fill"></i>
                             </button>
                         </div>
 
@@ -46,12 +50,12 @@
                         <div class="or-divider">OR</div>
 
                         <button type="button" class="btn-google">
-                            <i class="bi bi-google"> Sign in with Google</i>
+                            <i class="bi bi-google icon"> Sign in with Google</i>
                         </button>
                     </form>
 
                     <p class="signup-text">
-                        Already have an account? <a href="login.html">Sign In</a>
+                        Already have an account? <a href="/login">Sign In</a>
                     </p>
 
                     

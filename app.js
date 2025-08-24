@@ -20,6 +20,13 @@ app.use(express.static(join(__dirname, "src", "public")));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
+// This will make the current path available in all EJS views
+app.use((req, res, next) => {
+    res.locals.currentPath = req.path;
+    next();
+});
+
+
 //Routes
 app.get("/", (req, res) => {
   res.render("user/index.ejs"); 
@@ -33,6 +40,26 @@ app.get("/signup", (req, res) => {
     res.render("signup");
 })
 
+app.get("/cart", (req, res) =>{
+    res.render("user/cart");
+});
+
+app.get("/checkout", (req, res)=>{
+  res.render("user/checkout");
+});
+
+app.get("/products", (req, res)=>{
+  res.render("user/products");
+});
+
+//seller routes
+app.get("/seller", (req, res)=>{
+  res.render("seller/sellerDashboard");
+});
+
+app.get("/seller/products", (req, res)=>{
+  res.render("seller/sellerProducts");
+});
 
 
 

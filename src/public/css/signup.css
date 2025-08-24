@@ -86,7 +86,7 @@ input[type="password"] {
 .toggle-password {
     position: absolute;
     right: 8px;
-    top: 50%;
+    top: 40%;
     transform: translateY(-50%);
     width: 28px;
     height: 28px;
@@ -99,16 +99,6 @@ input[type="password"] {
     padding: 0;
 }
 
-.toggle-password img {
-    width: 20px;
-    height: 20px;
-    opacity: 0.7;
-    transition: opacity 0.15s ease;
-}
-
-.toggle-password:hover img {
-    opacity: 1;
-}
 
 
 .btn-primary {
@@ -146,10 +136,6 @@ input[type="password"] {
     justify-content: center;
 }
 
-.btn-google img {
-    width: 18px;
-    margin-right: 8px;
-}
 
 .signup-text {
     text-align: center;

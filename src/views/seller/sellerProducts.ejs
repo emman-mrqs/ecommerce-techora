@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TECHORA - My Products</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/sellerProducts.css">
+</head>
+<body>
+    <!-- Sidebar Overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+    <nav>
+        <%- include("../partials/sellerSideNav.ejs") %>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Top Header -->
+        <div class="top-header">
+            <div class="d-flex align-items-center">
+                <button class="mobile-menu-btn me-3" onclick="toggleSidebar()">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <span class="text-muted">Seller Dashboard</span>
+            </div>
+            <div class="user-actions">
+                <div class="notification-badge">
+                    <i class="fas fa-bell text-muted"></i>
+                </div>
+                <i class="fas fa-envelope text-muted"></i>
+                <div class="avatar">A</div>
+            </div>
+        </div>
+        
+        <!-- Page Content -->
+        <div class="page-content">
+            <!-- Page Header -->
+            <div class="page-header">
+                <h1 class="page-title">My Products</h1>
+                <p class="page-subtitle">Manage your product inventory and listings.</p>
+            </div>
+            
+            <!-- Filters Section -->
+            <div class="filters-section">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                    <div class="d-flex align-items-center gap-3 flex-wrap">
+                        <div class="position-relative">
+                            <i class="fas fa-search position-absolute" style="left: 12px; top: 50%; transform: translateY(-50%); color: #9ca3af; font-size: 14px;"></i>
+                            <input type="text" class="search-input" placeholder="Search products..." style="padding-left: 35px;">
+                        </div>
+                        <select class="filter-dropdown">
+                            <option>All Categories</option>
+                            <option>Electronics</option>
+                            <option>Accessories</option>
+                        </select>
+                        <select class="filter-dropdown">
+                            <option>All Status</option>
+                            <option>Active</option>
+                            <option>Inactive</option>
+                            <option>Out of Stock</option>
+                        </select>
+                        <button class="reset-filters-btn">Reset Filters</button>
+                    </div>
+                    <button class="add-product-btn">
+                        <i class="fas fa-plus me-2"></i>
+                        Add Product
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Products Table -->
+            <div class="products-table">
+                <!-- Table Header -->
+                <div class="table-header">
+                    <div class="d-flex">
+                        <div style="flex: 1; padding-left: 55px;">Product</div>
+                        <div class="product-price">Price</div>
+                        <div class="product-stock">Stock</div>
+                        <div class="product-status">Status</div>
+                        <div class="product-actions">Actions</div>
+                    </div>
+                </div>
+                
+                <!-- Product Rows -->
+                <div class="product-row">
+                    <div class="product-avatar avatar-hp">HP</div>
+                    <div class="product-info">
+                        <div class="product-name">Premium Wireless Headphones</div>
+                        <div class="product-category">Electronics</div>
+                    </div>
+                    <div class="product-price">₱2,999.00</div>
+                    <div class="product-stock">45</div>
+                    <div class="product-status">
+                        <span class="status-badge status-active">Active</span>
+                    </div>
+                    <div class="product-actions">
+                        <button class="action-btn edit">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="action-btn delete">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="product-row">
+                    <div class="product-avatar avatar-sw">SW</div>
+                    <div class="product-info">
+                        <div class="product-name">Smart Fitness Watch</div>
+                        <div class="product-category">Electronics</div>
+                    </div>
+                    <div class="product-price">₱4,599.00</div>
+                    <div class="product-stock">23</div>
+                    <div class="product-status">
+                        <span class="status-badge status-active">Active</span>
+                    </div>
+                    <div class="product-actions">
+                        <button class="action-btn edit">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="action-btn delete">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="product-row">
+                    <div class="product-avatar avatar-bs">BS</div>
+                    <div class="product-info">
+                        <div class="product-name">Bluetooth Speaker Pro</div>
+                        <div class="product-category">Electronics</div>
+                    </div>
+                    <div class="product-price">₱1,899.00</div>
+                    <div class="product-stock">67</div>
+                    <div class="product-status">
+                        <span class="status-badge status-active">Active</span>
+                    </div>
+                    <div class="product-actions">
+                        <button class="action-btn edit">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="action-btn delete">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="product-row">
+                    <div class="product-avatar avatar-wc">WC</div>
+                    <div class="product-info">
+                        <div class="product-name">Wireless Charging Pad</div>
+                        <div class="product-category">Accessories</div>
+                    </div>
+                    <div class="product-price">₱899.00</div>
+                    <div class="product-stock" style="color: #ef4444;">0</div>
+                    <div class="product-status">
+                        <span class="status-badge status-out-of-stock">Out of stock</span>
+                    </div>
+                    <div class="product-actions">
+                        <button class="action-btn edit">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="action-btn delete">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="product-row">
+                    <div class="product-avatar avatar-uc">UC</div>
+                    <div class="product-info">
+                        <div class="product-name">USB-C Hub</div>
+                        <div class="product-category">Accessories</div>
+                    </div>
+                    <div class="product-price">₱1,299.00</div>
+                    <div class="product-stock">34</div>
+                    <div class="product-status">
+                        <span class="status-badge status-active">Active</span>
+                    </div>
+                    <div class="product-actions">
+                        <button class="action-btn edit">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="action-btn delete">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="product-row">
+                    <div class="product-avatar avatar-pc">PC</div>
+                    <div class="product-info">
+                        <div class="product-name">Phone Case Premium</div>
+                        <div class="product-category">Accessories</div>
+                    </div>
+                    <div class="product-price">₱599.00</div>
+                    <div class="product-stock">156</div>
+                    <div class="product-status">
+                        <span class="status-badge status-active">Active</span>
+                    </div>
+                    <div class="product-actions">
+                        <button class="action-btn edit">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="action-btn delete">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="product-row">
+                    <div class="product-avatar avatar-tb">TB</div>
+                    <div class="product-info">
+                        <div class="product-name">Tablet Stand</div>
+                        <div class="product-category">Accessories</div>
+                    </div>
+                    <div class="product-price">₱799.00</div>
+                    <div class="product-stock">89</div>
+                    <div class="product-status">
+                        <span class="status-badge status-active">Active</span>
+                    </div>
+                    <div class="product-actions">
+                        <button class="action-btn edit">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="action-btn delete">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="product-row">
+                    <div class="product-avatar avatar-kb">KB</div>
+                    <div class="product-info">
+                        <div class="product-name">Mechanical Keyboard</div>
+                        <div class="product-category">Electronics</div>
+                    </div>
+                    <div class="product-price">₱3,499.00</div>
+                    <div class="product-stock" style="color: #f59e0b;">12</div>
+                    <div class="product-status">
+                        <span class="status-badge status-low-stock">Low Stock</span>
+                    </div>
+                    <div class="product-actions">
+                        <button class="action-btn edit">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="action-btn delete">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="product-row">
+                    <div class="product-avatar avatar-ms">MS</div>
+                    <div class="product-info">
+                        <div class="product-name">Wireless Mouse</div>
+                        <div class="product-category">Electronics</div>
+                    </div>
+                    <div class="product-price">₱1,199.00</div>
+                    <div class="product-stock">78</div>
+                    <div class="product-status">
+                        <span class="status-badge status-active">Active</span>
+                    </div>
+                    <div class="product-actions">
+                        <button class="action-btn edit">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="action-btn delete">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="product-row">
+                    <div class="product-avatar avatar-cm">CM</div>
+                    <div class="product-info">
+                        <div class="product-name">Camera Mount</div>
+                        <div class="product-category">Accessories</div>
+                    </div>
+                    <div class="product-price">₱1,599.00</div>
+                    <div class="product-stock" style="color: #ef4444;">2</div>
+                    <div class="product-status">
+                        <span class="status-badge status-inactive">Inactive</span>
+                    </div>
+                    <div class="product-actions">
+                        <button class="action-btn edit">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="action-btn delete">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Pagination -->
+            <div class="pagination">
+                <div class="pagination-info">Page 1of 2</div>
+                <button class="pagination-btn" disabled>
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <button class="pagination-btn active">1</button>
+                <button class="pagination-btn">2</button>
+                <button class="pagination-btn">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

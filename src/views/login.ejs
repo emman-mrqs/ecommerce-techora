@@ -10,7 +10,7 @@
     <div class="login-page">
        
         <div class="logo-section">
-            <img src="/techora/img/logoblack.png" alt="Company Logo">
+            <a href="/"><img src="/techora/img/logoblack.png" alt="Company Logo"></a>
         </div>
 
         <div class="form-section">
@@ -21,16 +21,18 @@
                     <label for="email">Email</label>
                     <input type="email" id="email" placeholder="Enter your email" required>
 
-                    <label for="password">Password</label>
-                    <div class="password-wrapper">
-                        <input type="password" id="password" placeholder="Enter your password" required>
-                        <button 
-                            type="button" 
-                            class="toggle-password" 
-                            data-target="password">
-                            <img src="/techora/img/show.png" alt="Toggle visibility">
-                        </button>
-                    </div>
+<!-- Password Input with Bootstrap Icons -->
+<label for="password">Password</label>
+<div class="password-wrapper">
+    <input type="password" id="password" placeholder="Enter your password" required>
+    <button 
+        type="button" 
+        class="toggle-password" 
+        data-target="password">
+        <i class="bi bi-eye-slash-fill"></i>
+    </button>
+</div>
+
 
                     <div class="form-options">
                         <label>

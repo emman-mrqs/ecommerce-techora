@@ -1,0 +1,48 @@
+<header>
+    <link rel="stylesheet" href="/css/sellerSideNav.css">
+</header>
+
+    <!-- Sidebar -->
+    <div class="sidebar">   
+        <div class="p-3">
+            <div class="d-flex align-items-center mb-4">
+                <div class="me-2" style="background: #f97316; width: 28px; height: 28px; border-radius: 4px; display: flex; align-items: center; justify-content: center;">
+                    <span style="color: white; font-weight: bold; font-size: 14px;">T</span>
+                </div>
+                <span style="color: white; font-weight: bold;">TECHORA</span>
+            </div>         
+            <nav class="nav flex-column">
+            <a class="nav-link <%= currentPath === '/seller' ? 'active' : '' %>" href="/seller">
+                <i class="fas fa-chart-line"></i> Overview
+            </a>
+
+            <a class="nav-link <%= currentPath.startsWith('/seller/products') ? 'active' : '' %>" href="/seller/products">
+                <i class="fas fa-box"></i> My Products
+            </a>
+
+            <a class="nav-link <%= currentPath.startsWith('/seller/add') ? 'active' : '' %>" href="#">
+                <i class="fas fa-plus"></i> Add Product
+            </a>
+
+            <a class="nav-link <%= currentPath.startsWith('/seller/orders') ? 'active' : '' %>" href="#">
+                <i class="fas fa-shopping-cart"></i> Orders
+            </a>
+
+            <a class="nav-link <%= currentPath.startsWith('/seller/earnings') ? 'active' : '' %>" href="#">
+                <i class="fas fa-dollar-sign"></i> Earnings
+            </a>
+
+            <a class="nav-link <%= currentPath.startsWith('/seller/analytics') ? 'active' : '' %>" href="#">
+                <i class="fas fa-chart-bar"></i> Analytics
+            </a>
+
+            <a class="nav-link <%= currentPath.startsWith('/seller/promotions') ? 'active' : '' %>" href="#">
+                <i class="fas fa-tags"></i> Promotions
+            </a>
+
+            <a class="nav-link <%= currentPath.startsWith('/seller/settings') ? 'active' : '' %>" href="#">
+                <i class="fas fa-cog"></i> Settings
+            </a>
+            </nav>
+        </div>
+    </div>

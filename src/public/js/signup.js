@@ -1,24 +1,29 @@
-// Toggle password visibility and change icon
-document.querySelectorAll(".toggle-password").forEach(button => {
-    button.addEventListener("click", (e) => {
-        e.preventDefault();
+document.addEventListener("DOMContentLoaded", () => {
+    const toggleButtons = document.querySelectorAll(".toggle-password");
+    const passwordFields = [
+        document.getElementById("password"),
+        document.getElementById("confirmPassword")
+    ];
 
-        const targetId = button.getAttribute("data-target");
-        const input = document.getElementById(targetId);
-        const icon = button.querySelector("img");
+    toggleButtons.forEach(button => {
+        button.addEventListener("click", () => {
+            const isPassword = passwordFields[0].type === "password"; 
 
-        if (input.type === "password") {
-            input.type = "text";
-            icon.src = "/techora/img/hide.png"; // change to hide icon
-        } else {
-            input.type = "password";
-            icon.src = "/techora/img/show.png"; // change to show icon
-        }
+            // Switch all password fields together
+            passwordFields.forEach(input => {
+                input.type = isPassword ? "text" : "password";
+            });
+
+            // Update all icons together
+            document.querySelectorAll(".toggle-password i").forEach(icon => {
+                if (isPassword) {
+                    icon.classList.remove("bi-eye-slash-fill");
+                    icon.classList.add("bi-eye-fill");
+                } else {
+                    icon.classList.remove("bi-eye-fill");
+                    icon.classList.add("bi-eye-slash-fill");
+                }
+            });
+        });
     });
-});
-
-// Handle signup form submit
-document.getElementById("signupForm").addEventListener("submit", function(e) {
-    e.preventDefault();
-    alert("Sign Up Successful!");
 });
