@@ -1,0 +1,68 @@
+<head>
+  <link rel="stylesheet" href="/css/sellerSideBarNav.css">
+  <script src="/js/sellerSideBarNav.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<!-- Sidebar Overlay (mobile only) -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+<!-- Sidebar -->
+<div class="sidebar" id="sidebar">
+  <div class="p-3">
+    <!-- Logo -->
+    <div class="d-flex align-items-center mb-4">
+      <div class="me-2" style="background: #f97316; width: 28px; height: 28px; border-radius: 4px; display: flex; align-items: center; justify-content: center;">
+        <span style="color: white; font-weight: bold; font-size: 14px;">T</span>
+      </div>
+      <span style="color: white; font-weight: bold;">TECHORA</span>
+    </div>
+
+    <!-- Nav Links -->
+    <nav class="nav flex-column">
+      <a class="nav-link <%= activePage === 'overview' ? 'active' : '' %>" href="/seller">
+        <i class="fas fa-chart-line"></i> Overview
+      </a>
+      <a class="nav-link <%= activePage === 'products' ? 'active' : '' %>" href="/seller/products">
+        <i class="fas fa-box"></i> My Products
+      </a>
+      <a class="nav-link <%= activePage === 'addProduct' ? 'active' : '' %>" href="/seller/add">
+        <i class="fas fa-plus"></i> Add Product
+      </a>
+      <a class="nav-link <%= activePage === 'orders' ? 'active' : '' %>" href="/seller/orders">
+        <i class="fas fa-shopping-cart"></i> Orders
+      </a>
+      <a class="nav-link <%= activePage === 'earnings' ? 'active' : '' %>" href="/seller/earnings">
+        <i class="fa-solid fa-peso-sign"></i></i> Earnings
+      </a>
+      <a class="nav-link <%= activePage === 'analytics' ? 'active' : '' %>" href="/seller/analytics">
+        <i class="fas fa-chart-bar"></i> Analytics
+      </a>
+      <a class="nav-link <%= activePage === 'promotions' ? 'active' : '' %>" href="/seller/promotions">
+        <i class="fas fa-tags"></i> Promotions
+      </a>
+      <a class="nav-link <%= activePage === 'settings' ? 'active' : '' %>" href="/seller/settings">
+        <i class="fas fa-cog"></i> Settings
+      </a>
+    </nav>
+  </div>
+</div>
+
+<!-- Top Header -->
+<div class="top-header d-flex justify-content-between align-items-center">
+  <div class="d-flex align-items-center">
+    <!-- Mobile hamburger -->
+    <button class="mobile-menu-btn me-3" onclick="toggleSidebar()">
+      <i class="fas fa-bars"></i>
+    </button>
+    <!-- Dynamic Title -->
+    <span class="text-muted"><%= pageTitle %></span>
+  </div>
+  <div class="user-actions d-flex align-items-center gap-3">
+    <div class="notification-badge">
+      <i class="fas fa-bell text-muted"></i>
+    </div>
+    <i class="fas fa-envelope text-muted"></i>
+    <div class="avatar">A</div>
+  </div>
+</div>

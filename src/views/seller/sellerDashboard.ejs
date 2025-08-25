@@ -9,26 +9,12 @@
     <link rel="stylesheet" href="css/sellerDashboard.css">
 </head>
 <body>
-    <nav>
-        <%- include("../partials/sellerSideNav.ejs") %>
-    </nav>
-
     
     <!-- Main Content -->
     <div class="main-content">
-        <!-- Top Header -->
-        <div class="top-header">
-            <div>
-                <span class="text-muted">Seller Dashboard</span>
-            </div>
-            <div class="user-actions">
-                <div class="notification-badge">
-                    <i class="fas fa-bell text-muted"></i>
-                </div>
-                <i class="fas fa-envelope text-muted"></i>
-                <div class="avatar">A</div>
-            </div>
-        </div>
+        <!-- Top Header and SideBar -->
+        <%- include("../partials/sellerSideBarNav.ejs") %>
+
         
         <!-- Dashboard Content -->
         <div class="dashboard-content">

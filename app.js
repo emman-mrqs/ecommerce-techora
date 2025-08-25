@@ -28,6 +28,7 @@ app.use((req, res, next) => {
 
 
 //Routes
+//User Routes
 app.get("/", (req, res) => {
   res.render("user/index.ejs"); 
 });
@@ -53,12 +54,57 @@ app.get("/products", (req, res)=>{
 });
 
 //seller routes
-app.get("/seller", (req, res)=>{
-  res.render("seller/sellerDashboard");
+app.get("/seller/store", (req, res)=>{
+  res.render("seller/sellerStore", {
+    activePage: "promotions",
+    pageTitle: "Seller Promotions"
+  });
 });
 
-app.get("/seller/products", (req, res)=>{
-  res.render("seller/sellerProducts");
+
+
+app.get("/seller", (req, res) => {
+  res.render("seller/sellerDashboard", { 
+    activePage: "overview",
+    pageTitle: "Seller Dashboard"
+  });
+});
+
+app.get("/seller/products", (req, res) => {
+  res.render("seller/sellerProducts", { 
+    activePage: "products",
+    pageTitle: "Seller Products"
+  });
+});
+
+app.get("/seller/add", (req, res)=>{
+  res.render("seller/sellerAddProducts", {
+    activePage: "addProduct",
+    pageTitle: "Seller Add Products"
+  });
+
+});
+
+app.get("/seller/orders", (req, res)=>{
+  res.render("seller/sellerOrders", {
+    activePage: "orders",
+    pageTitle: "Seller Orders"
+  });
+});
+
+app.get("/seller/earnings", (req, res)=>{
+  res.render("seller/sellerEarnings", {
+    activePage: "earnings",
+    pageTitle: "Seller Earnings"
+  });
+});
+
+
+app.get("/seller/promotions", (req, res)=>{
+  res.render("seller/sellerPromotions", {
+    activePage: "promotions",
+    pageTitle: "Seller Promotions"
+  });
 });
 
 

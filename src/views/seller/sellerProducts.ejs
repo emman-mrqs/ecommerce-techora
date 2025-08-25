@@ -9,32 +9,14 @@
     <link rel="stylesheet" href="/css/sellerProducts.css">
 </head>
 <body>
-    <!-- Sidebar Overlay -->
-    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
-    <nav>
-        <%- include("../partials/sellerSideNav.ejs") %>
-    </nav>
 
     <!-- Main Content -->
     <div class="main-content">
-        <!-- Top Header -->
-        <div class="top-header">
-            <div class="d-flex align-items-center">
-                <button class="mobile-menu-btn me-3" onclick="toggleSidebar()">
-                    <i class="fas fa-bars"></i>
-                </button>
-                <span class="text-muted">Seller Dashboard</span>
-            </div>
-            <div class="user-actions">
-                <div class="notification-badge">
-                    <i class="fas fa-bell text-muted"></i>
-                </div>
-                <i class="fas fa-envelope text-muted"></i>
-                <div class="avatar">A</div>
-            </div>
-        </div>
-        
+        <!-- Top Header and Sidebar-->
+         <%- include("../partials/sellerSideBarNav.ejs") %>
+
+
         <!-- Page Content -->
         <div class="page-content">
             <!-- Page Header -->
