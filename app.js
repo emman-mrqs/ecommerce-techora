@@ -1,5 +1,7 @@
+import 'dotenv/config';
 import express from "express";
 import bodyParser from "body-parser";
+import cookieParser from "cookie-parser";
 import axios from "axios";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
@@ -19,96 +21,31 @@ app.use(express.static(join(__dirname, "src", "public")));
 // Middleware
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 // This will make the current path available in all EJS views
 app.use((req, res, next) => {
     res.locals.currentPath = req.path;
     next();
-});
+}); 
 
+//Import Routes
+import authRoute from "./src/routes/authRoutes.js"
+import sellerRoute from "./src/routes/sellerRoutes.js";
+import userRoute from "./src/routes/userRoutes.js";
 
-//Routes
-//User Routes
-app.get("/", (req, res) => {
-  res.render("user/index.ejs"); 
-});
-
-app.get("/login", (req, res) => {
-    res.render("login");
-})
-
-app.get("/signup", (req, res) => {
-    res.render("signup");
-})
-
-app.get("/cart", (req, res) =>{
-    res.render("user/cart");
-});
-
-app.get("/checkout", (req, res)=>{
-  res.render("user/checkout");
-});
-
-app.get("/products", (req, res)=>{
-  res.render("user/products");
-});
+//auth Routes
+app.use("/", authRoute);
 
 //seller routes
-app.get("/seller/store", (req, res)=>{
-  res.render("seller/sellerStore", {
-    activePage: "promotions",
-    pageTitle: "Seller Promotions"
-  });
-});
+app.use("/", sellerRoute);
 
-
-
-app.get("/seller", (req, res) => {
-  res.render("seller/sellerDashboard", { 
-    activePage: "overview",
-    pageTitle: "Seller Dashboard"
-  });
-});
-
-app.get("/seller/products", (req, res) => {
-  res.render("seller/sellerProducts", { 
-    activePage: "products",
-    pageTitle: "Seller Products"
-  });
-});
-
-app.get("/seller/add", (req, res)=>{
-  res.render("seller/sellerAddProducts", {
-    activePage: "addProduct",
-    pageTitle: "Seller Add Products"
-  });
-
-});
-
-app.get("/seller/orders", (req, res)=>{
-  res.render("seller/sellerOrders", {
-    activePage: "orders",
-    pageTitle: "Seller Orders"
-  });
-});
-
-app.get("/seller/earnings", (req, res)=>{
-  res.render("seller/sellerEarnings", {
-    activePage: "earnings",
-    pageTitle: "Seller Earnings"
-  });
-});
-
-
-app.get("/seller/promotions", (req, res)=>{
-  res.render("seller/sellerPromotions", {
-    activePage: "promotions",
-    pageTitle: "Seller Promotions"
-  });
-});
+//User Routes
+app.use("/", userRoute);
 
 
 
 app.listen(port, () => {
   console.log(`Backend server is running on http://localhost:${port}`);
 });
+

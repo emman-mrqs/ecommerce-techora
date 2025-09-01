@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Verification</title>
+  <link rel="stylesheet" href="/css/verify.css" />
+</head>
+
+<%- include('../partials/modal') %>
+
+
+<body>
+  <div class="container">
+    <div class="card">
+      <h2>Enter Verification Code</h2>
+      <p>Please enter the 6-digit code sent to your email</p>
+      <form method="post" action="/verify" id="verifyForm">
+        <div class="code-inputs">
+          <input type="text" maxlength="1" class="code" />
+          <input type="text" maxlength="1" class="code" />
+          <input type="text" maxlength="1" class="code" />
+          <input type="text" maxlength="1" class="code" />
+          <input type="text" maxlength="1" class="code" />
+          <input type="text" maxlength="1" class="code" />
+        </div>
+
+        <!-- Hidden field to hold final code -->
+        <input type="hidden" name="code" id="finalCode" />
+
+        <p class="timer">Code expires in <span id="countdown">05:00</span></p>
+        
+        <!-- Verify button -->
+        <button id="verifyBtn" disabled>Verify</button>
+
+        <!-- Resend link below the button -->
+        <p class="resend-text">
+          Didn’t receive a code? <a href="#" id="resend">Resend Code</a>
+        </p>
+      </form>
+    </div>
+  </div>
+  <script src="js/verify.js"></script>
+</body>
+</html>

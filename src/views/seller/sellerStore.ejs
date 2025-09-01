@@ -4,477 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TECHORA - Apple Products Seller</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background-color: #FFFFFF;
-            color: #0A0A0A;
-            line-height: 1.6;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
-        /* Header Section */
-        .seller-header {
-            display: flex;
-            flex-direction: column;
-            gap: 30px;
-            margin-bottom: 40px;
-            padding: 30px;
-            background: #FAFAFA;
-            border-radius: 12px;
-            border: 1px solid #E0E0E0;
-        }
-
-        .seller-info {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            flex-wrap: wrap;
-        }
-
-        .seller-avatar {
-            width: 80px;
-            height: 80px;
-            background: linear-gradient(135deg, #000000, #333333);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #FFFFFF;
-            font-size: 28px;
-            font-weight: bold;
-            flex-shrink: 0;
-        }
-
-        .seller-details {
-            flex: 1;
-            min-width: 200px;
-        }
-
-        .seller-name {
-            font-size: 32px;
-            font-weight: 700;
-            margin-bottom: 8px;
-            color: #0A0A0A;
-        }
-
-        .seller-badges {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 12px;
-            flex-wrap: wrap;
-        }
-
-        .badge {
-            padding: 4px 12px;
-            background: #000000;
-            color: #FFFFFF;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 500;
-        }
-
-        .badge.verified {
-            background: #28a745;
-        }
-
-        .seller-description {
-            color: #4D4D4D;
-            font-size: 14px;
-            margin-bottom: 15px;
-        }
-
-        .seller-actions {
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-        }
-
-        .btn {
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-weight: 600;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.3s ease;
-            cursor: pointer;
-            border: none;
-            font-size: 14px;
-        }
-
-        .btn-primary {
-            background: #000000;
-            color: #FFFFFF;
-        }
-
-        .btn-primary:hover {
-            background: #333333;
-        }
-
-        .btn-outline {
-            background: transparent;
-            color: #000000;
-            border: 2px solid #000000;
-        }
-
-        .btn-outline:hover {
-            background: #000000;
-            color: #FFFFFF;
-        }
-
-        /* Stats Section */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 20px;
-            margin-bottom: 40px;
-        }
-
-        .stat-card {
-            text-align: center;
-            padding: 25px 15px;
-            background: #FAFAFA;
-            border-radius: 12px;
-            border: 1px solid #E0E0E0;
-            transition: transform 0.2s ease;
-        }
-
-        .stat-card:hover {
-            transform: translateY(-2px);
-        }
-
-        .stat-number {
-            font-size: 28px;
-            font-weight: 700;
-            color: #0A0A0A;
-            margin-bottom: 5px;
-        }
-
-        .stat-label {
-            color: #4D4D4D;
-            font-size: 14px;
-            font-weight: 500;
-        }
-
-        /* Filters Section */
-        .filters-section {
-            background: #FAFAFA;
-            padding: 25px;
-            border-radius: 12px;
-            margin-bottom: 30px;
-            border: 1px solid #E0E0E0;
-        }
-
-        .filters-header {
-            display: flex;
-            justify-content: between;
-            align-items: center;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-
-        .filters-title {
-            font-size: 20px;
-            font-weight: 600;
-            color: #0A0A0A;
-        }
-
-        .search-box {
-            flex: 1;
-            min-width: 250px;
-            max-width: 400px;
-            position: relative;
-        }
-
-        .search-input {
-            width: 100%;
-            padding: 12px 16px;
-            border: 2px solid #E0E0E0;
-            border-radius: 8px;
-            font-size: 14px;
-            transition: border-color 0.3s ease;
-        }
-
-        .search-input:focus {
-            outline: none;
-            border-color: #000000;
-        }
-
-        .filter-groups {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 25px;
-        }
-
-        .filter-group h4 {
-            font-size: 16px;
-            font-weight: 600;
-            margin-bottom: 12px;
-            color: #0A0A0A;
-        }
-
-        .filter-options {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .filter-option {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .filter-option input[type="checkbox"] {
-            width: 16px;
-            height: 16px;
-        }
-
-        .filter-option label {
-            font-size: 14px;
-            color: #4D4D4D;
-            cursor: pointer;
-        }
-
-        /* Products Grid */
-        .products-header {
-            display: flex;
-            justify-content: between;
-            align-items: center;
-            margin-bottom: 25px;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-
-        .products-title {
-            font-size: 24px;
-            font-weight: 600;
-            color: #0A0A0A;
-        }
-
-        .sort-select {
-            padding: 10px 16px;
-            border: 2px solid #E0E0E0;
-            border-radius: 8px;
-            font-size: 14px;
-            background: #FFFFFF;
-            cursor: pointer;
-        }
-
-        .products-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 25px;
-            margin-bottom: 40px;
-        }
-
-        .product-card {
-            background: #FFFFFF;
-            border-radius: 12px;
-            border: 1px solid #E0E0E0;
-            overflow: hidden;
-            transition: all 0.3s ease;
-            position: relative;
-        }
-
-        .product-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-        }
-
-        .product-image {
-            height: 200px;
-            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 48px;
-            color: #4D4D4D;
-            position: relative;
-        }
-
-        .discount-badge {
-            position: absolute;
-            top: 12px;
-            left: 12px;
-            background: #CC0000;
-            color: #FFFFFF;
-            padding: 4px 8px;
-            border-radius: 6px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-
-        .product-info {
-            padding: 20px;
-        }
-
-        .product-name {
-            font-size: 18px;
-            font-weight: 600;
-            color: #0A0A0A;
-            margin-bottom: 8px;
-        }
-
-        .product-description {
-            color: #4D4D4D;
-            font-size: 14px;
-            margin-bottom: 12px;
-        }
-
-        .product-price {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 12px;
-        }
-
-        .current-price {
-            font-size: 20px;
-            font-weight: 700;
-            color: #0A0A0A;
-        }
-
-        .original-price {
-            font-size: 16px;
-            color: #4D4D4D;
-            text-decoration: line-through;
-        }
-
-        .product-stats {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            font-size: 12px;
-            color: #4D4D4D;
-        }
-
-        .rating {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .heart-icon {
-            position: absolute;
-            top: 12px;
-            right: 12px;
-            width: 32px;
-            height: 32px;
-            background: #FFFFFF;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            transition: all 0.3s ease;
-        }
-
-        .heart-icon:hover {
-            background: #000000;
-            color: #FFFFFF;
-        }
-
-        /* Pagination */
-        .pagination {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 10px;
-            margin: 40px 0;
-        }
-
-        .page-btn {
-            padding: 10px 16px;
-            border: 2px solid #E0E0E0;
-            background: #FFFFFF;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-weight: 500;
-        }
-
-        .page-btn:hover,
-        .page-btn.active {
-            background: #000000;
-            color: #FFFFFF;
-            border-color: #000000;
-        }
-
-        /* Responsive Design */
-        @media (max-width: 768px) {
-            .container {
-                padding: 15px;
-            }
-
-            .seller-header {
-                padding: 20px;
-            }
-
-            .seller-info {
-                flex-direction: column;
-                text-align: center;
-            }
-
-            .seller-name {
-                font-size: 24px;
-            }
-
-            .stats-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            .filter-groups {
-                grid-template-columns: 1fr;
-            }
-
-            .products-grid {
-                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-                gap: 20px;
-            }
-
-            .products-header {
-                flex-direction: column;
-                align-items: stretch;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .seller-actions {
-                flex-direction: column;
-            }
-
-            .btn {
-                justify-content: center;
-            }
-
-            .stats-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .products-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/sellerStore.css">
 </head>
 <body>
+    <nav>
+        <%- include("../partials/header.ejs") %>
+    </nav>
+
     <div class="container">
         <!-- Seller Header -->
         <div class="seller-header">
@@ -526,6 +64,130 @@
                 <div class="stat-label">Store Age</div>
             </div>
         </div>
+
+        <!-- Vouchers Section -->
+        <div class="vouchers-section">
+            <div class="vouchers-header">
+                <div class="vouchers-title-group">
+                    <div class="vouchers-icon">🎫</div>
+                    <div>
+                        <h3 class="vouchers-title">Store Vouchers</h3>
+                        <p class="vouchers-subtitle">Claim exclusive discounts and save more</p>
+                    </div>
+                </div>
+                <div class="vouchers-counter">4 Available</div>
+            </div>
+            <div class="vouchers-grid">
+                <div class="voucher-card">
+                    <div class="voucher-content">
+                        <div class="voucher-discount-container">
+                            <div class="voucher-discount">15%</div>
+                            <div class="voucher-discount-label">DISCOUNT</div>
+                        </div>
+                        <div class="voucher-info">
+                            <div class="voucher-title">New Customer Special</div>
+                            <div class="voucher-description">Perfect for your first Apple purchase</div>
+                            <div class="voucher-details">
+                                <div class="voucher-usage">85% claimed</div>
+                                <div class="voucher-expiry">
+                                    <span class="voucher-expiry-icon">⏰</span>
+                                    <span>Expires Jan 15, 2026</span>
+                                </div>
+                            </div>
+                            <div class="voucher-progress">
+                                <div class="voucher-progress-fill" style="width: 85%"></div>
+                            </div>
+                        </div>
+                        <div class="voucher-claim-section">
+                            <button class="voucher-claim-btn" onclick="claimVoucher(this, 'WELCOME15')">Claim</button>
+                            <div class="voucher-savings">Save up to ₱3.7K</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="voucher-card premium">
+                    <div class="voucher-content">
+                        <div class="voucher-discount-container">
+                            <div class="voucher-discount">₱5K</div>
+                            <div class="voucher-discount-label">OFF</div>
+                        </div>
+                        <div class="voucher-info">
+                            <div class="voucher-title">MacBook Pro Deal</div>
+                            <div class="voucher-description">Premium discount for MacBook purchases</div>
+                            <div class="voucher-details">
+                                <div class="voucher-usage">42% claimed</div>
+                                <div class="voucher-expiry">
+                                    <span class="voucher-expiry-icon">⏰</span>
+                                    <span>Expires Feb 28, 2026</span>
+                                </div>
+                            </div>
+                            <div class="voucher-progress">
+                                <div class="voucher-progress-fill" style="width: 42%"></div>
+                            </div>
+                        </div>
+                        <div class="voucher-claim-section">
+                            <button class="voucher-claim-btn" onclick="claimVoucher(this, 'MACBOOK5K')">Claim</button>
+                            <div class="voucher-savings">Min. spend ₱80K</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="voucher-card limited almost-gone">
+                    <div class="voucher-content">
+                        <div class="voucher-discount-container">
+                            <div class="voucher-discount">20%</div>
+                            <div class="voucher-discount-label">FLASH SALE</div>
+                        </div>
+                        <div class="voucher-info">
+                            <div class="voucher-title">iPhone Flash Deal</div>
+                            <div class="voucher-description">Limited time iPhone discount - hurry!</div>
+                            <div class="voucher-details">
+                                <div class="voucher-usage">91% claimed</div>
+                                <div class="voucher-expiry">
+                                    <span class="voucher-expiry-icon">⚡</span>
+                                    <span>Expires Sep 2, 2025</span>
+                                </div>
+                            </div>
+                            <div class="voucher-progress">
+                                <div class="voucher-progress-fill" style="width: 91%"></div>
+                            </div>
+                        </div>
+                        <div class="voucher-claim-section">
+                            <button class="voucher-claim-btn" onclick="claimVoucher(this, 'FLASH20')">Claim</button>
+                            <div class="voucher-savings">Save up to ₱8K</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="voucher-card">
+                    <div class="voucher-content">
+                        <div class="voucher-discount-container">
+                            <div class="voucher-discount">₱1K</div>
+                            <div class="voucher-discount-label">OFF</div>
+                        </div>
+                        <div class="voucher-info">
+                            <div class="voucher-title">Accessories Bundle</div>
+                            <div class="voucher-description">Great for AirPods, Apple Pencil & more</div>
+                            <div class="voucher-details">
+                                <div class="voucher-usage">67% claimed</div>
+                                <div class="voucher-expiry">
+                                    <span class="voucher-expiry-icon">⏰</span>
+                                    <span>Expires Dec 31, 2025</span>
+                                </div>
+                            </div>
+                            <div class="voucher-progress">
+                                <div class="voucher-progress-fill" style="width: 67%"></div>
+                            </div>
+                        </div>
+                        <div class="voucher-claim-section">
+                            <button class="voucher-claim-btn" onclick="claimVoucher(this, 'ACCESS1K')">Claim</button>
+                            <div class="voucher-savings">Min. spend ₱8K</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
 
         <!-- Filters Section -->
         <div class="filters-section">
@@ -753,66 +415,6 @@
         </div>
     </div>
 
-    <script>
-        // Simple JavaScript for interactivity
-        document.addEventListener('DOMContentLoaded', function() {
-            // Heart icon toggle
-            const heartIcons = document.querySelectorAll('.heart-icon');
-            heartIcons.forEach(icon => {
-                icon.addEventListener('click', function() {
-                    if (this.innerHTML === '♡') {
-                        this.innerHTML = '❤️';
-                        this.style.color = '#CC0000';
-                    } else {
-                        this.innerHTML = '♡';
-                        this.style.color = '';
-                    }
-                });
-            });
-
-            // Search functionality
-            const searchInput = document.querySelector('.search-input');
-            searchInput.addEventListener('input', function() {
-                const searchTerm = this.value.toLowerCase();
-                const productCards = document.querySelectorAll('.product-card');
-                
-                productCards.forEach(card => {
-                    const productName = card.querySelector('.product-name').textContent.toLowerCase();
-                    if (productName.includes(searchTerm)) {
-                        card.style.display = 'block';
-                    } else {
-                        card.style.display = 'none';
-                    }
-                });
-            });
-
-            // Filter functionality
-            const filterCheckboxes = document.querySelectorAll('.filter-option input[type="checkbox"]');
-            filterCheckboxes.forEach(checkbox => {
-                checkbox.addEventListener('change', function() {
-                    // Simple filter logic - in a real app, this would be more sophisticated
-                    console.log(`Filter ${this.id} ${this.checked ? 'checked' : 'unchecked'}`);
-                });
-            });
-
-            // Pagination
-            const pageButtons = document.querySelectorAll('.page-btn');
-            pageButtons.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    if (!isNaN(this.textContent)) {
-                        pageButtons.forEach(b => b.classList.remove('active'));
-                        this.classList.add('active');
-                    }
-                });
-            });
-
-            // Sort functionality
-            const sortSelect = document.querySelector('.sort-select');
-            sortSelect.addEventListener('change', function() {
-                console.log(`Sorting by: ${this.value}`);
-                // In a real app, this would sort the products
-            });
-        });
-    </script>
+    <script src="js/sellerStore"></script>
 </body>
 </html>
