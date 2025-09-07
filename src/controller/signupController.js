@@ -28,7 +28,9 @@ export const signupUser = async (req, res) => {
     if (existing.rows.length > 0) {
       if (existing.rows[0].is_verified) {
         // already verified → block duplicate signup
-        return res.status(400).send("Email already registered and verified.");
+        return res.status(400).render('auth/signup', {
+          message: "Email already registered and verified.",
+        });
       } else {
         // not verified → update their record with new code, password, etc.
         await db.query(
@@ -81,44 +83,6 @@ export const signupUser = async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).send("Something went wrong");
-  }
-};
-
-
-// verifyUser
-export const verifyUser = async (req, res) => {
-  const { code } = req.body;
-  const email = req.cookies.verifyEmail;
-
-  if (!email) {
-    return res.status(400).json({ success: false, message: "Verification session expired or email missing." });
-  }
-
-  try {
-    const result = await db.query(
-      `SELECT * FROM users 
-        WHERE email = $1 
-        AND verification_code = $2 
-        AND verification_expires > NOW()`,
-      [email, code]
-    );
-
-    if (result.rows.length === 0) {
-      return res.status(400).json({ success: false, message: "Invalid or expired verification code." });
-    }
-
-    await db.query(
-      "UPDATE users SET is_verified = true, verification_code = null, verification_expires = null WHERE email = $1",
-      [email]
-    );
-
-    // Clear the verification email cookie after successful verification  
-    res.clearCookie('verifyEmail');
-
-    res.json({ success: true, message: "Email verified successfully!" });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
 

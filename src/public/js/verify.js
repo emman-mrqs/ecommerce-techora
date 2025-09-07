@@ -59,7 +59,7 @@ function updateCountdown() {
     time--;
   } else {
     verifyBtn.disabled = true;
-    countdown.textContent = "Expired";
+    document.querySelector('.timer').textContent = 'Code has expired';
   }
 }
 

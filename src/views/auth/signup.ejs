@@ -5,15 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign Up - Techora</title>
     <link rel="stylesheet" href="css/signup.css">
+
+    <!-- Boostrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+
 </head>
 <body>
+    <%- include('../partials/modal') %>
+
     <div class="page-wrapper">
         <div class="signup-page">
-            <!-- Logo Section -->
-            <div class="logo-section">
-                <a href="/"><img src="/techora/img/logoblack.png" alt="Techora Logo"></a>
-            </div>
-
             <!-- Form Section -->
             <div class="form-section">
                 <div class="form-container">
@@ -50,7 +51,8 @@
                         <div class="or-divider">OR</div>
 
                         <button type="button" class="btn-google">
-                            <i class="bi bi-google icon"> Sign in with Google</i>
+                            <i class="bi bi-google icon me-2"></i>
+                            Sign in with Google
                         </button>
                     </form>
 
@@ -65,7 +67,14 @@
         <%- include("../partials/footer.ejs") %>
 
     </div>
-
+    
+    <script>
+    //Call Partial Modal
+    const message = "<%= typeof message !== 'undefined' && message ? message : '' %>";
+    if (message) {
+            openModal(message); // from your modal partial
+    }
+    </script>
     <script src="js/signup.js"></script>
 </body>
 </html>

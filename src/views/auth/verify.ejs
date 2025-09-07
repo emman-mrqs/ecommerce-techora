@@ -6,16 +6,14 @@
   <title>Verification</title>
   <link rel="stylesheet" href="/css/verify.css" />
 </head>
-
-<%- include('../partials/modal') %>
-
-
 <body>
+  <%- include('../partials/modal') %>
+
   <div class="container">
     <div class="card">
       <h2>Enter Verification Code</h2>
       <p>Please enter the 6-digit code sent to your email</p>
-      <form method="post" action="/verify" id="verifyForm">
+      <form id="verifyForm">
         <div class="code-inputs">
           <input type="text" maxlength="1" class="code" />
           <input type="text" maxlength="1" class="code" />
@@ -31,7 +29,7 @@
         <p class="timer">Code expires in <span id="countdown">05:00</span></p>
         
         <!-- Verify button -->
-        <button id="verifyBtn" disabled>Verify</button>
+        <button id="verifyBtn" disabled type="submit">Verify</button>
 
         <!-- Resend link below the button -->
         <p class="resend-text">
@@ -40,6 +38,43 @@
       </form>
     </div>
   </div>
+  
+<!-- Modal -->
+<script>
+  const form = document.getElementById("verifyForm");
+
+  form.addEventListener("submit", async function (e) {
+    e.preventDefault();
+
+    // Collect the 6 digits
+    const inputs = document.querySelectorAll(".code");
+    let userInputCode = "";
+    inputs.forEach(input => userInputCode += input.value);
+
+    document.getElementById("finalCode").value = userInputCode;
+
+    try {
+      const res = await fetch("/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: userInputCode })
+      });
+
+      const data = await res.json();
+
+      if (data.message) {
+        // pass both message + redirect to modal
+        openModal(data.message, data.redirect || null);
+      }
+    } catch (err) {
+      console.error(err);
+      openModal("Something went wrong. Try again.");
+    }
+  });
+</script>
+
+
+
   <script src="js/verify.js"></script>
 </body>
 </html>
