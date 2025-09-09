@@ -1,15 +1,17 @@
 import express from "express";
 const router = express.Router();
 import { signupUser, resendCode } from "../controller/signupController.js";
+import { redirectIfLoggedIn } from "../middleware/authMiddleware.js"; // ✅ Import the middleware
 
-//sign up
-router.get("/signup", (req, res) => {
-    res.render("auth/signup");
+// Signup Page
+router.get("/signup", redirectIfLoggedIn, (req, res) => {
+  res.render("auth/signup");
 });
 
-router.post("/signup", signupUser);
-router.post("/resend-code", resendCode);
+// Signup Form Submission
+router.post("/signup", redirectIfLoggedIn, signupUser);
 
+// Resend Code (optional — still protected)
+router.post("/resend-code", redirectIfLoggedIn, resendCode);
 
-//Es module export
 export default router;

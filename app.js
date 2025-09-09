@@ -5,6 +5,7 @@ import cookieParser from "cookie-parser";
 import axios from "axios";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
+import session from "express-session";
 
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -24,12 +25,25 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+//Express Session
+app.use(session({
+  secret: process.env.SESSION_SECRET || "supersecretkey", // Use .env in production!
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: false, // Set to true if using HTTPS
+    maxAge: 1000 * 60 * 60 * 24, // 1 day
+  },
+}));
+
 
 // This will make the current path available in all EJS views
 app.use((req, res, next) => {
     res.locals.currentPath = req.path;
+    res.locals.user = req.session.user || null; // ✅ this line
     next();
 }); 
+
 
 //Import Routes
 import loginRoutes from "./src/routes/loginRoutes.js"

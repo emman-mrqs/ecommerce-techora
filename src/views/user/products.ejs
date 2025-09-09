@@ -17,180 +17,98 @@
 
     <div class="container1">
         <!-- Header Section -->
-        <div class="header-section">
-            <div class="shop-related">Shop Related to: <strong>electronics</strong></div>
-            <div class="featured-products">
-                <div class="featured-item active">
-                    <div class="featured-circle">📱</div>
-                    <div>ABC SHOP</div>
-                    <div style="font-size: 12px; margin-top: 5px;">View Shop</div>
+        <div class="shop-related-seller-box">
+            <div class="shop-related-title">
+            <% if (search) { %>
+                Shop Related to: <strong>"<%= search %>"</strong>
+            <% } else { %>
+                All Products
+            <% } %>
+            </div>
+
+            <div class="shop-seller-card">
+                <!-- Seller Avatar -->
+                <div class="seller-logo">
+                <img src="/images/apple-logo.png" alt="Apple Store Logo">
                 </div>
-                <div class="featured-item">
-                    <div class="featured-circle">🔌</div>
-                    <div>Charger</div>
+
+                <!-- Seller Info -->
+                <div class="seller-details">
+                <div class="seller-name">Apple Flagship Store</div>
+                <div class="seller-followers">797.1K Followers</div>
                 </div>
-                <div class="featured-item">
-                    <div class="featured-circle">🔌</div>
-                    <div>Charger</div>
+
+                <!-- Seller Stats -->
+                <div class="seller-stats">
+                <div class="stat-box">
+                    <div class="stat-label">Products</div>
+                    <div class="stat-value">144</div>
                 </div>
-                <div class="featured-item">
-                    <div class="featured-circle">🔌</div>
-                    <div>Charger</div>
+                <div class="stat-box">
+                    <div class="stat-label">Rating</div>
+                    <div class="stat-value">4.9</div>
                 </div>
-                <div class="featured-item">
-                    <div class="featured-circle">🔌</div>
-                    <div>Charger</div>
+                <div class="stat-box">
+                    <div class="stat-label">Response</div>
+                    <div class="stat-value">Within Minutes</div>
                 </div>
+                </div>
+            </div>
+            </div>
+
+
+            <!-- Simplified Sorting and Pagination Bar -->
+            <div class="sort-pagination-bar">
+            <div class="sort-by-group">
+                <span class="sort-label">Sort by:</span>
+                
+                <button class="sort-btn active" data-sort="relevance">Relevance</button>
+                <button class="sort-btn" data-sort="latest">Latest</button>
+                <button class="sort-btn" data-sort="top-sales">Top Sales</button>
+
+                <div class="sort-dropdown">
+                <button class="sort-btn dropdown-toggle">Price ▾</button>
+                <div class="dropdown-menu">
+                    <div class="dropdown-item" data-sort="price-low">Low to High</div>
+                    <div class="dropdown-item" data-sort="price-high">High to Low</div>
+                </div>
+                </div>
+            </div>
+
+            <div class="pagination-group">
+                <span class="page-count"><span class="current-page">1</span>/<span class="total-pages">17</span></span>
+                <button class="page-btn" disabled>&lt;</button>
+                <button class="page-btn">&gt;</button>
             </div>
         </div>
 
-        <!-- Filtering and Sorting Controls -->
-        <div class="controls-section">
-            <div class="filter-group">
-                <label>Category:</label>
-                <select id="categoryFilter">
-                    <option value="all">All Categories</option>
-                    <option value="headphones">Headphones</option>
-                    <option value="charger">Chargers</option>
-                    <option value="earbuds">Earbuds</option>
-                    <option value="hub">Hub</option>
-                    <option value="cables">Cables</option>
-                    <option value="mouse">Mouse</option>
-                    <option value="keyboard">Keyboard</option>
-                    <option value="lights">Lights</option>
-                </select>
-            </div>
-
-            <div class="filter-group">
-                <label>Sort by:</label>
-                <select id="sortFilter">
-                    <option value="featured">Featured</option>
-                    <option value="price-low">Price: Low to High</option>
-                    <option value="price-high">Price: High to Low</option>
-                    <option value="name">Name A-Z</option>
-                    <option value="popularity">Popularity</option>
-                    <option value="newest">Newest</option>
-                </select>
-            </div>
-
-            <div class="filter-group">
-                <label>Price Range:</label>
-                <div class="price-range">
-                    <input type="range" id="priceRange" min="0" max="500" value="500">
-                    <span class="price-display" id="priceDisplay">₱0 - ₱500</span>
-                </div>
-            </div>
-
-            <div class="attribute-filters">
-                <div class="color-filter">
-                    <label>Color:</label>
-                    <div class="color-option" style="background-color: #000;" data-color="black"></div>
-                    <div class="color-option" style="background-color: #fff;" data-color="white"></div>
-                    <div class="color-option" style="background-color: #666;" data-color="gray"></div>
-                    <div class="color-option" style="background-color: #0066cc;" data-color="blue"></div>
-                </div>
-
-                <div class="size-filter">
-                    <label>Size:</label>
-                    <div class="size-option" data-size="small">S</div>
-                    <div class="size-option" data-size="medium">M</div>
-                    <div class="size-option" data-size="large">L</div>
-                </div>
-            </div>
-
-            <button class="clear-filters" onclick="clearAllFilters()">Clear All Filters</button>
-        </div>
-
+                <!-- Products Grid -->
         <!-- Products Grid -->
-        <div class="products-grid">
-            <!-- Headphones Section -->
-            <div class="product-category" data-category="headphones">
-                <h2 class="category-title">Headphones</h2>
-                <div class="product-card" data-price="299" data-name="Premium Wireless Headphones" data-popularity="95" data-date="2024-01-15">
-                    <div class="product-image">🎧</div>
-                    <div class="product-name">Premium Wireless Headphones</div>
-                    <div class="product-price">₱299</div>
-                    <button class="add-to-cart">Add to Cart</button>
-                </div>
-            </div>
-
-            <!-- Charger Section -->
-            <div class="product-category" data-category="charger">
-                <h2 class="category-title">Charger</h2>
-                <div class="product-card" data-price="69" data-name="Wireless Charging Pad" data-popularity="88" data-date="2024-02-10">
-                    <div class="product-image">🔌</div>
-                    <div class="product-name">Wireless Charging Pad</div>
-                    <div class="product-price">₱69</div>
-                    <button class="add-to-cart">Add to Cart</button>
-                </div>
-            </div>
-
-            <!-- Earbuds Section -->
-            <div class="product-category" data-category="earbuds">
-                <h2 class="category-title">Earbuds</h2>
-                <div class="product-card" data-price="199" data-name="Noise Cancelling Earbuds" data-popularity="92" data-date="2024-03-05">
-                    <div class="product-image">🎵</div>
-                    <div class="product-name">Noise Cancelling Earbuds</div>
-                    <div class="product-price">₱199</div>
-                    <button class="add-to-cart">Add to Cart</button>
-                </div>
-            </div>
-
-            <!-- Hub Section -->
-            <div class="product-category" data-category="hub">
-                <h2 class="category-title">Hub</h2>
-                <div class="product-card" data-price="149" data-name="Smart Home Hub" data-popularity="78" data-date="2024-01-20">
-                    <div class="product-image">🏠</div>
-                    <div class="product-name">Smart Home Hub</div>
-                    <div class="product-price">₱149</div>
-                    <button class="add-to-cart">Add to Cart</button>
-                </div>
-            </div>
-
-            <!-- Cables Section -->
-            <div class="product-category" data-category="cables">
-                <h2 class="category-title">Cables</h2>
-                <div class="product-card" data-price="29" data-name="USB-C Cable Set" data-popularity="85" data-date="2024-02-28">
-                    <div class="product-image">🔗</div>
-                    <div class="product-name">USB-C Cable Set</div>
-                    <div class="product-price">₱29</div>
-                    <button class="add-to-cart">Add to Cart</button>
-                </div>
-            </div>
-
-            <!-- Mouse Section -->
-            <div class="product-category" data-category="mouse">
-                <h2 class="category-title">Mouse</h2>
-                <div class="product-card" data-price="79" data-name="Wireless Mouse" data-popularity="90" data-date="2024-03-12">
-                    <div class="product-image">🖱️</div>
-                    <div class="product-name">Wireless Mouse</div>
-                    <div class="product-price">₱79</div>
-                    <button class="add-to-cart">Add to Cart</button>
-                </div>
-            </div>
-
-            <!-- Keyboard Section -->
-            <div class="product-category" data-category="keyboard">
-                <h2 class="category-title">Keyboard</h2>
-                <div class="product-card" data-price="159" data-name="Mechanical Gaming Keyboard" data-popularity="87" data-date="2024-01-08">
-                    <div class="product-image">⌨️</div>
-                    <div class="product-name">Mechanical Gaming Keyboard</div>
-                    <div class="product-price">₱159</div>
-                    <button class="add-to-cart">Add to Cart</button>
-                </div>
-            </div>
-
-            <!-- Lights Section -->
-            <div class="product-category" data-category="lights">
-                <h2 class="category-title">Lights</h2>
-                <div class="product-card" data-price="89" data-name="RGB LED Strip Lights" data-popularity="83" data-date="2024-03-18">
-                    <div class="product-image">💡</div>
-                    <div class="product-name">RGB LED Strip Lights</div>
-                    <div class="product-price">₱89</div>
-                    <button class="add-to-cart">Add to Cart</button>
-                </div>
-            </div>
+<div class="products-grid">
+  <% if (products && products.length > 0) { %>
+    <% products.forEach(product => { %>
+<a href="/buy/<%= product.id %>" class="clean-product-card">
+        <div class="product-img">
+          <% if (product.img_url) { %>
+            <img src="<%= product.img_url %>" alt="<%= product.name %>" style="width: 100%; height: 150px; object-fit: contain;">
+          <% } else { %>
+            🛍️
+          <% } %>
         </div>
+        <div class="product-info">
+          <div class="product-name"><%= product.name %></div>
+
+          <% if (product.price) { %>
+            <div class="product-price">₱<%= product.price %></div>
+          <% } %>
+        </div>
+      </a>
+    <% }); %>
+  <% } else { %>
+    <p>No products found for "<%= search %>"</p>
+  <% } %>
+</div>
+
     </div>
 
     <footer>

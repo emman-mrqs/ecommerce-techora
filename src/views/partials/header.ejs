@@ -1,4 +1,5 @@
   <head>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
     <link rel="stylesheet" href="/css/header.css">
   </head>
   
@@ -11,9 +12,21 @@
                     <a href="#" class="nav-link">About</a>
                     <a href="#" class="nav-link">Contact</a>
                 </div>
-                <div class="auth-links">
-                    <a href="/login">Login</a> | <a href="/signup">Sign up</a>
-                </div>
+                  <div class="auth-links position-relative">
+                    <% if (user) { %>
+                      <div class="dropdown d-inline-block">
+                        <button class="btn btn-link nav-link dropdown-toggle d-flex align-items-center p-0" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                          <i class="bi bi-person-fill me-1 fs-5"></i> <%= user.name %>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                          <li><a class="dropdown-item" href="/profile">Profile</a></li>
+                          <li><a class="dropdown-item" href="/logout">Logout</a></li>
+                        </ul>
+                      </div>
+                    <% } else { %>
+                      <a href="/login">Login</a> | <a href="/signup">Sign up</a>
+                    <% } %>
+                  </div>
             </div>
         </div>
     </div>
@@ -30,15 +43,24 @@
                     </a>
                 </div>
 
-                <!-- Search Bar -->
-                <div class="col-lg-6 col-md-4 col-sm-12 mb-2 mb-md-0">
-                    <div class="search-container">
-                        <input type="text" class="search-input" placeholder="Search products...">
-                        <button class="search-btn">
-                            <i class="fas fa-search"></i>
-                        </button>
-                    </div>
+              <!-- Search Bar -->
+              <div class="col-lg-6 col-md-4 col-sm-12 mb-2 mb-md-0">
+                <div class="search-container position-relative">
+                  <input
+                    type="text"
+                    class="search-input"
+                    id="productSearch"
+                    placeholder="Search products..."
+                    autocomplete="off"
+                  />
+                  <button class="search-btn">
+                    <i class="fas fa-search"></i>
+                  </button>
+
+                  <!-- Suggestion Dropdown -->
+                  <ul id="searchSuggestions" class="suggestions-list"></ul>
                 </div>
+              </div>
 
                 <!-- Header Actions -->
                 <div class="col-lg-3 col-md-4 col-sm-12">
@@ -57,3 +79,72 @@
             </div>
         </div>
     </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const searchInput = document.getElementById("productSearch");
+  const suggestions = document.getElementById("searchSuggestions");
+
+  searchInput.addEventListener("input", async () => {
+    const query = searchInput.value.trim();
+
+    if (query.length === 0) {
+      suggestions.innerHTML = "";
+      suggestions.style.display = "none";
+      return;
+    }
+
+    try {
+      const res = await fetch(`/search-suggestions?query=${encodeURIComponent(query)}`);
+      const products = await res.json();
+
+      suggestions.innerHTML = "";
+
+      if (products.length > 0) {
+        products.forEach(p => {
+          const li = document.createElement("li");
+          li.textContent = p.name;
+          li.onclick = () => {
+            window.location.href = `/products?search=${encodeURIComponent(p.name)}`;
+          };
+          suggestions.appendChild(li);
+        });
+        suggestions.style.display = "block";
+      } else {
+        const li = document.createElement("li");
+        li.textContent = "No results found";
+        li.classList.add("no-result");
+        suggestions.appendChild(li);
+        suggestions.style.display = "block";
+      }
+    } catch (err) {
+      console.error("Search error:", err);
+      suggestions.innerHTML = "";
+      suggestions.style.display = "none";
+    }
+  });
+
+  // ENTER key submits search
+  searchInput.addEventListener("keypress", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const keyword = searchInput.value.trim();
+      if (keyword) {
+        window.location.href = `/products?search=${encodeURIComponent(keyword)}`;
+      }
+    }
+  });
+
+  searchInput.addEventListener("blur", () => {
+    setTimeout(() => {
+      suggestions.innerHTML = "";
+      suggestions.style.display = "none";
+    }, 100);
+  });
+});
+
+</script>
+
+
+    <!-- Bootstrap JS Bundle -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>

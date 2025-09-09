@@ -48,6 +48,7 @@ export const logoutUser = (req, res) => {
     if (err) {
       console.error(err);
     }
-    res.redirect("/auth/login");
+    res.redirect("/");
   });
 };
+
