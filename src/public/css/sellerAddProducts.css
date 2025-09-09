@@ -209,6 +209,34 @@
             flex: 1;
         }
         
+        .variant-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  align-items: flex-end;
+  margin-bottom: 15px;
+}
+
+.variant-input {
+  flex: 1 1 160px;
+  min-width: 120px;
+}
+
+.remove-variant-btn {
+  background: #ef4444;
+  color: white;
+  border: none;
+  padding: 8px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s;
+  height: 42px;
+}
+
+.remove-variant-btn:hover {
+  background: #dc2626;
+}
+
         .add-variant-btn {
             background: #1f2937;
             color: white;

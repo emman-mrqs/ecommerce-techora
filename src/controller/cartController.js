@@ -1,79 +1,219 @@
 import db from "../database/db.js";
 
-// For not logged-in users
-function saveToCookieCart(req, res, cartItem) {
-  const existingCart = req.cookies.cart ? JSON.parse(req.cookies.cart) : [];
+const TAX_RATE = Number(process.env.TAX_RATE ?? 0.12);
 
-  // Check for existing variant
-  const index = existingCart.findIndex(item =>
-    item.variant_id === cartItem.variant_id
-  );
-
-  if (index >= 0) {
-    existingCart[index].quantity += cartItem.quantity;
-  } else {
-    existingCart.push(cartItem);
-  }
-
-  res.cookie('cart', JSON.stringify(existingCart), { httpOnly: true });
-}
-
-// For logged-in users
-async function saveToDBCart(userId, { product_id, variant_id, quantity }) {
-  // Get or create cart
-  const cartRes = await db.query(
-    "SELECT * FROM cart WHERE user_id = $1", [userId]
-  );
-
-  let cartId;
-
-  if (cartRes.rows.length === 0) {
-    const newCart = await db.query(
-      "INSERT INTO cart(user_id, created_at) VALUES($1, NOW()) RETURNING id", [userId]
-    );
-    cartId = newCart.rows[0].id;
-  } else {
-    cartId = cartRes.rows[0].id;
-  }
-
-  // Check if item exists
-  const itemRes = await db.query(
-    "SELECT * FROM cart_items WHERE cart_id = $1 AND product_id = $2",
-    [cartId, product_id]
-  );
-
-  if (itemRes.rows.length > 0) {
-    await db.query(
-      "UPDATE cart_items SET quantity = quantity + $1 WHERE cart_id = $2 AND product_id = $3",
-      [quantity, cartId, product_id]
-    );
-  } else {
-    await db.query(
-      "INSERT INTO cart_items(cart_id, product_id, quantity) VALUES ($1, $2, $3)",
-      [cartId, product_id, quantity]
-    );
-  }
-}
-
-export const addToCart = async (req, res) => {
-  const { product_id, variant_id, quantity } = req.body;
-
-  if (!product_id || !variant_id || !quantity) {
-    return res.status(400).json({ error: "Missing fields" });
-  }
-
+// --- cookie helpers ---
+function readCookieCart(req) {
   try {
-    const cartItem = { product_id, variant_id, quantity: parseInt(quantity) };
+    const raw = req.cookies?.cart;
+    if (!raw) return { items: [] };
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) return { items: parsed }; // legacy shape "[]"
+    if (parsed && Array.isArray(parsed.items)) return { items: parsed.items };
+    return { items: [] };
+  } catch {
+    return { items: [] };
+  }
+}
+function writeCookieCart(res, cart) {
+  const normalized = cart && Array.isArray(cart.items) ? cart : { items: [] };
+  res.cookie('cart', JSON.stringify(normalized), { httpOnly: false, sameSite: 'lax', maxAge: 1000 * 60 * 60 * 24 * 7 });
+}
 
-    if (req.session.user) {
-      await saveToDBCart(req.session.user.id, cartItem);
+function calcTotals(items) {
+  const subtotal = items.reduce((s, it) => s + it.unitPrice * it.quantity, 0);
+  const tax = Math.round(subtotal * TAX_RATE * 100) / 100;
+  return { subtotal, tax, shipping: 0, total: subtotal + tax };
+}
+
+async function ensureUserCart(userId) {
+  const { rows } = await db.query('SELECT id FROM cart WHERE user_id = $1', [userId]);
+  if (rows.length) return rows[0].id;
+  const ins = await db.query('INSERT INTO cart (user_id, created_at) VALUES ($1, NOW()) RETURNING id', [userId]);
+  return ins.rows[0].id;
+}
+
+async function fetchVariant(variantId) {
+  const q = `SELECT pv.id, pv.product_id, pv.price, pv.color, pv.storage, pv.stock_quantity,
+                    p.name,
+                    COALESCE((SELECT img_url FROM product_images WHERE product_id=p.id AND (is_primary = TRUE OR position = 1) ORDER BY is_primary DESC, position ASC, id ASC LIMIT 1), NULL) AS image
+             FROM product_variant pv
+             JOIN products p ON p.id = pv.product_id
+             WHERE pv.id = $1`;
+  const { rows } = await db.query(q, [variantId]);
+  return rows[0] || null;
+}
+
+async function loadUserCartItems(userId) {
+  const q = `SELECT ci.variant_id AS item_id, ci.quantity,
+                    pv.product_id, pv.color, pv.storage, pv.price AS unit_price, pv.stock_quantity,
+                    p.name,
+                    COALESCE((SELECT img_url FROM product_images WHERE product_id=p.id AND (is_primary = TRUE OR position = 1) ORDER BY is_primary DESC, position ASC, id ASC LIMIT 1), NULL) AS image
+             FROM cart c
+             JOIN cart_items ci ON ci.cart_id = c.id
+             JOIN product_variant pv ON pv.id = ci.variant_id
+             JOIN products p ON p.id = pv.product_id
+             WHERE c.user_id = $1
+             ORDER BY ci.id ASC`;
+  const { rows } = await db.query(q, [userId]);
+  return rows.map(r => ({
+    itemId: String(r.item_id), // same as variantId
+    productId: r.product_id,
+    variantId: String(r.item_id),
+    name: r.name,
+    color: r.color,
+    storage: Number(r.storage),
+    unitPrice: Number(r.unit_price),
+    quantity: Number(r.quantity),
+    image: r.image,
+    stock: Number(r.stock_quantity),
+  }));
+}
+
+export async function renderCart(req, res) {
+  try {
+    const isLoggedIn = Boolean(req.session.user);
+    let items = [];
+
+    if (isLoggedIn) {
+      items = await loadUserCartItems(req.session.user.id);
     } else {
-      saveToCookieCart(req, res, cartItem);
+      const cookie = readCookieCart(req);
+      const cookieItems = Array.isArray(cookie.items) ? cookie.items : [];
+      for (const it of cookieItems) {
+        const v = await fetchVariant(it.variantId);
+        if (!v) continue;
+        const clampedQty = Math.min(Number(it.quantity || 1), Number(v.stock_quantity || 0));
+        items.push({
+          itemId: String(v.id),
+          productId: v.product_id,
+          variantId: String(v.id),
+          name: v.name,
+          color: v.color,
+          storage: Number(v.storage),
+          unitPrice: Number(v.price),
+          quantity: clampedQty,
+          image: v.image,
+          stock: Number(v.stock_quantity),
+        });
+      }
     }
 
-    res.status(200).json({ message: "Item added to cart" });
+    const totals = calcTotals(items);
+    const count = items.reduce((s, it) => s + it.quantity, 0);
+
+    res.render('user/cart', { cart: { items, count, ...totals } });
   } catch (err) {
-    console.error("Add to cart error:", err);
-    res.status(500).json({ error: "Failed to add to cart" });
+    console.error('renderCart error', err);
+    res.status(500).render('user/cart', { cart: { items: [], count: 0, subtotal: 0, tax: 0, shipping: 0, total: 0 } });
   }
-};
+}
+
+export async function apiAddToCart(req, res) {
+  try {
+    const { productId, variantId, color, storage, unitPrice, quantity } = req.body;
+    if (!productId || !variantId || !color || !storage || !unitPrice || !quantity) {
+      return res.status(400).json({ ok: false, message: 'Missing required fields.' });
+    }
+
+    const variant = await fetchVariant(variantId);
+    if (!variant) return res.status(404).json({ ok: false, message: 'Variant not found.' });
+    if (Number(variant.stock_quantity) < 1) return res.status(400).json({ ok: false, message: 'Variant out of stock.' });
+
+    let safeQty = Math.max(1, Number(quantity));
+    safeQty = Math.min(safeQty, Number(variant.stock_quantity));
+
+    const isLoggedIn = Boolean(req.session.user);
+    if (isLoggedIn) {
+      const userId = req.session.user.id;
+      const cartId = await ensureUserCart(userId);
+
+      const { rows: existRows } = await db.query(
+        'SELECT id, quantity FROM cart_items WHERE cart_id = $1 AND variant_id = $2',
+        [cartId, variantId]
+      );
+      if (existRows.length) {
+        const newQty = Math.min(existRows[0].quantity + safeQty, Number(variant.stock_quantity));
+        await db.query('UPDATE cart_items SET quantity = $1 WHERE id = $2', [newQty, existRows[0].id]);
+      } else {
+        await db.query(
+          'INSERT INTO cart_items (cart_id, product_id, variant_id, quantity) VALUES ($1, $2, $3, $4)',
+          [cartId, productId, variantId, safeQty]
+        );
+      }
+      return res.json({ ok: true });
+    }
+
+    // Guest → cookie
+    const cookieCart = readCookieCart(req);
+    if (!cookieCart || typeof cookieCart !== 'object') {
+      // recover from bad cookie shape
+      return writeCookieCart(res, { items: [] }), res.json({ ok: true });
+    }
+    if (!Array.isArray(cookieCart.items)) cookieCart.items = [];
+    const idx = cookieCart.items.findIndex((it) => String(it.variantId) === String(variantId));
+    if (idx >= 0) {
+      cookieCart.items[idx].quantity = Math.min(Number(cookieCart.items[idx].quantity || 0) + safeQty, Number(variant.stock_quantity));
+    } else {
+      cookieCart.items.push({ variantId: String(variantId), productId, color, storage, unitPrice: Number(variant.price), quantity: safeQty });
+    }
+    writeCookieCart(res, cookieCart);
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('apiAddToCart error', err);
+    res.status(500).json({ ok: false, message: 'Server error' });
+  }
+}
+
+export async function apiUpdateCartItem(req, res) {
+  try {
+    const { variantId } = req.params;
+    let { quantity } = req.body;
+    quantity = Math.max(1, Number(quantity));
+
+    const variant = await fetchVariant(variantId);
+    if (!variant) return res.status(404).json({ ok: false, message: 'Variant not found.' });
+    const clamped = Math.min(quantity, Number(variant.stock_quantity));
+
+    const isLoggedIn = Boolean(req.session.user);
+    if (isLoggedIn) {
+      const cartId = await ensureUserCart(req.session.user.id);
+      await db.query('UPDATE cart_items SET quantity = $1 WHERE cart_id = $2 AND variant_id = $3', [clamped, cartId, variantId]);
+      return res.json({ ok: true });
+    }
+
+    const cookieCart = readCookieCart(req);
+    if (!cookieCart || typeof cookieCart !== 'object') return res.json({ ok: true });
+    if (!Array.isArray(cookieCart.items)) cookieCart.items = [];
+    const it = cookieCart.items.find((i) => String(i.variantId) === String(variantId));
+    if (it) it.quantity = clamped;
+    writeCookieCart(res, cookieCart);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('apiUpdateCartItem error', err);
+    res.status(500).json({ ok: false, message: 'Server error' });
+  }
+}
+
+export async function apiRemoveCartItem(req, res) {
+  try {
+    const { variantId } = req.params;
+    const isLoggedIn = Boolean(req.session.user);
+    if (isLoggedIn) {
+      const cartId = await ensureUserCart(req.session.user.id);
+      await db.query('DELETE FROM cart_items WHERE cart_id = $1 AND variant_id = $2', [cartId, variantId]);
+      return res.json({ ok: true });
+    }
+
+    const cookieCart = readCookieCart(req);
+    if (!cookieCart || typeof cookieCart !== 'object') return res.json({ ok: true });
+    if (!Array.isArray(cookieCart.items)) cookieCart.items = [];
+    cookieCart.items = cookieCart.items.filter((it) => String(it.variantId) !== String(variantId));
+    writeCookieCart(res, cookieCart);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('apiRemoveCartItem error', err);
+    res.status(500).json({ ok: false, message: 'Server error' });
+  }
+}

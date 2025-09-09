@@ -1,158 +1,90 @@
-<!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TECHORA - Your Cart</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="css/cart.css">
-
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TECHORA - Your Cart</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/cart.css" />
 </head>
 <body>
-    <nav>
-        <%- include("../partials/header.ejs") %>
-    </nav>
+  <nav>
+    <%- include("../partials/header.ejs") %>
+  </nav>
 
-    <div class="cart-container">
-        <div class="container">
-            <div class="row">
-                <!-- Cart Items -->
-                <div class="col-lg-8 col-md-7">
-                    <div class="cart-card">
-                        <div class="cart-header">
-                            <h2 class="cart-title">YOUR CART</h2>
-                            <p class="cart-subtitle"><span id="cart-count">3</span> items in your cart</p>
-                        </div>
-
-                        <div id="cart-items">
-                            <!-- Item 1 -->
-                            <div class="cart-item" data-price="1999" data-id="headphones">
-                                <div class="item-image">
-                                    <i class="fas fa-headphones"></i>
-                                </div>
-                                <div class="item-details">
-                                    <div class="item-name">Premium Wireless Headphones</div>
-                                    <div class="item-variant">Matte Black • Standard</div>
-                                    <div class="item-price-unit">₱1999 each</div>
-                                </div>
-                                <div class="quantity-controls">
-                                    <button class="quantity-btn" onclick="updateQuantity('headphones', -1)">-</button>
-                                    <input type="text" class="quantity-input" value="1" readonly>
-                                    <button class="quantity-btn" onclick="updateQuantity('headphones', 1)">+</button>
-                                </div>
-                                <div class="item-total">₱1999</div>
-                                <div class="remove-btn" onclick="removeItem('headphones')">
-                                    <i class="fas fa-times"></i>
-                                </div>
-                            </div>
-
-                            <!-- Item 2 -->
-                            <div class="cart-item" data-price="3999" data-id="watch">
-                                <div class="item-image">
-                                    <i class="fas fa-clock"></i>
-                                </div>
-                                <div class="item-details">
-                                    <div class="item-name">Smart Watch</div>
-                                    <div class="item-variant">Space Gray • 42mm</div>
-                                    <div class="item-price-unit">₱3999 each</div>
-                                </div>
-                                <div class="quantity-controls">
-                                    <button class="quantity-btn" onclick="updateQuantity('watch', -1)">-</button>
-                                    <input type="text" class="quantity-input" value="2" readonly>
-                                    <button class="quantity-btn" onclick="updateQuantity('watch', 1)">+</button>
-                                </div>
-                                <div class="item-total">₱7998</div>
-                                <div class="remove-btn" onclick="removeItem('watch')">
-                                    <i class="fas fa-times"></i>
-                                </div>
-                            </div>
-
-                            <!-- Item 3 -->
-                            <div class="cart-item" data-price="2499" data-id="speaker">
-                                <div class="item-image">
-                                    <i class="fas fa-volume-up"></i>
-                                </div>
-                                <div class="item-details">
-                                    <div class="item-name">Portable Bluetooth Speaker</div>
-                                    <div class="item-variant">Charcoal • Medium</div>
-                                    <div class="item-price-unit">₱2499 each</div>
-                                </div>
-                                <div class="quantity-controls">
-                                    <button class="quantity-btn" onclick="updateQuantity('speaker', -1)">-</button>
-                                    <input type="text" class="quantity-input" value="1" readonly>
-                                    <button class="quantity-btn" onclick="updateQuantity('speaker', 1)">+</button>
-                                </div>
-                                <div class="item-total">₱2499</div>
-                                <div class="remove-btn" onclick="removeItem('speaker')">
-                                    <i class="fas fa-times"></i>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="empty-cart" id="empty-cart" style="display: none;">
-                            <i class="fas fa-shopping-cart" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.3;"></i>
-                            <p>Your cart is empty</p>
-                            <span class="empty-cart-link" onclick="continueShopping()">Show Empty Cart</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Order Summary -->
-                <div class="col-lg-4 col-md-5">
-                    <div class="order-summary">
-                        <h3 class="summary-title">ORDER SUMMARY</h3>
-                        
-                        <div class="summary-row">
-                            <span class="summary-label">Subtotal</span>
-                            <span class="summary-value" id="subtotal">₱12496</span>
-                        </div>
-                        
-                        <div class="summary-row">
-                            <span class="summary-label">Shipping</span>
-                            <span class="summary-value" id="shipping">Free</span>
-                        </div>
-                        
-                        <div class="summary-row">
-                            <span class="summary-label">Tax</span>
-                            <span class="summary-value" id="tax">₱625</span>
-                        </div>
-                        
-                        <div class="summary-divider"></div>
-                        
-                        <div class="summary-row total-row">
-                            <span class="summary-label">Total</span>
-                            <span class="summary-value" id="total">₱13121</span>
-                        </div>
-                        
-                        <button class="checkout-btn">
-                            <a href="/checkout">PROCEED TO CHECKOUT</a>
-                        </button>
-                        
-                        <button class="continue-shopping">
-                           <a href="/">CONTINUE SHOPPING</a>
-                        </button>
-
-                        <div class="shipping-info">
-                            <div class="shipping-title">
-                                <i class="fas fa-shipping-fast"></i>
-                                Free Shipping
-                            </div>
-                            <div class="shipping-desc">
-                                On orders over ₱1000. Fast and secure delivery to your doorstep.
-                            </div>
-                        </div>
-                    </div>
-                </div>
+  <div class="cart-container">
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-8 col-md-7">
+          <div class="cart-card">
+            <div class="cart-header">
+              <h2 class="cart-title">YOUR CART</h2>
+              <p class="cart-subtitle"><span id="cart-count"><%= cart.count %></span> items in your cart</p>
             </div>
-        </div>
-    </div>
 
-    <footer>
-        <%- include("../partials/footer.ejs") %>
-    </footer>
-    
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="js/cart.js"></script>
+            <% if (!cart.items || cart.items.length === 0) { %>
+              <div class="empty-cart" id="empty-cart">
+                <i class="fas fa-shopping-cart" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.3;"></i>
+                <p>Your cart is empty</p>
+                <a class="empty-cart-link" href="/">Continue shopping</a>
+              </div>
+            <% } else { %>
+              <div id="cart-items">
+                <% cart.items.forEach(function(it) { %>
+                  <div class="cart-item" data-id="<%= it.variantId %>" data-price="<%= it.unitPrice %>">
+                    <div class="item-image">
+                      <% if (it.image) { %>
+                        <img src="<%= it.image %>" alt="<%= it.name %>" style="width:48px;height:48px;object-fit:cover;border-radius:8px;"/>
+                      <% } else { %>
+                        <i class="fas fa-mobile-alt"></i>
+                      <% } %>
+                    </div>
+                    <div class="item-details">
+                      <div class="item-name"><%= it.name %></div>
+                      <div class="item-variant"><%= it.color %> • <%= it.storage %>GB</div>
+                      <div class="item-price-unit">₱<%= it.unitPrice.toFixed(2) %> each</div>
+                    </div>
+                    <div class="quantity-controls">
+                      <button class="quantity-btn btn-decrease">-</button>
+                      <input type="text" class="quantity-input" value="<%= it.quantity %>" readonly>
+                      <button class="quantity-btn btn-increase">+</button>
+                    </div>
+                    <div class="item-total">₱<%= (it.unitPrice * it.quantity).toFixed(2) %></div>
+                    <div class="remove-btn btn-remove"><i class="fas fa-times"></i></div>
+                  </div>
+                <% }) %>
+              </div>
+            <% } %>
+          </div>
+        </div>
+
+        <div class="col-lg-4 col-md-5">
+          <div class="order-summary">
+            <h3 class="summary-title">ORDER SUMMARY</h3>
+            <div class="summary-row"><span class="summary-label">Subtotal</span><span class="summary-value" id="subtotal">₱<%= cart.subtotal.toFixed(2) %></span></div>
+            <div class="summary-row"><span class="summary-label">Shipping</span><span class="summary-value" id="shipping"><%= cart.shipping === 0 ? 'Free' : '₱' + cart.shipping.toFixed(2) %></span></div>
+            <div class="summary-row"><span class="summary-label">Tax</span><span class="summary-value" id="tax">₱<%= cart.tax.toFixed(2) %></span></div>
+            <div class="summary-divider"></div>
+            <div class="summary-row total-row"><span class="summary-label">Total</span><span class="summary-value" id="total">₱<%= cart.total.toFixed(2) %></span></div>
+
+            <button class="checkout-btn"><a href="/checkout">PROCEED TO CHECKOUT</a></button>
+            <button class="continue-shopping"><a href="/">CONTINUE SHOPPING</a></button>
+
+            <div class="shipping-info">
+              <div class="shipping-title"><i class="fas fa-shipping-fast"></i> Free Shipping</div>
+              <div class="shipping-desc">On orders over ₱1000. Fast and secure delivery to your doorstep.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <%- include("../partials/footer.ejs") %>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/js/cart.js"></script>
 </body>
 </html>

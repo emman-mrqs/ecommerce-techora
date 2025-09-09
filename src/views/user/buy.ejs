@@ -1,123 +1,281 @@
+<!-- /views/products/buy.ejs -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>TECHORA Products | Shop Now</title>
-
-  <!-- External Styles -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
-
-  <!-- Your page CSS (note the leading slash so it loads correctly) -->
   <link rel="stylesheet" href="/css/buy.css"/>
+  <style>
+    /* Why: Ensure clear visual feedback for user selections and disabled options without relying on external CSS. */
+    .variant-options { display: flex; gap: .5rem; flex-wrap: wrap; }
+    .variant-btn { border: 1px solid #ccc; background: #fff; padding: .5rem .75rem; border-radius: .5rem; cursor: pointer; transition: all .15s ease; }
+    .variant-btn:hover { transform: translateY(-1px); }
+    .variant-btn.selected { background: #000; color: #fff; border-color: #000; }
+    .variant-btn[aria-disabled="true"] { opacity: .45; cursor: not-allowed; pointer-events: none; }
+    .quantity-control { display: inline-flex; align-items: center; gap: .5rem; }
+    .qty-btn { border: 1px solid #ccc; background: #fff; padding: .25rem .6rem; border-radius: .5rem; }
+    .price-range .price { font-size: 1.4rem; font-weight: 700; }
+    .stock-info { margin-left: .5rem; font-size: .95rem; color: #6c757d; }
+  </style>
 </head>
-
 <body>
-  <!-- Header -->
-    <header>
-        <%- include("../partials/header.ejs") %>
-    </header>
+  <header>
+    <%- include("../partials/header.ejs") %>
+  </header>
 
-    <!-- Page container centers the content -->
-    <main class="page">
+  <main class="page">
     <section class="product-detail" role="region" aria-label="Product details">
-        
-        <!-- Gallery -->
-        <aside class="product-gallery" aria-label="Product images">
+      <aside class="product-gallery" aria-label="Product images">
         <figure class="main-image">
-            <img 
-            src="<%= images[0]?.img_url || '/images/default.png' %>" 
-            alt="<%= product.name %> main image"
-            id="mainProductImage"
-            />
+          <img src="<%= images[0]?.img_url || '/images/default.png' %>" alt="<%= product.name %> main image" id="mainProductImage" />
         </figure>
-
         <div class="image-thumbnails" role="list">
-            <% images.forEach((img, index) => { %>
-            <img 
-                role="listitem"
-                src="<%= img.img_url %>" 
-                alt="Image <%= index + 1 %>" 
-                class="<%= index === 0 ? 'active' : '' %>" 
-                onclick="document.getElementById('mainProductImage').src = '<%= img.img_url %>'"
-            />
-            <% }); %>
+          <% images.forEach((img, index) => { %>
+            <img role="listitem" src="<%= img.img_url %>" alt="Image <%= index + 1 %>" class="<%= index === 0 ? 'active' : '' %>" onclick="document.getElementById('mainProductImage').src = '<%= img.img_url %>'" />
+          <% }); %>
         </div>
-        </aside>
+      </aside>
 
-        <!-- Info -->
-        <section class="product-info">
+      <section class="product-info">
         <h1 class="product-title"><%= product.name %></h1>
         <p class="product-description"><%= product.description %></p>
 
-        <!-- Price Range -->
         <div class="price-range" aria-live="polite">
-            <% 
+          <%
             const prices = variants.map(v => parseFloat(v.price));
             const minPrice = Math.min(...prices).toFixed(2);
             const maxPrice = Math.max(...prices).toFixed(2);
-            %>
-            <div class="price">₱<%= minPrice %> – ₱<%= maxPrice %></div>
+          %>
+          <div class="price" id="price-display">₱<%= minPrice %> – ₱<%= maxPrice %></div>
         </div>
 
-        <!-- Variants -->
         <div class="variant-section">
-            <!-- Color Options -->
-            <label class="variant-label" for="color-options">Color:</label>
-            <div id="color-options" class="variant-options" role="group" aria-label="Color options">
-            <% 
-                const colors = [...new Set(variants.map(v => v.color))];
-                colors.forEach(color => { 
+          <label class="variant-label" for="color-options">Color:</label>
+          <div id="color-options" class="variant-options" role="group" aria-label="Color options">
+            <%
+              const colors = [...new Set(variants.map(v => v.color))];
+              colors.forEach(color => {
             %>
-                <button type="button" class="variant-btn" aria-pressed="false"><%= color %></button>
+              <button type="button" class="variant-btn" aria-pressed="false" data-color="<%= color %>"><%= color %></button>
             <% }); %>
-            </div>
+          </div>
 
-            <!-- Storage Options -->
-            <label class="variant-label" for="storage-options">Storage:</label>
-            <div id="storage-options" class="variant-options" role="group" aria-label="Storage options">
-            <% 
-                const storages = [...new Set(variants.map(v => v.storage))];
-                storages.forEach(storage => { 
+          <label class="variant-label" for="storage-options">Storage:</label>
+          <div id="storage-options" class="variant-options" role="group" aria-label="Storage options">
+            <%
+              const storages = [...new Set(variants.map(v => v.storage))];
+              storages.forEach(storage => {
             %>
-                <button type="button" class="variant-btn" aria-pressed="false"><%= storage %>GB</button>
+              <button type="button" class="variant-btn" aria-pressed="false" data-storage="<%= storage %>"><%= storage %>GB</button>
             <% }); %>
-            </div>
+          </div>
         </div>
 
-        <!-- Quantity & Stock -->
-        <div class="quantity-section">
-            <label class="variant-label" for="qty-input">Quantity:</label>
-            <div class="quantity-control">
+        <div class="quantity-section mt-3">
+          <label class="variant-label" for="qty-input">Quantity:</label>
+          <div class="quantity-control">
             <button type="button" class="qty-btn" aria-label="Decrease quantity">−</button>
             <input id="qty-input" type="number" min="1" value="1" inputmode="numeric" />
             <button type="button" class="qty-btn" aria-label="Increase quantity">+</button>
-            </div>
-
-            <% 
-            const totalStock = variants.reduce((sum, v) => sum + parseInt(v.stock_quantity), 0); 
-            %>
-            <span class="stock-info">In Stock: <%= totalStock %></span>
+          </div>
+          <span class="stock-info">In Stock: 0</span>
         </div>
 
-        <!-- Buttons -->
-        <div class="action-buttons">
-            <button class="btn-outline" type="button">Add to Cart</button>
-            <button class="btn-solid" type="button">Buy Now</button>
+        <div class="total-section mt-2">
+          <strong id="total-amount">Total: ₱0.00</strong>
         </div>
-        </section>
+
+        <div class="action-buttons mt-3 d-flex gap-2">
+          <button id="btn-add" class="btn btn-outline-dark" type="button">Add to Cart</button>
+          <button id="btn-buy" class="btn btn-dark" type="button">Buy Now</button>
+        </div>
+      </section>
     </section>
-    
-    </main>
+  </main>
 
+  <footer>
+    <%-/* include("../partials/footer.ejs") */%>
+  </footer>
 
-    <!-- Footer -->
-    <footer>
-        <%-// include("../partials/footer.ejs") %>
-    </footer>
+  <!-- Embed data for JS -->
+  <script type="application/json" id="product-data"><%- JSON.stringify(product) %></script>
+  <script type="application/json" id="variants-data"><%- JSON.stringify(variants) %></script>
 
-    
+  <script>
+    // ========= Embedded data =========
+    const PRODUCT = JSON.parse(document.getElementById('product-data').textContent);
+    const VARIANTS = JSON.parse(document.getElementById('variants-data').textContent);
 
-    </body>
+    // ========= State =========
+    let selectedColor = null;
+    let selectedStorage = null;
+    let selectedVariant = null;
+    let quantity = 1;
+
+    // ========= DOM =========
+    const colorWrap = document.getElementById('color-options');
+    const storageWrap = document.getElementById('storage-options');
+    const qtyInput = document.getElementById('qty-input');
+    const decBtn = document.querySelector(".qty-btn[aria-label='Decrease quantity']");
+    const incBtn = document.querySelector(".qty-btn[aria-label='Increase quantity']");
+    const stockInfo = document.querySelector('.stock-info');
+    const addToCartBtn = document.getElementById('btn-add');
+    const buyNowBtn = document.getElementById('btn-buy');
+    const totalEl = document.getElementById('total-amount');
+    const priceEl = document.getElementById('price-display');
+
+    // ========= Helpers =========
+    const formatPHP = (n) => new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(Number(n || 0));
+    const getMinMax = () => {
+      const nums = VARIANTS.map(v => Number(v.price));
+      return [Math.min(...nums), Math.max(...nums)];
+    };
+    function findVariant(color, storage) {
+      return VARIANTS.find(v => v.color === color && Number(v.storage) === Number(storage)) || null;
+    }
+    function setSelected(group, btn) {
+      group.querySelectorAll('.variant-btn').forEach(b => { b.classList.remove('selected'); b.setAttribute('aria-pressed', 'false'); });
+      if (btn) { btn.classList.add('selected'); btn.setAttribute('aria-pressed', 'true'); }
+    }
+    function disableUnavailableOptions() {
+      // Why: Guide the user by disabling impossible combinations based on current partial selection.
+      const colorButtons = [...colorWrap.querySelectorAll('[data-color]')];
+      const storageButtons = [...storageWrap.querySelectorAll('[data-storage]')];
+
+      const availableByColor = new Map();
+      const availableByStorage = new Map();
+
+      VARIANTS.forEach(v => {
+        const st = String(v.storage);
+        const co = String(v.color);
+        if (!availableByColor.has(co)) availableByColor.set(co, new Set());
+        if (!availableByStorage.has(st)) availableByStorage.set(st, new Set());
+        availableByColor.get(co).add(st);
+        availableByStorage.get(st).add(co);
+      });
+
+      // Update storages against color
+      storageButtons.forEach(btn => {
+        const st = String(btn.dataset.storage);
+        const ok = !selectedColor || (availableByColor.get(String(selectedColor)) || new Set()).has(st);
+        btn.setAttribute('aria-disabled', ok ? 'false' : 'true');
+      });
+      // Update colors against storage
+      colorButtons.forEach(btn => {
+        const co = String(btn.dataset.color);
+        const ok = !selectedStorage || (availableByStorage.get(String(selectedStorage)) || new Set()).has(co);
+        btn.setAttribute('aria-disabled', ok ? 'false' : 'true');
+      });
+    }
+    function updateStockDisplay() {
+      if (selectedVariant) {
+        stockInfo.textContent = 'In Stock: ' + Number(selectedVariant.stock_quantity || 0);
+      } else {
+        const total = VARIANTS.reduce((s, v) => s + Number(v.stock_quantity || 0), 0);
+        stockInfo.textContent = 'In Stock: ' + total;
+      }
+    }
+    function updateTotalsUI() {
+      const unit = selectedVariant ? Number(selectedVariant.price) : 0;
+      const total = unit * quantity;
+      totalEl.textContent = `Total: ${formatPHP(total)}`;
+      if (selectedVariant) {
+        priceEl.textContent = `${formatPHP(total)}`; // show total here as requested
+      } else {
+        const [minP, maxP] = getMinMax();
+        priceEl.textContent = `${formatPHP(minP)} – ${formatPHP(maxP)}`; // default range
+      }
+    }
+    function clampQty() {
+      const max = selectedVariant ? Number(selectedVariant.stock_quantity || 0) : Infinity;
+      if (!Number.isFinite(quantity) || quantity < 1) quantity = 1;
+      if (quantity > max) quantity = max;
+      qtyInput.value = String(quantity);
+      updateTotalsUI();
+    }
+    function validateSelection() {
+      if (!selectedColor || !selectedStorage) { alert('Please select color and storage.'); return false; }
+      if (!selectedVariant) { alert('Selected combination is not available.'); return false; }
+      if (Number(selectedVariant.stock_quantity || 0) < 1) { alert('This variant is out of stock.'); return false; }
+      if (quantity > Number(selectedVariant.stock_quantity || 0)) {
+        alert('Quantity exceeds stock!');
+        quantity = Number(selectedVariant.stock_quantity || 0);
+        clampQty();
+        return false;
+      }
+      return true;
+    }
+    async function postJSON(url, data) {
+      const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+      return res.json();
+    }
+    function buildPayload() {
+      return {
+        productId: PRODUCT.id || PRODUCT.product_id || PRODUCT._id,
+        variantId: selectedVariant.id || selectedVariant.variant_id || selectedVariant._id,
+        color: selectedColor,
+        storage: selectedStorage,
+        unitPrice: Number(selectedVariant.price),
+        quantity: Number(quantity)
+      };
+    }
+
+    // ========= Event handlers (order-independent) =========
+    colorWrap.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-color]');
+      if (!btn || btn.getAttribute('aria-disabled') === 'true') return;
+      selectedColor = btn.dataset.color;
+      setSelected(colorWrap, btn);
+      selectedVariant = selectedStorage ? findVariant(selectedColor, selectedStorage) : null;
+      disableUnavailableOptions();
+      updateStockDisplay();
+      clampQty();
+    });
+
+    storageWrap.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-storage]');
+      if (!btn || btn.getAttribute('aria-disabled') === 'true') return;
+      selectedStorage = Number(btn.dataset.storage);
+      setSelected(storageWrap, btn);
+      selectedVariant = selectedColor ? findVariant(selectedColor, selectedStorage) : null;
+      disableUnavailableOptions();
+      updateStockDisplay();
+      clampQty();
+    });
+
+    decBtn.addEventListener('click', () => { if (quantity > 1) { quantity--; clampQty(); } });
+    incBtn.addEventListener('click', () => {
+      const cap = selectedVariant ? Number(selectedVariant.stock_quantity || 0) : Infinity;
+      if (quantity + 1 > cap) { alert('Cannot exceed stock!'); return; }
+      quantity++; clampQty();
+    });
+    qtyInput.addEventListener('input', () => {
+      quantity = parseInt(qtyInput.value, 10) || 1;
+      clampQty();
+    });
+
+    addToCartBtn.addEventListener('click', async () => {
+      if (!validateSelection()) return;
+      const res = await postJSON('/api/cart', buildPayload());
+      if (res.ok) window.location.href = '/cart'; else alert(res.message || 'Failed to add to cart');
+    });
+    buyNowBtn.addEventListener('click', async () => {
+      if (!validateSelection()) return;
+      const res = await postJSON('/api/cart', buildPayload());
+      if (res.ok) window.location.href = '/checkout'; else alert(res.message || 'Failed to proceed');
+    });
+
+    // ========= Init =========
+    (function init() {
+      const [minP, maxP] = getMinMax();
+      priceEl.textContent = `${formatPHP(minP)} – ${formatPHP(maxP)}`;
+      updateStockDisplay();
+      clampQty();
+      disableUnavailableOptions();
+    })();
+  </script>
+</body>
 </html>

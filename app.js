@@ -6,12 +6,25 @@ import axios from "axios";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
 import session from "express-session";
+import fs from "fs";
+import cartMiddleware from "./src/middleware/cartMiddleware.js";
+// import path from "path";
 
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const app = express();
 const port = 3000;
+
+// Serve /src/public as your static root
+app.use(express.static(join(__dirname, "src", "public")));
+
+
+// Ensure uploads directory exists at src/public/uploads
+const uploadDir = join(__dirname, "src", "public", "uploads");
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
 
 // Tell Express where the View folder 
 app.set("views", join(__dirname, "src", "views")); // Views Folder
@@ -20,10 +33,13 @@ app.set("view engine", "ejs");
 //Public Folder
 app.use(express.static(join(__dirname, "src", "public")));
 
+
 // Middleware
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
+app.use(cartMiddleware);
+
 
 //Express Session
 app.use(session({
@@ -52,6 +68,8 @@ import verifyRoutes from "./src/routes/verifyRoutes.js"
 import sellerRoute from "./src/routes/sellerRoutes.js";
 import userRoute from "./src/routes/userRoutes.js";
 import { verify } from 'crypto';
+import cartRoutes from './src/routes/cartRoutes.js'; // ✅ NEW
+
 
 //auth Routes
 app.use("/", loginRoutes);
@@ -64,6 +82,8 @@ app.use("/", sellerRoute);
 //User Routes
 app.use("/", userRoute);
 
+//cart Routes CRUD
+app.use('/', cartRoutes); // ✅ Mount cart
 
 app.listen(port, () => {
   console.log(`Backend server is running on http://localhost:${port}`);

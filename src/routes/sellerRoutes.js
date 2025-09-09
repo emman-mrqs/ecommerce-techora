@@ -1,5 +1,14 @@
 import express from "express";
 const router = express.Router();
+import multer from "multer";
+import { renderAddProductPage, addProduct } from "../controller/sellerController.js";
+
+//multer
+const storage = multer.diskStorage({
+destination: (req, file, cb) => cb(null, "src/public/uploads"), 
+  filename: (req, file, cb) => cb(null, Date.now() + "-" + file.originalname)
+});
+const upload = multer({ storage });
 
 router.get("/seller/store", (req, res)=>{
   res.render("seller/sellerStore", {
@@ -22,13 +31,9 @@ router.get("/seller/products", (req, res) => {
   });
 });
 
-router.get("/seller/add", (req, res)=>{
-  res.render("seller/sellerAddProducts", {
-    activePage: "addProduct",
-    pageTitle: "Seller Add Products"
-  });
 
-});
+router.get("/seller/add", renderAddProductPage);
+router.post("/seller/add", upload.array("product_images"), addProduct);
 
 router.get("/seller/orders", (req, res)=>{
   res.render("seller/sellerOrders", {
