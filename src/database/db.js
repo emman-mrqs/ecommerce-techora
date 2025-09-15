@@ -9,7 +9,7 @@ const db = new Pool({
   password: process.env.DB_PASSWORD,
   port: Number(process.env.DB_PORT) || 5432,
   // If you're on a managed DB that requires SSL, uncomment:
-  ssl: { rejectUnauthorized: false },
+  // ssl: { rejectUnauthorized: false },
 });
 
 // Optional: quick sanity check at boot (remove if you prefer)

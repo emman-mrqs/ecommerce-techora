@@ -27,11 +27,15 @@ function addVariant() {
   `;
 
   container.appendChild(newRow);
+
+  // Refresh dropdowns so new variant shows up
+  updateVariantDropdowns();
 }
 
 // REMOVE PRODUCT VARIANT
 function removeVariant(button) {
   button.parentElement.remove();
+  updateVariantDropdowns(); // refresh dropdowns after removing
 }
 
 // ADD NEW IMAGE ROW
@@ -42,10 +46,15 @@ function addImageField() {
   newRow.classList.add("row", "image-row", "align-items-end", "mt-2");
 
   newRow.innerHTML = `
-    <div class="col-md-6">
+    <div class="col-md-4">
       <input type="file" class="form-input" name="product_images[]" accept="image/*" required>
     </div>
     <div class="col-md-3">
+      <select name="variant_for_image[]" class="form-select">
+        <option value="">General (no variant)</option>
+      </select>
+    </div>
+    <div class="col-md-2">
       <select name="is_primary[]" class="form-select" required>
         <option value="">Is Primary?</option>
         <option value="true">Yes</option>
@@ -63,9 +72,40 @@ function addImageField() {
   `;
 
   container.appendChild(newRow);
+
+  // Populate variant dropdown immediately
+  updateVariantDropdowns();
 }
 
 // REMOVE IMAGE ROW
 function removeImageField(button) {
   button.closest(".row").remove();
 }
+
+// UPDATE VARIANT DROPDOWNS
+function updateVariantDropdowns() {
+  const variantRows = document.querySelectorAll("#variantContainer .variant-row");
+  const variantOptions = [];
+
+  variantRows.forEach((row, idx) => {
+    const color = row.querySelector("input[name='color[]']").value || "Color?";
+    const ram = row.querySelector("input[name='ram[]']").value || "?";
+    const storage = row.querySelector("input[name='storage[]']").value || "?";
+    variantOptions.push({ idx, label: `${color} - ${ram}GB + ${storage}GB` });
+  });
+
+  // Update every image dropdown
+  document.querySelectorAll("select[name='variant_for_image[]']").forEach(sel => {
+    sel.innerHTML = `<option value="">General (no variant)</option>`;
+    variantOptions.forEach((opt, i) => {
+      sel.innerHTML += `<option value="${i+1}">${opt.label}</option>`;
+    });
+  });
+}
+
+// Auto-update dropdowns when seller edits fields
+document.addEventListener("input", (e) => {
+  if (e.target.matches("input[name='color[]'], input[name='ram[]'], input[name='storage[]']")) {
+    updateVariantDropdowns();
+  }
+});

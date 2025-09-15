@@ -7,7 +7,7 @@ import { dirname, join } from "path";
 import { fileURLToPath } from "url";
 import session from "express-session";
 import fs from "fs";
-import cartMiddleware from "./src/middleware/cartMiddleware.js";
+import  { cartCountMiddleware } from "./src/middleware/cartMiddleware.js";
 // import path from "path";
 
 
@@ -15,6 +15,19 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const app = express();
 const port = 3000;
+
+
+//Express Session
+app.use(session({
+  secret: process.env.SESSION_SECRET || "supersecretkey", // Use .env in production!
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: false, // Set to true if using HTTPS
+    maxAge: 1000 * 60 * 60 * 24, // 1 day
+  },
+}));
+
 
 // Serve /src/public as your static root
 app.use(express.static(join(__dirname, "src", "public")));
@@ -38,19 +51,7 @@ app.use(express.static(join(__dirname, "src", "public")));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
-app.use(cartMiddleware);
-
-
-//Express Session
-app.use(session({
-  secret: process.env.SESSION_SECRET || "supersecretkey", // Use .env in production!
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    secure: false, // Set to true if using HTTPS
-    maxAge: 1000 * 60 * 60 * 24, // 1 day
-  },
-}));
+app.use(cartCountMiddleware); // cart count
 
 
 // This will make the current path available in all EJS views

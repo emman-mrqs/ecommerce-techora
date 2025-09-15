@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>TECHORA — Account</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+<link rel="stylesheet" href="/css/profile.css">
+</head>
+<body>
+
+    <nav>
+        <%- include("../partials/header.ejs") %>
+    </nav>
+
+
+<div class="wrap" id="app" aria-live="polite">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+
+    <div class="me" id="meBox">
+      <div class="avatar" id="meAvatar">T</div>
+      <div class="meta">
+        <strong id="meName">Techora User</strong>
+        <small id="meEmail">user@example.com</small>
+      </div>
+    </div>
+
+    <nav class="nav" role="navigation" aria-label="Account sections">
+      <button class="active" data-view="profile"><span class="icon">👤</span> Profile</button>
+      <button data-view="orders"><span class="icon">🧾</span> My Orders</button>
+      <button data-view="settings"><span class="icon">⚙️</span> Settings</button>
+      <button data-action="logout" class="ghost" style="margin-top:8px"><span class="icon">↪</span> Logout</button>
+    </nav>
+  </aside>
+
+  <!-- Main content -->
+  <main class="content">
+
+    <!-- PROFILE -->
+    <section data-route="profile" class="route">
+      <div class="page-title"><h2>Profile</h2></div>
+
+      <div class="panel">
+        <div class="head"><strong>Personal Info</strong>
+          <div class="actions">
+            <button class="btn outline" id="btnEditProfile">Edit</button>
+            <button class="btn" id="btnSaveProfile" style="display:none">Save</button>
+          </div>
+        </div>
+        <div class="body">
+          <div class="grid-3">
+            <div class="stack">
+              <label for="pfName">Full Name</label>
+              <input id="pfName" type="text" placeholder="Your name" disabled>
+            </div>
+            <div class="stack">
+              <label for="pfEmail">Email</label>
+              <input id="pfEmail" type="email" placeholder="you@domain.com" disabled>
+            </div>
+            <div class="stack">
+              <label for="pfPhone">Phone</label>
+              <input id="pfPhone" type="tel" placeholder="+63 900 000 0000" disabled>
+            </div>
+          </div>
+
+          <div class="grid-3" style="margin-top:12px">
+            <div class="stack">
+              <label for="pfUsername">Username</label>
+              <input id="pfUsername" type="text" placeholder="username" disabled>
+            </div>
+            <div class="stack">
+              <label for="pfBio">About</label>
+              <input id="pfBio" type="text" placeholder="Tell us about you" disabled>
+            </div>
+            <div class="stack">
+              <label for="pfAvatar">Avatar (initials)</label>
+              <input id="pfAvatar" maxlength="2" placeholder="e.g. TM" disabled>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-top:14px">
+        <div class="head"><strong>Security</strong></div>
+        <div class="body">
+          <div class="grid-3">
+            <div class="stack">
+              <label for="pfPasswordNow">Current Password</label>
+              <input id="pfPasswordNow" type="password" placeholder="••••••••">
+            </div>
+            <div class="stack">
+              <label for="pfPasswordNew">New Password</label>
+              <input id="pfPasswordNew" type="password" placeholder="Minimum 6 chars">
+            </div>
+            <div class="stack">
+              <label>&nbsp;</label>
+              <button class="btn" id="btnChangePassword">Change Password</button>
+            </div>
+          </div>
+          <small class="muted" style="color:var(--muted)">Passwords are stored locally in your browser for demo purposes only.</small>
+        </div>
+      </div>
+    </section>
+
+    <!-- ORDERS -->
+    <section data-route="orders" class="route" hidden>
+      <div class="page-title"><h2>My Orders</h2></div>
+
+      <div class="tabs" id="orderTabs" role="tablist" aria-label="Order status">
+        <!-- generated -->
+      </div>
+
+      <div class="order-toolbar" role="search">
+        <div class="search" style="flex:1">
+          🔎 <input id="orderSearch" placeholder="Search by Seller, Order ID or Product" />
+        </div>
+        <button class="btn outline" id="btnSeedOrders" title="Load demo orders">Load Demo Orders</button>
+        <button class="btn" id="btnNewOrder">Quick Create</button>
+      </div>
+
+      <div class="order-list" id="orderList" aria-live="polite">
+        <!-- orders populate here -->
+      </div>
+
+      <div class="empty" id="ordersEmpty" hidden>
+        <div class="center" style="flex-direction:column;gap:8px">
+          <div style="font-size:40px">📄</div>
+          <div>No orders yet</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section data-route="settings" class="route" hidden>
+      <div class="page-title"><h2>Settings</h2></div>
+
+      <div class="grid-2">
+        <!-- Addresses -->
+        <div class="panel">
+          <div class="head"><strong>Shipping Addresses</strong>
+            <div class="actions"><button class="btn" id="btnAddAddress">Add Address</button></div>
+          </div>
+          <div class="body stack" id="addressList">
+            <!-- addresses -->
+          </div>
+        </div>
+
+        <!-- Account -->
+        <div class="panel">
+          <div class="head"><strong>Account</strong></div>
+          <div class="body stack">
+            <div class="stack">
+              <label for="chgEmail">Change Account (Email)</label>
+              <div class="actions" style="gap:8px">
+                <input id="chgEmail" type="email" placeholder="new-email@domain.com" style="max-width:320px">
+                <button class="btn outline" id="btnChangeAccount">Update Email</button>
+              </div>
+            </div>
+            <hr style="border:0;border-top:1px solid var(--border)">
+            <div class="stack">
+              <label>Danger Zone</label>
+              <div class="actions">
+                <button class="btn danger" id="btnDeleteAccount">Delete Account</button>
+                <button class="btn outline" data-action="logout">Logout</button>
+              </div>
+              <small class="muted" style="color:var(--muted)">Deleting account clears all local data (profile, orders, addresses).</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- Modal (reused) -->
+<div class="modal-bg" id="modalBg" role="dialog" aria-modal="true" aria-hidden="true">
+  <div class="modal" role="document" aria-labelledby="modalTitle">
+    <div class="head">
+      <strong id="modalTitle">Modal</strong>
+      <button class="btn ghost" id="modalClose" aria-label="Close">✕</button>
+    </div>
+    <div class="body" id="modalBody"></div>
+    <div class="foot" id="modalFoot">
+      <!-- buttons -->
+    </div>
+  </div>
+</div>
+
+<!-- Logged-out overlay -->
+<div class="logout-overlay" id="logoutLayer">
+  <div class="logout-card">
+    <h3>You are logged out</h3>
+    <p class="muted" style="color:var(--muted)">This is a front-end demo. Click below to sign back in (restores your local data).</p>
+    <div class="actions">
+      <button class="btn" id="btnLoginAgain">Login</button>
+      <button class="btn outline" id="btnClearAll">Clear all data</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<footer>
+    <%- include("../partials/footer.ejs") %>
+</footer>
+
+<script src="/js/profile.js"></script>
+</body>
+</html>

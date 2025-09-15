@@ -41,7 +41,9 @@
                     </div>
                     <div class="item-details">
                       <div class="item-name"><%= it.name %></div>
-                      <div class="item-variant"><%= it.color %> • <%= it.storage %>GB</div>
+                      <div class="item-variant">
+                        <%= it.color %> • <%= it.ram %>GB RAM • <%= it.storage %>GB
+                      </div>
                       <div class="item-price-unit">₱<%= it.unitPrice.toFixed(2) %> each</div>
                     </div>
                     <div class="quantity-controls">

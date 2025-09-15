@@ -32,11 +32,16 @@
         <figure class="main-image">
           <img src="<%= images[0]?.img_url || '/images/default.png' %>" alt="<%= product.name %> main image" id="mainProductImage" />
         </figure>
-        <div class="image-thumbnails" role="list">
-          <% images.forEach((img, index) => { %>
-            <img role="listitem" src="<%= img.img_url %>" alt="Image <%= index + 1 %>" class="<%= index === 0 ? 'active' : '' %>" onclick="document.getElementById('mainProductImage').src = '<%= img.img_url %>'" />
-          <% }); %>
-        </div>
+<div class="image-thumbnails" role="list">
+  <% images.forEach((img, index) => { %>
+    <img role="listitem"
+         src="<%= img.img_url %>"
+         data-variant-id="<%= img.product_variant_id %>"
+         alt="Image <%= index + 1 %>"
+         class="<%= index === 0 ? 'active' : '' %>" />
+  <% }); %>
+</div>
+
       </aside>
 
       <section class="product-info">
@@ -63,15 +68,23 @@
             <% }); %>
           </div>
 
-          <label class="variant-label" for="storage-options">Storage:</label>
-          <div id="storage-options" class="variant-options" role="group" aria-label="Storage options">
-            <%
-              const storages = [...new Set(variants.map(v => v.storage))];
-              storages.forEach(storage => {
-            %>
-              <button type="button" class="variant-btn" aria-pressed="false" data-storage="<%= storage %>"><%= storage %>GB</button>
-            <% }); %>
-          </div>
+<label class="variant-label" for="ram-storage-options">RAM + Storage:</label>
+<div id="ram-storage-options" class="variant-options" role="group" aria-label="RAM + Storage options">
+  <%
+    // Create combined labels like "8GB + 128GB"
+    const ramStorages = [...new Set(variants.map(v => `${v.ram}GB + ${v.storage}GB`))];
+    ramStorages.forEach(rs => {
+      const [ram, storage] = rs.split(" + ");
+  %>
+    <button type="button" 
+            class="variant-btn" 
+            aria-pressed="false" 
+            data-ram="<%= ram.replace('GB','') %>" 
+            data-storage="<%= storage.replace('GB','') %>">
+      <%= rs %>
+    </button>
+  <% }); %>
+</div>
         </div>
 
         <div class="quantity-section mt-3">
@@ -100,182 +113,269 @@
     <%-/* include("../partials/footer.ejs") */%>
   </footer>
 
-  <!-- Embed data for JS -->
-  <script type="application/json" id="product-data"><%- JSON.stringify(product) %></script>
-  <script type="application/json" id="variants-data"><%- JSON.stringify(variants) %></script>
+<!-- Embed data for JS -->
+<script type="application/json" id="product-data"><%- JSON.stringify(product) %></script>
+<script type="application/json" id="variants-data"><%- JSON.stringify(variants) %></script>
 
-  <script>
-    // ========= Embedded data =========
-    const PRODUCT = JSON.parse(document.getElementById('product-data').textContent);
-    const VARIANTS = JSON.parse(document.getElementById('variants-data').textContent);
+<script>
+  // ========= Embedded data =========
+  const PRODUCT = JSON.parse(document.getElementById('product-data').textContent);
+  const VARIANTS = JSON.parse(document.getElementById('variants-data').textContent);
 
-    // ========= State =========
-    let selectedColor = null;
-    let selectedStorage = null;
-    let selectedVariant = null;
-    let quantity = 1;
+  // ========= State =========
+  let selectedColor = null;
+  let selectedRam = null;
+  let selectedStorage = null;
+  let selectedVariant = null;
+  let quantity = 1;
 
-    // ========= DOM =========
-    const colorWrap = document.getElementById('color-options');
-    const storageWrap = document.getElementById('storage-options');
-    const qtyInput = document.getElementById('qty-input');
-    const decBtn = document.querySelector(".qty-btn[aria-label='Decrease quantity']");
-    const incBtn = document.querySelector(".qty-btn[aria-label='Increase quantity']");
-    const stockInfo = document.querySelector('.stock-info');
-    const addToCartBtn = document.getElementById('btn-add');
-    const buyNowBtn = document.getElementById('btn-buy');
-    const totalEl = document.getElementById('total-amount');
-    const priceEl = document.getElementById('price-display');
+  // ========= DOM =========
+  const colorWrap = document.getElementById('color-options');
+  const ramStorageWrap = document.getElementById('ram-storage-options');
+  const qtyInput = document.getElementById('qty-input');
+  const decBtn = document.querySelector(".qty-btn[aria-label='Decrease quantity']");
+  const incBtn = document.querySelector(".qty-btn[aria-label='Increase quantity']");
+  const stockInfo = document.querySelector('.stock-info');
+  const addToCartBtn = document.getElementById('btn-add');
+  const buyNowBtn = document.getElementById('btn-buy');
+  const totalEl = document.getElementById('total-amount');
+  const priceEl = document.getElementById('price-display');
 
-    // ========= Helpers =========
-    const formatPHP = (n) => new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(Number(n || 0));
-    const getMinMax = () => {
-      const nums = VARIANTS.map(v => Number(v.price));
-      return [Math.min(...nums), Math.max(...nums)];
-    };
-    function findVariant(color, storage) {
-      return VARIANTS.find(v => v.color === color && Number(v.storage) === Number(storage)) || null;
-    }
-    function setSelected(group, btn) {
-      group.querySelectorAll('.variant-btn').forEach(b => { b.classList.remove('selected'); b.setAttribute('aria-pressed', 'false'); });
-      if (btn) { btn.classList.add('selected'); btn.setAttribute('aria-pressed', 'true'); }
-    }
-    function disableUnavailableOptions() {
-      // Why: Guide the user by disabling impossible combinations based on current partial selection.
-      const colorButtons = [...colorWrap.querySelectorAll('[data-color]')];
-      const storageButtons = [...storageWrap.querySelectorAll('[data-storage]')];
+  // ========= Helpers =========
+  const formatPHP = (n) => new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(Number(n || 0));
+  const getMinMax = () => {
+    const nums = VARIANTS.map(v => Number(v.price));
+    return [Math.min(...nums), Math.max(...nums)];
+  };
 
-      const availableByColor = new Map();
-      const availableByStorage = new Map();
+  function findVariant(color, ram, storage) {
+    return VARIANTS.find(v =>
+      v.color === color &&
+      Number(v.ram) === Number(ram) &&
+      Number(v.storage) === Number(storage)
+    ) || null;
+  }
 
-      VARIANTS.forEach(v => {
-        const st = String(v.storage);
-        const co = String(v.color);
-        if (!availableByColor.has(co)) availableByColor.set(co, new Set());
-        if (!availableByStorage.has(st)) availableByStorage.set(st, new Set());
-        availableByColor.get(co).add(st);
-        availableByStorage.get(st).add(co);
-      });
+  function setSelected(group, btn) {
+    group.querySelectorAll('.variant-btn').forEach(b => {
+      b.classList.remove('selected');
+      b.setAttribute('aria-pressed', 'false');
+    });
+    if (btn) {
+      btn.classList.add('selected');
+      btn.setAttribute('aria-pressed', 'true');
+    }
+  }
 
-      // Update storages against color
-      storageButtons.forEach(btn => {
-        const st = String(btn.dataset.storage);
-        const ok = !selectedColor || (availableByColor.get(String(selectedColor)) || new Set()).has(st);
-        btn.setAttribute('aria-disabled', ok ? 'false' : 'true');
-      });
-      // Update colors against storage
-      colorButtons.forEach(btn => {
-        const co = String(btn.dataset.color);
-        const ok = !selectedStorage || (availableByStorage.get(String(selectedStorage)) || new Set()).has(co);
-        btn.setAttribute('aria-disabled', ok ? 'false' : 'true');
-      });
-    }
-    function updateStockDisplay() {
-      if (selectedVariant) {
-        stockInfo.textContent = 'In Stock: ' + Number(selectedVariant.stock_quantity || 0);
-      } else {
-        const total = VARIANTS.reduce((s, v) => s + Number(v.stock_quantity || 0), 0);
-        stockInfo.textContent = 'In Stock: ' + total;
-      }
-    }
-    function updateTotalsUI() {
-      const unit = selectedVariant ? Number(selectedVariant.price) : 0;
-      const total = unit * quantity;
-      totalEl.textContent = `Total: ${formatPHP(total)}`;
-      if (selectedVariant) {
-        priceEl.textContent = `${formatPHP(total)}`; // show total here as requested
-      } else {
-        const [minP, maxP] = getMinMax();
-        priceEl.textContent = `${formatPHP(minP)} – ${formatPHP(maxP)}`; // default range
-      }
-    }
-    function clampQty() {
-      const max = selectedVariant ? Number(selectedVariant.stock_quantity || 0) : Infinity;
-      if (!Number.isFinite(quantity) || quantity < 1) quantity = 1;
-      if (quantity > max) quantity = max;
-      qtyInput.value = String(quantity);
-      updateTotalsUI();
-    }
-    function validateSelection() {
-      if (!selectedColor || !selectedStorage) { alert('Please select color and storage.'); return false; }
-      if (!selectedVariant) { alert('Selected combination is not available.'); return false; }
-      if (Number(selectedVariant.stock_quantity || 0) < 1) { alert('This variant is out of stock.'); return false; }
-      if (quantity > Number(selectedVariant.stock_quantity || 0)) {
-        alert('Quantity exceeds stock!');
-        quantity = Number(selectedVariant.stock_quantity || 0);
-        clampQty();
-        return false;
-      }
-      return true;
-    }
-    async function postJSON(url, data) {
-      const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-      return res.json();
-    }
-    function buildPayload() {
-      return {
-        productId: PRODUCT.id || PRODUCT.product_id || PRODUCT._id,
-        variantId: selectedVariant.id || selectedVariant.variant_id || selectedVariant._id,
-        color: selectedColor,
-        storage: selectedStorage,
-        unitPrice: Number(selectedVariant.price),
-        quantity: Number(quantity)
-      };
-    }
+  function disableUnavailableOptions() {
+    const colorButtons = [...colorWrap.querySelectorAll('[data-color]')];
+    const ramStorageButtons = [...ramStorageWrap.querySelectorAll('[data-ram][data-storage]')];
 
-    // ========= Event handlers (order-independent) =========
-    colorWrap.addEventListener('click', (e) => {
-      const btn = e.target.closest('[data-color]');
-      if (!btn || btn.getAttribute('aria-disabled') === 'true') return;
-      selectedColor = btn.dataset.color;
-      setSelected(colorWrap, btn);
-      selectedVariant = selectedStorage ? findVariant(selectedColor, selectedStorage) : null;
-      disableUnavailableOptions();
-      updateStockDisplay();
-      clampQty();
+    // Use numeric keys: "ram-storage"
+    const availableByColor = new Map(); // color -> Set("8-128", ...)
+    const availableByCombo = new Map(); // "8-128" -> Set(colors)
+
+    VARIANTS.forEach(v => {
+      const combo = `${Number(v.ram)}-${Number(v.storage)}`;
+      const co = String(v.color);
+
+      if (!availableByColor.has(co)) availableByColor.set(co, new Set());
+      if (!availableByCombo.has(combo)) availableByCombo.set(combo, new Set());
+
+      availableByColor.get(co).add(combo);
+      availableByCombo.get(combo).add(co);
     });
 
-    storageWrap.addEventListener('click', (e) => {
-      const btn = e.target.closest('[data-storage]');
-      if (!btn || btn.getAttribute('aria-disabled') === 'true') return;
-      selectedStorage = Number(btn.dataset.storage);
-      setSelected(storageWrap, btn);
-      selectedVariant = selectedColor ? findVariant(selectedColor, selectedStorage) : null;
-      disableUnavailableOptions();
-      updateStockDisplay();
-      clampQty();
+    // RAM+Storage availability vs selected color
+    ramStorageButtons.forEach(btn => {
+      const combo = `${btn.dataset.ram}-${btn.dataset.storage}`;
+      const ok = !selectedColor || (availableByColor.get(selectedColor) || new Set()).has(combo);
+      btn.setAttribute('aria-disabled', ok ? 'false' : 'true');
     });
 
-    decBtn.addEventListener('click', () => { if (quantity > 1) { quantity--; clampQty(); } });
-    incBtn.addEventListener('click', () => {
-      const cap = selectedVariant ? Number(selectedVariant.stock_quantity || 0) : Infinity;
-      if (quantity + 1 > cap) { alert('Cannot exceed stock!'); return; }
-      quantity++; clampQty();
+    // Color availability vs selected RAM+Storage
+    colorButtons.forEach(btn => {
+      const co = String(btn.dataset.color);
+      const combo = (selectedRam && selectedStorage) ? `${selectedRam}-${selectedStorage}` : null;
+      const ok = !combo || (availableByCombo.get(combo) || new Set()).has(co);
+      btn.setAttribute('aria-disabled', ok ? 'false' : 'true');
     });
-    qtyInput.addEventListener('input', () => {
-      quantity = parseInt(qtyInput.value, 10) || 1;
-      clampQty();
-    });
+  }
 
-    addToCartBtn.addEventListener('click', async () => {
-      if (!validateSelection()) return;
-      const res = await postJSON('/api/cart', buildPayload());
-      if (res.ok) window.location.href = '/cart'; else alert(res.message || 'Failed to add to cart');
-    });
-    buyNowBtn.addEventListener('click', async () => {
-      if (!validateSelection()) return;
-      const res = await postJSON('/api/cart', buildPayload());
-      if (res.ok) window.location.href = '/checkout'; else alert(res.message || 'Failed to proceed');
-    });
+  function updateStockDisplay() {
+    if (selectedVariant) {
+      stockInfo.textContent = 'In Stock: ' + Number(selectedVariant.stock_quantity || 0);
+    } else {
+      const total = VARIANTS.reduce((s, v) => s + Number(v.stock_quantity || 0), 0);
+      stockInfo.textContent = 'In Stock: ' + total;
+    }
+  }
 
-    // ========= Init =========
-    (function init() {
+  function updateTotalsUI() {
+    const unit = selectedVariant ? Number(selectedVariant.price) : 0;
+    const total = unit * quantity;
+    totalEl.textContent = `Total: ${formatPHP(total)}`;
+    if (selectedVariant) {
+      priceEl.textContent = `${formatPHP(total)}`;
+    } else {
       const [minP, maxP] = getMinMax();
       priceEl.textContent = `${formatPHP(minP)} – ${formatPHP(maxP)}`;
-      updateStockDisplay();
+    }
+  }
+
+  function clampQty() {
+    const max = selectedVariant ? Number(selectedVariant.stock_quantity || 0) : Infinity;
+    if (!Number.isFinite(quantity) || quantity < 1) quantity = 1;
+    if (quantity > max) quantity = max;
+    qtyInput.value = String(quantity);
+    updateTotalsUI();
+  }
+
+  function validateSelection() {
+    if (!selectedColor || !selectedRam || !selectedStorage) {
+      alert('Please select color and RAM + Storage.');
+      return false;
+    }
+    if (!selectedVariant) {
+      alert('Selected combination is not available.');
+      return false;
+    }
+    if (Number(selectedVariant.stock_quantity || 0) < 1) {
+      alert('This variant is out of stock.');
+      return false;
+    }
+    if (quantity > Number(selectedVariant.stock_quantity || 0)) {
+      alert('Quantity exceeds stock!');
+      quantity = Number(selectedVariant.stock_quantity || 0);
       clampQty();
-      disableUnavailableOptions();
-    })();
-  </script>
+      return false;
+    }
+    return true;
+  }
+
+  async function postJSON(url, data) {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    return res.json();
+  }
+  
+  
+
+  function buildPayload() {
+    return {
+      productId: PRODUCT.id || PRODUCT.product_id || PRODUCT._id,
+      variantId: selectedVariant.id || selectedVariant.variant_id || selectedVariant._id,
+      color: selectedColor,
+      ram: selectedRam,
+      storage: selectedStorage,
+      unitPrice: Number(selectedVariant.price),
+      quantity: Number(quantity)
+    };
+  }
+
+  // ========= Event handlers =========
+  colorWrap.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-color]');
+    if (!btn || btn.getAttribute('aria-disabled') === 'true') return;
+    selectedColor = btn.dataset.color;
+    setSelected(colorWrap, btn);
+    selectedVariant = (selectedRam && selectedStorage)
+      ? findVariant(selectedColor, selectedRam, selectedStorage)
+      : null;
+    disableUnavailableOptions();
+    updateStockDisplay();
+    clampQty();
+  });
+
+    // ========= Image gallery with active border + keyboard =========
+  const mainImage = document.getElementById("mainProductImage");
+  const thumbnails = document.querySelectorAll(".image-thumbnails img");
+  let currentIndex = 0;
+
+  function setActiveThumbnail(index) {
+    thumbnails.forEach((thumb, i) => {
+      if (i === index) {
+        thumb.classList.add("active");
+      } else {
+        thumb.classList.remove("active");
+      }
+    });
+    currentIndex = index;
+    mainImage.src = thumbnails[index].src;
+  }
+
+  // Click handler
+  thumbnails.forEach((thumb, i) => {
+    thumb.addEventListener("click", () => setActiveThumbnail(i));
+  });
+
+  // Keyboard navigation
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowLeft") {
+      currentIndex = (currentIndex - 1 + thumbnails.length) % thumbnails.length;
+      setActiveThumbnail(currentIndex);
+    } else if (e.key === "ArrowRight") {
+      currentIndex = (currentIndex + 1) % thumbnails.length;
+      setActiveThumbnail(currentIndex);
+    }
+  });
+
+  // Init: highlight first thumbnail
+  setActiveThumbnail(0);
+
+  ramStorageWrap.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-ram][data-storage]');
+    if (!btn || btn.getAttribute('aria-disabled') === 'true') return;
+
+    selectedRam = Number(btn.dataset.ram);
+    selectedStorage = Number(btn.dataset.storage);
+
+    setSelected(ramStorageWrap, btn);
+
+    selectedVariant = selectedColor
+      ? findVariant(selectedColor, selectedRam, selectedStorage)
+      : null;
+
+    disableUnavailableOptions();
+    updateStockDisplay();
+    clampQty();
+  });
+
+  decBtn.addEventListener('click', () => { if (quantity > 1) { quantity--; clampQty(); } });
+  incBtn.addEventListener('click', () => {
+    const cap = selectedVariant ? Number(selectedVariant.stock_quantity || 0) : Infinity;
+    if (quantity + 1 > cap) { alert('Cannot exceed stock!'); return; }
+    quantity++; clampQty();
+  });
+  qtyInput.addEventListener('input', () => {
+    quantity = parseInt(qtyInput.value, 10) || 1;
+    clampQty();
+  });
+
+  addToCartBtn.addEventListener('click', async () => {
+    if (!validateSelection()) return;
+    const res = await postJSON('/api/cart', buildPayload());
+    if (res.ok) window.location.href = '/cart'; else alert(res.message || 'Failed to add to cart');
+  });
+
+  buyNowBtn.addEventListener('click', async () => {
+    if (!validateSelection()) return;
+    const res = await postJSON('/api/cart', buildPayload());
+    if (res.ok) window.location.href = '/checkout'; else alert(res.message || 'Failed to proceed');
+  });
+
+  // ========= Init =========
+  (function init() {
+    const [minP, maxP] = getMinMax();
+    priceEl.textContent = `${formatPHP(minP)} – ${formatPHP(maxP)}`;
+    updateStockDisplay();
+    clampQty();
+    disableUnavailableOptions();
+  })();
+</script>
+
 </body>
 </html>

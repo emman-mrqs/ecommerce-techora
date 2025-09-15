@@ -17,7 +17,11 @@ function readCookieCart(req) {
 }
 function writeCookieCart(res, cart) {
   const normalized = cart && Array.isArray(cart.items) ? cart : { items: [] };
-  res.cookie('cart', JSON.stringify(normalized), { httpOnly: false, sameSite: 'lax', maxAge: 1000 * 60 * 60 * 24 * 7 });
+  res.cookie("cart", JSON.stringify(normalized), {
+    httpOnly: false,
+    sameSite: "lax",
+    maxAge: 1000 * 60 * 60 * 24 * 7,
+  });
 }
 
 function calcTotals(items) {
@@ -27,14 +31,19 @@ function calcTotals(items) {
 }
 
 async function ensureUserCart(userId) {
-  const { rows } = await db.query('SELECT id FROM cart WHERE user_id = $1', [userId]);
+  const { rows } = await db.query("SELECT id FROM cart WHERE user_id = $1", [
+    userId,
+  ]);
   if (rows.length) return rows[0].id;
-  const ins = await db.query('INSERT INTO cart (user_id, created_at) VALUES ($1, NOW()) RETURNING id', [userId]);
+  const ins = await db.query(
+    "INSERT INTO cart (user_id, created_at) VALUES ($1, NOW()) RETURNING id",
+    [userId]
+  );
   return ins.rows[0].id;
 }
 
 async function fetchVariant(variantId) {
-  const q = `SELECT pv.id, pv.product_id, pv.price, pv.color, pv.storage, pv.stock_quantity,
+  const q = `SELECT pv.id, pv.product_id, pv.price, pv.color, pv.ram, pv.storage, pv.stock_quantity,
                     p.name,
                     COALESCE((SELECT img_url FROM product_images WHERE product_id=p.id AND (is_primary = TRUE OR position = 1) ORDER BY is_primary DESC, position ASC, id ASC LIMIT 1), NULL) AS image
              FROM product_variant pv
@@ -46,7 +55,7 @@ async function fetchVariant(variantId) {
 
 async function loadUserCartItems(userId) {
   const q = `SELECT ci.variant_id AS item_id, ci.quantity,
-                    pv.product_id, pv.color, pv.storage, pv.price AS unit_price, pv.stock_quantity,
+                    pv.product_id, pv.color, pv.ram, pv.storage, pv.price AS unit_price, pv.stock_quantity,
                     p.name,
                     COALESCE((SELECT img_url FROM product_images WHERE product_id=p.id AND (is_primary = TRUE OR position = 1) ORDER BY is_primary DESC, position ASC, id ASC LIMIT 1), NULL) AS image
              FROM cart c
@@ -56,12 +65,13 @@ async function loadUserCartItems(userId) {
              WHERE c.user_id = $1
              ORDER BY ci.id ASC`;
   const { rows } = await db.query(q, [userId]);
-  return rows.map(r => ({
-    itemId: String(r.item_id), // same as variantId
+  return rows.map((r) => ({
+    itemId: String(r.item_id),
     productId: r.product_id,
     variantId: String(r.item_id),
     name: r.name,
     color: r.color,
+    ram: Number(r.ram), // ✅ include RAM
     storage: Number(r.storage),
     unitPrice: Number(r.unit_price),
     quantity: Number(r.quantity),
@@ -83,13 +93,17 @@ export async function renderCart(req, res) {
       for (const it of cookieItems) {
         const v = await fetchVariant(it.variantId);
         if (!v) continue;
-        const clampedQty = Math.min(Number(it.quantity || 1), Number(v.stock_quantity || 0));
+        const clampedQty = Math.min(
+          Number(it.quantity || 1),
+          Number(v.stock_quantity || 0)
+        );
         items.push({
           itemId: String(v.id),
           productId: v.product_id,
           variantId: String(v.id),
           name: v.name,
           color: v.color,
+          ram: Number(v.ram), // ✅ include RAM
           storage: Number(v.storage),
           unitPrice: Number(v.price),
           quantity: clampedQty,
@@ -102,23 +116,51 @@ export async function renderCart(req, res) {
     const totals = calcTotals(items);
     const count = items.reduce((s, it) => s + it.quantity, 0);
 
-    res.render('user/cart', { cart: { items, count, ...totals } });
+    res.render("user/cart", { cart: { items, count, ...totals } });
   } catch (err) {
-    console.error('renderCart error', err);
-    res.status(500).render('user/cart', { cart: { items: [], count: 0, subtotal: 0, tax: 0, shipping: 0, total: 0 } });
+    console.error("renderCart error", err);
+    res
+      .status(500)
+      .render("user/cart", {
+        cart: {
+          items: [],
+          count: 0,
+          subtotal: 0,
+          tax: 0,
+          shipping: 0,
+          total: 0,
+        },
+      });
   }
 }
 
 export async function apiAddToCart(req, res) {
   try {
-    const { productId, variantId, color, storage, unitPrice, quantity } = req.body;
-    if (!productId || !variantId || !color || !storage || !unitPrice || !quantity) {
-      return res.status(400).json({ ok: false, message: 'Missing required fields.' });
+    const { productId, variantId, color, ram, storage, unitPrice, quantity } =
+      req.body;
+    if (
+      !productId ||
+      !variantId ||
+      !color ||
+      !ram ||
+      !storage ||
+      !unitPrice ||
+      !quantity
+    ) {
+      return res
+        .status(400)
+        .json({ ok: false, message: "Missing required fields." });
     }
 
     const variant = await fetchVariant(variantId);
-    if (!variant) return res.status(404).json({ ok: false, message: 'Variant not found.' });
-    if (Number(variant.stock_quantity) < 1) return res.status(400).json({ ok: false, message: 'Variant out of stock.' });
+    if (!variant)
+      return res
+        .status(404)
+        .json({ ok: false, message: "Variant not found." });
+    if (Number(variant.stock_quantity) < 1)
+      return res
+        .status(400)
+        .json({ ok: false, message: "Variant out of stock." });
 
     let safeQty = Math.max(1, Number(quantity));
     safeQty = Math.min(safeQty, Number(variant.stock_quantity));
@@ -129,15 +171,21 @@ export async function apiAddToCart(req, res) {
       const cartId = await ensureUserCart(userId);
 
       const { rows: existRows } = await db.query(
-        'SELECT id, quantity FROM cart_items WHERE cart_id = $1 AND variant_id = $2',
+        "SELECT id, quantity FROM cart_items WHERE cart_id = $1 AND variant_id = $2",
         [cartId, variantId]
       );
       if (existRows.length) {
-        const newQty = Math.min(existRows[0].quantity + safeQty, Number(variant.stock_quantity));
-        await db.query('UPDATE cart_items SET quantity = $1 WHERE id = $2', [newQty, existRows[0].id]);
+        const newQty = Math.min(
+          existRows[0].quantity + safeQty,
+          Number(variant.stock_quantity)
+        );
+        await db.query("UPDATE cart_items SET quantity = $1 WHERE id = $2", [
+          newQty,
+          existRows[0].id,
+        ]);
       } else {
         await db.query(
-          'INSERT INTO cart_items (cart_id, product_id, variant_id, quantity) VALUES ($1, $2, $3, $4)',
+          "INSERT INTO cart_items (cart_id, product_id, variant_id, quantity) VALUES ($1, $2, $3, $4)",
           [cartId, productId, variantId, safeQty]
         );
       }
@@ -146,23 +194,38 @@ export async function apiAddToCart(req, res) {
 
     // Guest → cookie
     const cookieCart = readCookieCart(req);
-    if (!cookieCart || typeof cookieCart !== 'object') {
-      // recover from bad cookie shape
-      return writeCookieCart(res, { items: [] }), res.json({ ok: true });
+    if (!cookieCart || typeof cookieCart !== "object") {
+      return (
+        writeCookieCart(res, { items: [] }),
+        res.json({ ok: true })
+      );
     }
     if (!Array.isArray(cookieCart.items)) cookieCart.items = [];
-    const idx = cookieCart.items.findIndex((it) => String(it.variantId) === String(variantId));
+    const idx = cookieCart.items.findIndex(
+      (it) => String(it.variantId) === String(variantId)
+    );
     if (idx >= 0) {
-      cookieCart.items[idx].quantity = Math.min(Number(cookieCart.items[idx].quantity || 0) + safeQty, Number(variant.stock_quantity));
+      cookieCart.items[idx].quantity = Math.min(
+        Number(cookieCart.items[idx].quantity || 0) + safeQty,
+        Number(variant.stock_quantity)
+      );
     } else {
-      cookieCart.items.push({ variantId: String(variantId), productId, color, storage, unitPrice: Number(variant.price), quantity: safeQty });
+      cookieCart.items.push({
+        variantId: String(variantId),
+        productId,
+        color,
+        ram, // ✅ keep RAM in cookie
+        storage,
+        unitPrice: Number(variant.price),
+        quantity: safeQty,
+      });
     }
     writeCookieCart(res, cookieCart);
 
     res.json({ ok: true });
   } catch (err) {
-    console.error('apiAddToCart error', err);
-    res.status(500).json({ ok: false, message: 'Server error' });
+    console.error("apiAddToCart error", err);
+    res.status(500).json({ ok: false, message: "Server error" });
   }
 }
 
@@ -173,26 +236,35 @@ export async function apiUpdateCartItem(req, res) {
     quantity = Math.max(1, Number(quantity));
 
     const variant = await fetchVariant(variantId);
-    if (!variant) return res.status(404).json({ ok: false, message: 'Variant not found.' });
+    if (!variant)
+      return res
+        .status(404)
+        .json({ ok: false, message: "Variant not found." });
     const clamped = Math.min(quantity, Number(variant.stock_quantity));
 
     const isLoggedIn = Boolean(req.session.user);
     if (isLoggedIn) {
       const cartId = await ensureUserCart(req.session.user.id);
-      await db.query('UPDATE cart_items SET quantity = $1 WHERE cart_id = $2 AND variant_id = $3', [clamped, cartId, variantId]);
+      await db.query(
+        "UPDATE cart_items SET quantity = $1 WHERE cart_id = $2 AND variant_id = $3",
+        [clamped, cartId, variantId]
+      );
       return res.json({ ok: true });
     }
 
     const cookieCart = readCookieCart(req);
-    if (!cookieCart || typeof cookieCart !== 'object') return res.json({ ok: true });
+    if (!cookieCart || typeof cookieCart !== "object")
+      return res.json({ ok: true });
     if (!Array.isArray(cookieCart.items)) cookieCart.items = [];
-    const it = cookieCart.items.find((i) => String(i.variantId) === String(variantId));
+    const it = cookieCart.items.find(
+      (i) => String(i.variantId) === String(variantId)
+    );
     if (it) it.quantity = clamped;
     writeCookieCart(res, cookieCart);
     res.json({ ok: true });
   } catch (err) {
-    console.error('apiUpdateCartItem error', err);
-    res.status(500).json({ ok: false, message: 'Server error' });
+    console.error("apiUpdateCartItem error", err);
+    res.status(500).json({ ok: false, message: "Server error" });
   }
 }
 
@@ -202,18 +274,24 @@ export async function apiRemoveCartItem(req, res) {
     const isLoggedIn = Boolean(req.session.user);
     if (isLoggedIn) {
       const cartId = await ensureUserCart(req.session.user.id);
-      await db.query('DELETE FROM cart_items WHERE cart_id = $1 AND variant_id = $2', [cartId, variantId]);
+      await db.query(
+        "DELETE FROM cart_items WHERE cart_id = $1 AND variant_id = $2",
+        [cartId, variantId]
+      );
       return res.json({ ok: true });
     }
 
     const cookieCart = readCookieCart(req);
-    if (!cookieCart || typeof cookieCart !== 'object') return res.json({ ok: true });
+    if (!cookieCart || typeof cookieCart !== "object")
+      return res.json({ ok: true });
     if (!Array.isArray(cookieCart.items)) cookieCart.items = [];
-    cookieCart.items = cookieCart.items.filter((it) => String(it.variantId) !== String(variantId));
+    cookieCart.items = cookieCart.items.filter(
+      (it) => String(it.variantId) !== String(variantId)
+    );
     writeCookieCart(res, cookieCart);
     res.json({ ok: true });
   } catch (err) {
-    console.error('apiRemoveCartItem error', err);
-    res.status(500).json({ ok: false, message: 'Server error' });
+    console.error("apiRemoveCartItem error", err);
+    res.status(500).json({ ok: false, message: "Server error" });
   }
 }

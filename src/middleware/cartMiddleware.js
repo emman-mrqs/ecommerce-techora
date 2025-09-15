@@ -1,59 +1,45 @@
 import db from "../database/db.js";
 
-export default async function cartMiddleware(req, res, next) {
-  let cartItemCount = 0;
-
+export const cartCountMiddleware = async (req, res, next) => {
   try {
-    // 🧑 Logged-in user
-    if (req.session && req.session.user) {
-      const userId = req.session.user.id;
-
-      // Get the user's cart ID
-      const cartResult = await db.query(
-        `SELECT id FROM cart WHERE user_id = $1 LIMIT 1`,
-        [userId]
+    if (req.session && req.session.user && req.session.user.id) {
+      // Logged-in user -> query DB
+      const { rows } = await db.query(
+        `
+        SELECT COUNT(DISTINCT ci.product_id) AS unique_products_in_cart
+        FROM cart c
+        JOIN cart_items ci ON c.id = ci.cart_id
+        WHERE c.user_id = $1
+        `,
+        [req.session.user.id]
       );
 
-      if (cartResult.rows.length > 0) {
-        const cartId = cartResult.rows[0].id;
-
-        // ✅ Count number of distinct items (not total quantity)
-        const itemResult = await db.query(
-          `SELECT COUNT(*) AS total FROM cart_items WHERE cart_id = $1`,
-          [cartId]
-        );
-
-        cartItemCount = parseInt(itemResult.rows[0].total) || 0;
-      }
-
-    // 👤 Guest user with cookie
-    } else if (req.cookies && req.cookies.cart) {
-      let guestCartItems = [];
-
+      res.locals.cartCount = rows[0]?.unique_products_in_cart || 0;
+    } else if (req.cookies.cart) {
+      // Guest user -> cookie
       try {
-        const rawCart = req.cookies.cart;
-        const parsed = JSON.parse(rawCart);
+        const guestCart = JSON.parse(req.cookies.cart); // ✅ parse string
 
-        // ✅ Check if items is an array
-        if (parsed && Array.isArray(parsed.items)) {
-          guestCartItems = parsed.items;
+        if (guestCart.items && Array.isArray(guestCart.items)) {
+          const uniqueProducts = new Set(
+            guestCart.items.map(item => item.product_id || item.productId)
+          );
+          res.locals.cartCount = uniqueProducts.size;
         } else {
-          console.warn("Guest cart 'items' is not an array:", parsed);
+          res.locals.cartCount = 0;
         }
-
-      } catch (e) {
-        console.error("Error parsing guest cart cookie:", e.message);
+      } catch (err) {
+        console.error("Guest cart parse error:", err);
+        res.locals.cartCount = 0;
       }
-
-      // ✅ Count number of distinct items (not total quantity)
-      cartItemCount = guestCartItems.length;
+    } else {
+      res.locals.cartCount = 0;
     }
 
+    next();
   } catch (err) {
-    console.error("Cart badge error:", err.message);
+    console.error("Cart count error:", err);
+    res.locals.cartCount = 0;
+    next();
   }
-
-  // ✅ Make available in all EJS views
-  res.locals.cartItemCount = cartItemCount;
-  next();
-}
+};

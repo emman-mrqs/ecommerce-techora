@@ -74,17 +74,28 @@
                             <label class="form-label">Product Images <span class="required">*</span></label>
                             <div id="imageFields">
                                 <div class="row image-row align-items-end">
-                                <div class="col-md-6">
-                                    <input type="file" class="form-input" name="product_images" accept="image/*" required>
+                                <div class="col-md-4">
+                                    <input type="file" class="form-input" name="product_images[]" accept="image/*" required>
                                 </div>
                                 <div class="col-md-3">
+                                    <select name="variant_for_image[]" class="form-select">
+                                    <option value="">General (no variant)</option>
+                                    <% /* render variants dynamically if you load them */ %>
+                                    <% if (typeof variants !== "undefined") { %>
+                                        <% variants.forEach((v, i) => { %>
+                                        <option value="<%= v.id %>"><%= v.color %> - <%= v.ram %>GB + <%= v.storage %>GB</option>
+                                        <% }); %>
+                                    <% } %>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
                                     <select name="is_primary[]" class="form-select" required>
                                     <option value="">Is Primary?</option>
                                     <option value="true">Yes</option>
                                     <option value="false">No</option>
                                     </select>
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-md-2">
                                     <input type="number" class="form-input" name="position[]" placeholder="Position (1,2,3...)" required>
                                 </div>
                                 </div>
@@ -99,6 +110,7 @@
                             </button>
                             </div>
                         </div>
+                        
                 </form>
             </div>
         </div>

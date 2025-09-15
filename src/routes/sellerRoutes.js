@@ -33,7 +33,8 @@ router.get("/seller/products", (req, res) => {
 
 
 router.get("/seller/add", renderAddProductPage);
-router.post("/seller/add", upload.array("product_images"), addProduct);
+// Allow up to 10 images
+router.post("/seller/add", upload.array("product_images[]", 10), addProduct);
 
 router.get("/seller/orders", (req, res)=>{
   res.render("seller/sellerOrders", {
