@@ -85,141 +85,47 @@
                 <p class="section-subtitle">Fresh additions to our collection - be the first to get your hands on these latest tech innovations.</p>
             </div>
             
-            <div class="row">
+           <div class="row">
+            <% newArrivals.forEach(p => { %>
                 <div class="col-lg-3 col-md-6">
-                    <div class="product-card">
-                        <div class="product-badge">NEW</div>
-                        <div class="product-icon">
-                            <i class="fas fa-mobile-alt"></i>
-                        </div>
-                        <h4 class="product-title">Smartphone</h4>
-                        <div class="product-rating">
-                            <span class="rating-stars">★★★★★</span>
-                        </div>
-                        <p class="product-price">₱25,999</p>
-                        <button class="btn btn-primary btn-sm">Shop Now</button>
-                    </div>
+                <div class="product-card">
+                    <img src="<%= p.img_url || '/images/no-image.png' %>" 
+                        alt="<%= p.name %>" class="img-fluid">
+                    <h4 class="product-title"><%= p.name %></h4>
+                    <p class="product-price">₱<%= p.price %></p>
+                    <a href="/buy/<%= p.id %>" class="btn btn-primary btn-sm">Shop Now</a>
                 </div>
-                
-                <div class="col-lg-3 col-md-6">
-                    <div class="product-card">
-                        <div class="product-badge">NEW</div>
-                        <div class="product-icon">
-                            <i class="fas fa-laptop"></i>
-                        </div>
-                        <h4 class="product-title">Gaming Laptop</h4>
-                        <div class="product-rating">
-                            <span class="rating-stars">★★★★★</span>
-                        </div>
-                        <p class="product-price">₱45,999</p>
-                        <button class="btn btn-primary btn-sm">Shop Now</button>
-                    </div>
                 </div>
-                
-                <div class="col-lg-3 col-md-6">
-                    <div class="product-card">
-                        <div class="product-badge">NEW</div>
-                        <div class="product-icon">
-                            <i class="fas fa-camera"></i>
-                        </div>
-                        <h4 class="product-title">Digital Camera</h4>
-                        <div class="product-rating">
-                            <span class="rating-stars">★★★★★</span>
-                        </div>
-                        <p class="product-price">₱18,999</p>
-                        <button class="btn btn-primary btn-sm">Shop Now</button>
-                    </div>
-                </div>
-                
-                <div class="col-lg-3 col-md-6">
-                    <div class="product-card">
-                        <div class="product-badge">NEW</div>
-                        <div class="product-icon">
-                            <i class="fas fa-gamepad"></i>
-                        </div>
-                        <h4 class="product-title">Gaming Controller</h4>
-                        <div class="product-rating">
-                            <span class="rating-stars">★★★★★</span>
-                        </div>
-                        <p class="product-price">₱2,999</p>
-                        <button class="btn btn-primary btn-sm">Shop Now</button>
-                    </div>
-                </div>
+            <% }) %>
             </div>
         </div>
     </section>
 
     <!-- Popular Products Section -->
     <section class="popular-section" id="popular">
-        <div class="container">
-            <div class="section-title">
-                <h2>Popular Products</h2>
-                <p class="section-subtitle">Customer favorites - these bestsellers are loved by thousands of satisfied customers.</p>
-            </div>
-            
-            <div class="row">
-                <div class="col-lg-3 col-md-6">
-                    <div class="product-card">
-                        <div class="product-badge popular">BESTSELLER</div>
-                        <div class="product-icon">
-                            <i class="fas fa-headphones"></i>
-                        </div>
-                        <h4 class="product-title">Wireless Headphones</h4>
-                        <div class="product-rating">
-                            <span class="rating-stars">★★★★★</span>
-                        </div>
-                        <p class="product-price">₱1,999</p>
-                        <button class="btn btn-primary btn-sm">Shop Now</button>
-                    </div>
-                </div>
-                
-                <div class="col-lg-3 col-md-6">
-                    <div class="product-card">
-                        <div class="product-badge popular">BESTSELLER</div>
-                        <div class="product-icon">
-                            <i class="fas fa-clock"></i>
-                        </div>
-                        <h4 class="product-title">Smart Watch</h4>
-                        <div class="product-rating">
-                            <span class="rating-stars">★★★★★</span>
-                        </div>
-                        <p class="product-price">₱3,999</p>
-                        <button class="btn btn-primary btn-sm">Shop Now</button>
-                    </div>
-                </div>
-                
-                <div class="col-lg-3 col-md-6">
-                    <div class="product-card">
-                        <div class="product-badge popular">BESTSELLER</div>
-                        <div class="product-icon">
-                            <i class="fas fa-volume-up"></i>
-                        </div>
-                        <h4 class="product-title">Bluetooth Speaker</h4>
-                        <div class="product-rating">
-                            <span class="rating-stars">★★★★★</span>
-                        </div>
-                        <p class="product-price">₱2,499</p>
-                        <button class="btn btn-primary btn-sm">Shop Now</button>
-                    </div>
-                </div>
-                
-                <div class="col-lg-3 col-md-6">
-                    <div class="product-card">
-                        <div class="product-badge popular">BESTSELLER</div>
-                        <div class="product-icon">
-                            <i class="fas fa-charging-station"></i>
-                        </div>
-                        <h4 class="product-title">Fast Charger</h4>
-                        <div class="product-rating">
-                            <span class="rating-stars">★★★★★</span>
-                        </div>
-                        <p class="product-price">₱899</p>
-                        <button class="btn btn-primary btn-sm">Shop Now</button>
-                    </div>
-                </div>
-            </div>
+    <div class="container">
+        <div class="section-title">
+        <h2>Popular Products</h2>
+        <p class="section-subtitle">Customer favorites based on real orders.</p>
         </div>
+
+        <div class="row">
+        <% popularProducts.forEach(p => { %>
+            <div class="col-lg-3 col-md-6">
+            <div class="product-card">
+                <img src="<%= p.img_url || '/images/no-image.png' %>" 
+                    alt="<%= p.name %>" class="img-fluid">
+                <h4 class="product-title"><%= p.name %></h4>
+                <p class="product-price">₱<%= p.price %></p>
+                <small class="text-muted">Ordered <%= p.order_count %> times</small>
+                <a href="/buy/<%= p.id %>" class="btn btn-primary btn-sm mt-2">Shop Now</a>
+            </div>
+            </div>
+        <% }) %>
+        </div>
+    </div>
     </section>
+
 
     <!-- Newsletter -->
     <section class="newsletter-section">
@@ -239,6 +145,7 @@
         <%- include("../partials/footer.ejs") %>
     </footer>
 
+<!-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script> -->
 
     
     <!-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

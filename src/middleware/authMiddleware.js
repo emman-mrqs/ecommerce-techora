@@ -8,3 +8,9 @@ export const redirectIfLoggedIn = (req, res, next) => {
   }
   next();
 };
+
+// Require an authenticated session to access a route
+export const ensureAuth = (req, res, next) => {
+  if (req.session?.user?.id) return next();
+  return res.redirect("/login");
+};

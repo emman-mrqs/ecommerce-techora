@@ -10,21 +10,24 @@
 </head>
 <body>
 
-    <nav>
-        <%- include("../partials/header.ejs") %>
-    </nav>
-
+  <nav>
+    <%- include("../partials/header.ejs") %>
+  </nav>
 
 <div class="wrap" id="app" aria-live="polite">
 
   <!-- Sidebar -->
   <aside class="sidebar">
 
+    <% const _user = (typeof user !== 'undefined' && user) ? user : {}; %>
+    <% const _avatarSeed = (_user.name && _user.name.trim().length) ? _user.name : 'TU'; %>
+
     <div class="me" id="meBox">
-      <div class="avatar" id="meAvatar">T</div>
+      <div class="avatar" id="meAvatar"><%= _avatarSeed.slice(0,2).toUpperCase() %></div>
       <div class="meta">
-        <strong id="meName">Techora User</strong>
-        <small id="meEmail">user@example.com</small>
+        <strong id="meName"><%= _user.name || 'Techora User' %></strong>
+        <small id="meEmail"><%= _user.email || 'user@example.com' %></small>
+        <!-- <small class="text-muted">Session: <%= typeof sessionID !== 'undefined' ? sessionID : '' %></small> -->
       </div>
     </div>
 
@@ -106,26 +109,115 @@
     </section>
 
     <!-- ORDERS -->
-    <section data-route="orders" class="route" hidden>
+    <section data-route="orders" class="route" <% if ((typeof route !== 'undefined' ? route : 'profile') !== 'orders') { %>hidden<% } %>>
       <div class="page-title"><h2>My Orders</h2></div>
 
       <div class="tabs" id="orderTabs" role="tablist" aria-label="Order status">
-        <!-- generated -->
-      </div>
-
-      <div class="order-toolbar" role="search">
-        <div class="search" style="flex:1">
-          🔎 <input id="orderSearch" placeholder="Search by Seller, Order ID or Product" />
-        </div>
-        <button class="btn outline" id="btnSeedOrders" title="Load demo orders">Load Demo Orders</button>
-        <button class="btn" id="btnNewOrder">Quick Create</button>
+        <% const TABS = ['All','Pending','To Ship','To Receive','Completed','Cancelled','Return/Refund']; %>
+        <% TABS.forEach((t, i) => { %>
+          <button class="tab <%= i===0 ? 'active' : '' %>" role="tab"
+                  data-status="<%= t %>"
+                  data-count="<%= (ordersByStatus[t] || []).length %>">
+            <%= t %> (<%= (ordersByStatus[t] || []).length %>)
+          </button>
+        <% }) %>
       </div>
 
       <div class="order-list" id="orderList" aria-live="polite">
-        <!-- orders populate here -->
+        <% (allOrders || []).forEach(o => { %>
+          <div class="order" data-status="<%= o.ui_status %>">
+            <div class="row">
+              <div>
+                <strong>Order</strong> • <span class="badge"><%= o.ui_status %></span><br>
+                <small style="color:var(--muted)">Order ID: <%= o.id %> · <%= new Date(o.created_at).toLocaleString() %></small>
+              </div>
+              <div class="actions">
+                <% if (o.ui_status === 'Pending') { %>
+                  <!-- Pay Now intentionally hidden per request -->
+                  <button class="btn outline btn-cancel-order" data-order-id="<%= o.id %>">Cancel</button>
+                <% } %>
+                <% if (o.ui_status === 'To Ship') { %>
+                  <a href="/track/<%= o.id %>" class="btn outline">Track</a>
+                  <button class="btn outline btn-cancel-order" data-order-id="<%= o.id %>">Cancel</button>
+                <% } %>
+                <% if (o.ui_status === 'To Receive') { %>
+                  <form method="post" action="/api/orders/receive/<%= o.id %>">
+                    <button class="btn">Mark Received</button>
+                  </form>
+                <% } %>
+              </div>
+            </div>
+
+            <div class="items">
+              <% o.items.forEach(it => { %>
+                <div class="line">
+                  <div style="display:flex;gap:10px;align-items:center">
+                    <img src="<%= it.img_url || '/img/placeholder.png' %>" alt=""
+                         style="width:48px;height:48px;object-fit:cover;border-radius:8px;border:1px solid var(--border)">
+                    <div>
+                      <div><%= it.product_name %></div>
+                      <small style="color:var(--muted)">
+                        <%= [ it.color ? ('Color: ' + it.color) : null,
+                              it.storage ? ('Storage: ' + it.storage) : null,
+                              it.ram ? ('RAM: ' + it.ram) : null ].filter(Boolean).join(' • ') %>
+                      </small>
+                    </div>
+                  </div>
+                  <div>
+                    <div>₱<%= Number(it.unit_price).toFixed(2) %> × <%= it.quantity %></div>
+                    <div><strong>₱<%= Number(it.total_price).toFixed(2) %></strong></div>
+                  </div>
+                </div>
+              <% }) %>
+            </div>
+
+            <!-- Invoice / Payment summary -->
+            <div class="panel" style="margin-top:8px">
+              <div class="head"><strong>Invoice</strong></div>
+              <div class="body grid-3">
+                <div class="stack">
+                  <small class="muted">Payment Method</small>
+                  <div><%= (o.payment && o.payment.method) ? o.payment.method : (o.payment_method || '—') %></div>
+                </div>
+                <div class="stack">
+                  <small class="muted">Payment Status</small>
+                  <div><%= (o.payment && o.payment.status) ? o.payment.status : (o.payment_status || 'Unpaid') %></div>
+                </div>
+                <div class="stack">
+                  <small class="muted">Transaction ID</small>
+                  <div><%= (o.payment && o.payment.transaction_id) ? o.payment.transaction_id : '—' %></div>
+                </div>
+                <div class="stack">
+                  <small class="muted">Amount Paid</small>
+                  <div>₱<%= Number((o.payment && o.payment.amount_paid) ? o.payment.amount_paid : 0).toFixed(2) %></div>
+                </div>
+                <div class="stack">
+                  <small class="muted">Order Total</small>
+                  <div>₱<%= Number(o.total_amount || (o.payment && o.payment.amount) || 0).toFixed(2) %></div>
+                </div>
+                <div class="stack">
+                  <small class="muted">Payment Date</small>
+                  <div>
+                    <% if (o.payment && o.payment.payment_date) { %>
+                      <%= new Date(o.payment.payment_date).toLocaleString() %>
+                    <% } else { %> — <% } %>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="badge">Ship to: <%= o.shipping_address || '—' %></div>
+              <div>
+                <% const computedTotal = o.total_amount ?? o.items.reduce((s,x)=>s + (x.total_price ?? (x.unit_price * x.quantity)), 0); %>
+                <strong>Total: ₱<%= Number(computedTotal).toFixed(2) %></strong>
+              </div>
+            </div>
+          </div>
+        <% }) %>
       </div>
 
-      <div class="empty" id="ordersEmpty" hidden>
+      <div class="empty" id="ordersEmpty" <% if ((allOrders || []).length) { %>hidden<% } %>>
         <div class="center" style="flex-direction:column;gap:8px">
           <div style="font-size:40px">📄</div>
           <div>No orders yet</div>
@@ -184,9 +276,7 @@
       <button class="btn ghost" id="modalClose" aria-label="Close">✕</button>
     </div>
     <div class="body" id="modalBody"></div>
-    <div class="foot" id="modalFoot">
-      <!-- buttons -->
-    </div>
+    <div class="foot" id="modalFoot"></div>
   </div>
 </div>
 
@@ -206,9 +296,10 @@
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <footer>
-    <%- include("../partials/footer.ejs") %>
+  <%- include("../partials/footer.ejs") %>
 </footer>
 
+<!-- IMPORTANT: no inline JS here. Let /js/profile.js attach handlers (incl. Cancel modal). -->
 <script src="/js/profile.js"></script>
 </body>
 </html>

@@ -24,41 +24,41 @@
 
                 <!-- Login Form -->
                 <form id="loginForm" action="/login" method="POST">
-                    <!-- Email Input -->
-                    <label for="email">Email</label>
-                    <input type="email" id="email" name="email" placeholder="Enter your email" required>
+                <!-- Email (read-only) -->
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" value="<%= email %>" readonly>
 
-                    <!-- Password Input with Toggle -->
-                    <label for="password">Password</label>
-                    <div class="password-wrapper">
-                        <input type="password" id="password" name="password" placeholder="Enter your password" required>
-                        <button 
-                            type="button" 
-                            class="toggle-password" 
-                            data-target="password">
-                            <i class="bi bi-eye-slash-fill"></i>
-                        </button>
-                    </div>
-
-                    <!-- Remember Me & Forgot -->
-                    <div class="form-options">
-                        <label>
-                            <input type="checkbox" id="rememberMe"> Remember me
-                        </label>
-                        <a href="#" id="forgotLink">Forgot password?</a>
-                    </div>
-
-                    <!-- Submit Button -->
-                    <button type="submit" class="btn-primary">Sign In</button>
-
-                    <div class="or-divider">OR</div>
-
-                    <!-- Google Sign-In Button -->
-                    <button type="button" class="btn-google">
-                        <i class="bi bi-google me-2"></i>
-                        Sign in with Google
+                <!-- Password Input with Toggle -->
+                <label for="password">Password</label>
+                <div class="password-wrapper">
+                    <input type="password" id="password" name="password" placeholder="Enter your password" required>
+                    <button 
+                    type="button" 
+                    class="toggle-password" 
+                    data-target="password">
+                    <i class="bi bi-eye-slash-fill"></i>
                     </button>
+                </div>
+
+                <!-- Remember Me & Forgot -->
+                <div class="form-options">
+                    <label>
+                    <input type="checkbox" id="rememberMe"> Remember me
+                    </label>
+                    <a href="#" id="forgotLink">Forgot password?</a>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" class="btn-primary">Sign In</button>
                 </form>
+
+                <div class="or-divider">OR</div>
+
+                <!-- Google Sign-In Button (actual link now) -->
+                <a href="/auth/google" class="btn-google">
+                <i class="bi bi-google me-2"></i>
+                Sign in with Google
+                </a>
 
                 <!-- Sign Up Link -->
                 <p class="signup-text">

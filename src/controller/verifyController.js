@@ -33,7 +33,7 @@ export const verifyUser = async (req, res) => {
     res.json({
       success: true,
       message: "Email verified successfully, You can Now Login!",
-      redirect: "/login"
+      redirect: "/login-verify"
     });
   } catch (err) {
     console.error(err);

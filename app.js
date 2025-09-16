@@ -9,6 +9,7 @@ import session from "express-session";
 import fs from "fs";
 import  { cartCountMiddleware } from "./src/middleware/cartMiddleware.js";
 // import path from "path";
+import passport from "./src/config/passport.js"; // adjust path
 
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -52,6 +53,10 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(cartCountMiddleware); // cart count
+app.use(passport.initialize());
+app.use(passport.session());
+
+
 
 
 // This will make the current path available in all EJS views

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Page</title>
+    <link rel="stylesheet" href="/css/loginVerify.css">
+
+    <!-- Bootstrap-->
+     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+</head>
+<body>
+    <div class="login-page">
+        <div class="form-section">
+            <div class="form-container">
+                <h2>Sign In</h2>
+
+                <!-- Error Message -->
+                <% if (typeof error !== 'undefined' && error) { %>
+                    <div class="error-message" style="color: red; margin-bottom: 10px;">
+                        <%= error %>
+                    </div>
+                <% } %>
+
+                <!-- Login Form -->
+                <form id="loginVeriyForm" action="/login-verify" method="POST">
+                    <!-- Email Input -->
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" placeholder="Enter your email" required>
+
+
+                    <!-- Submit Button -->
+                    <button type="submit" class="btn-primary">Continue</button>
+
+                    <div class="or-divider">OR</div>
+
+                    <!-- Google Sign-In Button -->
+                    <a href="/auth/google" class="btn-google">
+                    <i class="bi bi-google me-2"></i>
+                    Sign in with Google
+                    </a>
+                </form>
+
+                <!-- Sign Up Link -->
+                <p class="signup-text">
+                    Don't have an account? <a href="/signup">Sign Up</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer (Optional Partial Include) -->
+    <%- include("../partials/footer.ejs") %>
+
+    <!-- Your Login JS -->
+    <script src="/js/loginVerify.js"></script>
+</body>
+</html>
