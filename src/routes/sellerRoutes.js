@@ -1,62 +1,67 @@
 import express from "express";
 const router = express.Router();
 import multer from "multer";
-import { renderAddProductPage, addProduct } from "../controller/sellerController.js";
+import { renderSellerApplication, submitSellerApplication } from "../controller/sellerApplicationController.js";
+import { renderAddProductPage, addProduct } from "../controller/sellerAddProductsController.js";
+import { renderSellerProducts } from "../controller/sellerProductsController.js"; // ✅ import
+import { ensureAuth } from "../middleware/authMiddleware.js";
+import { deleteProduct } from "../controller/sellerProductsController.js";
+import { renderSellerOrders, updateOrderStatus, filterSellerOrders } from "../controller/sellerOrdersController.js";
 
-//multer
+
+// multer
 const storage = multer.diskStorage({
-destination: (req, file, cb) => cb(null, "src/public/uploads"), 
+  destination: (req, file, cb) => cb(null, "src/public/uploads"),
   filename: (req, file, cb) => cb(null, Date.now() + "-" + file.originalname)
 });
 const upload = multer({ storage });
 
-router.get("/seller/store", (req, res)=>{
+// Seller application
+router.get("/seller-application", ensureAuth, renderSellerApplication);
+router.post("/seller-application", ensureAuth, submitSellerApplication);
+
+// Seller dashboard routes
+router.get("/seller/store", ensureAuth, (req, res) => {
   res.render("seller/sellerStore", {
     activePage: "promotions",
     pageTitle: "Seller Promotions"
   });
 });
 
-router.get("/seller", (req, res) => {
+router.get("/seller", ensureAuth, (req, res) => {
   res.render("seller/sellerDashboard", { 
     activePage: "overview",
     pageTitle: "Seller Dashboard"
   });
 });
 
-router.get("/seller/products", (req, res) => {
-  res.render("seller/sellerProducts", { 
-    activePage: "products",
-    pageTitle: "Seller Products"
-  });
-});
+// Seller Products
+router.get("/seller/products", ensureAuth, renderSellerProducts);
+router.delete("/seller/products/:id", ensureAuth, deleteProduct);
+
+// Seller add Products
+router.get("/seller/add", ensureAuth, renderAddProductPage);
+router.post("/seller/add", ensureAuth, upload.array("product_images[]", 10), addProduct);
+
+// Seller orders
+router.post("/seller/orders/filter", ensureAuth, filterSellerOrders);
+router.get("/seller/orders", ensureAuth, renderSellerOrders);
+router.post("/seller/orders/update-status", ensureAuth, updateOrderStatus); // Update order status (AJAX)
 
 
-router.get("/seller/add", renderAddProductPage);
-// Allow up to 10 images
-router.post("/seller/add", upload.array("product_images[]", 10), addProduct);
 
-router.get("/seller/orders", (req, res)=>{
-  res.render("seller/sellerOrders", {
-    activePage: "orders",
-    pageTitle: "Seller Orders"
-  });
-});
-
-router.get("/seller/earnings", (req, res)=>{
+router.get("/seller/earnings", ensureAuth, (req, res) => {
   res.render("seller/sellerEarnings", {
     activePage: "earnings",
     pageTitle: "Seller Earnings"
   });
 });
 
-
-router.get("/seller/promotions", (req, res)=>{
+router.get("/seller/promotions", ensureAuth, (req, res) => {
   res.render("seller/sellerPromotions", {
     activePage: "promotions",
     pageTitle: "Seller Promotions"
   });
 });
 
-//ES module export
 export default router;

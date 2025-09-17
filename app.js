@@ -10,6 +10,7 @@ import fs from "fs";
 import  { cartCountMiddleware } from "./src/middleware/cartMiddleware.js";
 // import path from "path";
 import passport from "./src/config/passport.js"; // adjust path
+import { attachSeller } from "./src/middleware/attachSeller.js";
 
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -55,6 +56,7 @@ app.use(cookieParser());
 app.use(cartCountMiddleware); // cart count
 app.use(passport.initialize());
 app.use(passport.session());
+app.use(attachSeller);
 
 
 

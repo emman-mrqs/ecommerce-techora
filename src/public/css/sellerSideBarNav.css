@@ -81,6 +81,10 @@
   font-weight: bold;
 }
 
+a {
+  text-decoration: none; /* no underline */
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .sidebar {

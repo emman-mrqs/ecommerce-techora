@@ -10,7 +10,8 @@ export const redirectIfLoggedIn = (req, res, next) => {
 };
 
 // Require an authenticated session to access a route
+// Require an authenticated session to access a route
 export const ensureAuth = (req, res, next) => {
   if (req.session?.user?.id) return next();
-  return res.redirect("/login");
+  return res.redirect("/login-verify"); // ✅ redirect to login-verify
 };

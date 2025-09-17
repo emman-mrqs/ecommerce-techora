@@ -16,6 +16,100 @@
             cursor: pointer;
         }
         
+        /* Modal base */
+        /* Modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5); /* Semi-transparent black background */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        /* Hide modal */
+        .modal.hidden {
+            display: none;
+        }
+
+        /* Modal Content */
+        .modal-content {
+            background: #FFFFFF; /* White background */
+            color: #0A0A0A; /* Primary Text - Rich Black */
+            padding: 25px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); /* Soft shadow */
+        }
+
+        /* Heading Style */
+        .modal-content h3 {
+            margin-bottom: 10px;
+            font-size: 20px;
+            font-weight: bold;
+            color: #0A0A0A; /* Primary Text */
+        }
+
+        /* Paragraph Style */
+        .modal-content p {
+            margin-bottom: 20px;
+            color: #4D4D4D; /* Secondary Text - Charcoal */
+        }
+
+        /* Modal Actions */
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        /* Button Styles */
+        .btn-outline {
+            border: 2px solid #000000; 
+            color: #000000; 
+            background: transparent;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-outline:hover {
+            background-color: #E0E0E0; 
+        }
+
+        /* Solid Button Style for Delete */
+        .btn-solid {
+            border: 2px solid #CC0000;
+            background-color: #CC0000; 
+            color: #FFFFFF;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-solid:hover {
+            background-color: #FF0000; /* Brighter red on hover */
+            color: #FFFFFF; /* White text on hover */
+        }
+
+        /* Error/Alert Text */
+        .error {
+            color: #CC0000; /* Dark Red (minimal use) */
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+
         /* Mobile Styles */
         @media (max-width: 768px) {
             .sidebar {

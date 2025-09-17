@@ -7,11 +7,33 @@
     <div class="top-bar">
         <div class="container">
             <div class="d-flex justify-content-between align-items-center">
-                <div class="d-flex">
-                    <a href="#" class="nav-link">Start Selling</a>
+                  <div class="d-flex">
+                    <% if (!user) { %>
+                      <!-- Not logged in -->
+                      <a href="/seller-application" class="nav-link">Start Selling</a>
+
+                    <% } else if (seller && seller.status === "approved") { %>
+                      <!-- Seller approved -->
+                      <a href="/seller" class="nav-link">My Store</a>
+
+                    <% } else if (seller && seller.status === "pending") { %>
+                      <!-- Seller applied but waiting -->
+                      <a href="/seller-application" class="nav-link text-warning">Application Pending</a>
+
+                    <% } else if (seller && seller.status === "rejected") { %>
+                      <!-- Seller rejected -->
+                      <a href="/seller-application" class="nav-link text-danger">Re-Apply</a>
+                      <!-- OR: <span class="nav-link text-danger">Application Rejected</span> -->
+
+                    <% } else { %>
+                      <!-- Logged in but not applied -->
+                      <a href="/seller-application" class="nav-link">Start Selling</a>
+                    <% } %>
+
                     <a href="#" class="nav-link">About</a>
                     <a href="#" class="nav-link">Contact</a>
-                </div>
+                  </div>
+
                   <div class="auth-links position-relative">
                     <% if (user) { %>
                       <div class="dropdown d-inline-block">
