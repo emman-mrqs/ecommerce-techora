@@ -1,0 +1,184 @@
+/* =========================
+   ADMIN ANALYTICS — static, responsive
+   Namespaced to avoid collisions
+   ========================= */
+
+.admin-analytics-page { overflow-x: hidden; }
+
+/* Generic card */
+.admin-analytics-page .analytics-card{
+  background:#FAFAFA;
+  border:1px solid #E0E0E0;
+  border-radius:16px;
+  padding:16px;
+}
+
+/* KPI variants */
+.admin-analytics-page .kpi .kpi-label{ font-size:.85rem; color:#6b7280; }
+.admin-analytics-page .kpi .kpi-value{ font-size:1.35rem; font-weight:800; letter-spacing:.2px; }
+.admin-analytics-page .kpi .kpi-sub{ font-size:.75rem; }
+.admin-analytics-page .kpi-dark{ background:#0B1220; color:#fff; border-color:#0B1220; }
+.admin-analytics-page .kpi-success{ background:#ECFDF5; border-color:#A7F3D0; }
+.admin-analytics-page .kpi{text-shadow:none}
+
+/* Main chart */
+.admin-analytics-page .chart-wrap{ height:320px; background:#fff; border:1px solid #eee; border-radius:12px; overflow:hidden; }
+.admin-analytics-page .chart{
+  width:100%; height:100%;
+}
+.admin-analytics-page .chart .area{
+  fill:#DBEAFE; opacity:.8;
+}
+.admin-analytics-page .chart .line{
+  fill:none; stroke:#6D28D9; stroke-width:4;
+}
+.admin-analytics-page .chart .dots circle{
+  fill:#6D28D9; stroke:#ffffff; stroke-width:2;
+}
+
+/* Rings (CSS-only circular meters) */
+.admin-analytics-page .ring,
+.admin-analytics-page .ring-sm{
+  --size:130px;
+  position:relative; width:var(--size); height:var(--size); margin:0 auto;
+}
+.admin-analytics-page .ring-sm{ --size:110px; }
+.admin-analytics-page .ring-track,
+.admin-analytics-page .ring-fill{
+  position:absolute; inset:0; border-radius:50%; border:10px solid transparent;
+}
+.admin-analytics-page .ring-track{ border-color:#eef2f7; }
+.admin-analytics-page .ring-fill{
+  border-top-color:currentColor;
+  border-right-color:currentColor;
+  transform:rotate(calc(3.6deg * var(--pct,50)));
+  color:#0ea5a7;
+}
+.admin-analytics-page .ring-fill.ring-teal{ color:#14b8a6; }
+.admin-analytics-page .ring-fill.ring-green{ color:#16a34a; }
+.admin-analytics-page .ring-fill.ring-blue{ color:#2563eb; }
+.admin-analytics-page .ring-center{
+  position:absolute; inset:0; display:grid; place-items:center; font-weight:800;
+}
+
+/* Tiny bars */
+.admin-analytics-page .bars{
+  display:grid; grid-template-columns: repeat(12, 1fr); gap:10px; align-items:end;
+  height:140px; background:#fff; border:1px solid #eee; border-radius:12px; padding:12px;
+}
+.admin-analytics-page .bars > div{
+  height:calc(var(--h) * 1); background:#2563eb; border-radius:8px 8px 0 0; opacity:.9;
+}
+
+/* Seller mini tiles */
+.admin-analytics-page .mini-seller{
+  background:#fff; border:1px solid #eee; border-radius:12px; padding:12px;
+}
+.admin-analytics-page .mini-seller .mini-head{ font-weight:700; }
+.admin-analytics-page .spark{ width:100%; height:56px; }
+.admin-analytics-page .spark polyline{ fill:none; stroke:#6D28D9; stroke-width:2.5; }
+.admin-analytics-page .mini-meta{ display:flex; justify-content:space-between; font-size:.85rem; color:#6b7280; margin-top:6px; }
+
+/* Tables */
+.admin-analytics-page .table-hover tbody tr:hover > *{ background:#f7f7f7 !important; }
+.admin-analytics-page .table-striped > tbody > tr:nth-of-type(odd)  > *{ background:#fff; }
+.admin-analytics-page .table-striped > tbody > tr:nth-of-type(even) > *{ background:#fbfbfb; }
+.admin-analytics-page .table thead th{ white-space:nowrap; }
+
+/* Responsive helpers */
+@media (max-width: 576px){
+  .admin-analytics-page .kpi .kpi-value{ font-size:1.15rem; }
+  .admin-analytics-page .ring{ --size:110px; }
+  .admin-analytics-page .ring-sm{ --size:100px; }
+}
+
+/* Keep it tidy with subtle shadows */
+.admin-analytics-page .analytics-card,
+.admin-analytics-page .kpi,
+.admin-analytics-page .mini-seller,
+.admin-analytics-page .chart-wrap{ box-shadow:0 1px 0 rgba(0,0,0,.03); }
+/* New ring colors for auth breakdown */
+.admin-analytics-page .ring-fill.ring-google{ color:#EA4335; } /* Google red */
+.admin-analytics-page .ring-fill.ring-local { color:#475569; } /* Slate for local */
+
+/* --- charts sizing: lock the height so cards don't stretch --- */
+.chart-container {
+  position: relative;
+  width: 100%;
+  height: 260px;            /* sales chart */
+}
+
+#viewsContainer  { height: 160px; }   /* views line */
+#authContainer   { height: 160px; }   /* auth doughnut */
+#weeklyContainer { height: 140px; }   /* weekly bar */
+
+/* ensure canvas never escapes its container */
+.chart-container > canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+
+
+/* One-line, horizontally scrollable seller row (keeps your card look) */
+.admin-analytics-page .seller-scroll{
+  display: flex;
+  flex-wrap: nowrap;          /* force single row */
+  gap: 1rem;                  /* same feel as g-3 */
+  overflow-x: auto;           /* show horizontal scroll when needed */
+  padding-bottom: .25rem;     /* room for scrollbar */
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x proximity;
+}
+
+/* Make each bootstrap column behave like a tile in the strip */
+.admin-analytics-page .seller-scroll > [class*="col-"]{
+  flex: 0 0 clamp(260px, 28vw, 360px);   /* responsive tile width */
+  max-width: none;                       /* ignore grid’s max-width */
+  scroll-snap-align: start;
+}
+
+/* Optional: subtle slim scrollbar */
+.admin-analytics-page .seller-scroll::-webkit-scrollbar{ height:8px; }
+.admin-analytics-page .seller-scroll::-webkit-scrollbar-thumb{
+  background:#d0d5dd; border-radius:999px;
+}
+.admin-analytics-page .seller-scroll:hover::-webkit-scrollbar-thumb{ background:#b9c0cf; }
+
+
+
+/* Vertical scroll for analytics tables */
+.admin-analytics-page .table-scroll{
+  /* pick a height that fits your card; tweak as you like */
+  max-height: 260px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* Keep headers visible while scrolling */
+.admin-analytics-page .table-scroll thead th{
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #f8f9fa; /* matches .table-light */
+}
+
+/* Tidy up spacing when scrolling */
+.admin-analytics-page .table-scroll table{
+  margin-bottom: 0; /* remove extra space under table */
+}
+
+/* Nice thin scrollbar (WebKit + Firefox) */
+.admin-analytics-page .table-scroll{
+  scrollbar-width: thin;               /* Firefox */
+  scrollbar-color: #c7c7c7 transparent;
+}
+.admin-analytics-page .table-scroll::-webkit-scrollbar{
+  width: 8px;
+}
+.admin-analytics-page .table-scroll::-webkit-scrollbar-thumb{
+  background: #c7c7c7; border-radius: 8px;
+}
+.admin-analytics-page .table-scroll::-webkit-scrollbar-track{
+  background: transparent;
+}

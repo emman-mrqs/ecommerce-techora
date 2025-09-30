@@ -1,0 +1,84 @@
+:root{
+  --bg:#FFFFFF;
+  --ink:#0A0A0A;
+  --muted:#4D4D4D;
+  --accent:#1A1A1A;
+  --line:#E0E0E0;
+  --card:#FAFAFA;
+  --btn:#000000;
+  --btnText:#FFFFFF;
+  --hover:#333333;
+  --alert:#CC0000;
+  --radius:16px;
+  --shadow:0 12px 32px rgba(0,0,0,.08);
+}
+
+/* Hero */
+.contact-hero{
+  padding:56px 0 28px;
+  background:linear-gradient(180deg,#fff,#FAFAFA);
+  border-bottom:1px solid var(--line);
+}
+
+/* Cards row */
+.contact-cards{ padding:28px 0; }
+.card-lite{
+  background:#fff; border:1px solid var(--line);
+  border-radius:var(--radius); padding:22px;
+  box-shadow:var(--shadow); height:100%;
+  text-align:center; transition:transform .3s cubic-bezier(.2,.8,.2,1);
+}
+.card-lite:hover{ transform:translateY(-6px); }
+.card-lite i{
+  width:46px;height:46px;border-radius:12px;display:grid;place-items:center;
+  background:#000; color:#fff; margin:0 auto 8px; font-size:1rem;
+}
+
+/* Main */
+.contact-main{ padding:48px 0 72px; }
+.form-card, .side-card{
+  background:#fff; border:1px solid var(--line);
+  border-radius:var(--radius); padding:22px; box-shadow:var(--shadow);
+}
+
+/* Inputs */
+.form-control{
+  background:#fff; border:1px solid var(--line); border-radius:12px;
+  padding:12px 14px;
+}
+.form-control:focus{ border-color:#000; box-shadow:none; }
+
+/* Buttons */
+.btn-dark{
+  background:var(--btn); color:var(--btnText); border:1px solid var(--btn);
+  border-radius:12px; font-weight:700;
+}
+.btn-dark:hover{ background:var(--hover); border-color:var(--hover); }
+.btn-outline-dark{ border-color:#000; color:#000; border-radius:12px; }
+.btn-outline-dark:hover{ background:#000; color:#fff; }
+
+/* Map */
+.mini-map{ overflow:hidden; border-radius:12px; border:1px solid var(--line); }
+.mini-map iframe{ width:100%; height:220px; filter:grayscale(100%); }
+
+/* Reveal-on-scroll */
+.reveal{ opacity:0; transform:translateY(18px); transition:all .7s cubic-bezier(.2,.8,.2,1); }
+.reveal.in{ opacity:1; transform:none; }
+.reveal[style*="--d"]{ transition-delay: var(--d); }
+
+/* Toast */
+.toast-wrap{
+  position:fixed; right:16px; bottom:16px; z-index:1000;
+  pointer-events:none; opacity:0; transform:translateY(8px);
+  transition: all .3s ease;
+}
+.toast-wrap.show{ opacity:1; transform:none; }
+.toast-msg{
+  background:#0A0A0A; color:#fff; border-radius:12px; padding:10px 14px;
+  box-shadow:var(--shadow); font-weight:600;
+}
+
+/* Responsive */
+@media (max-width: 768px){
+  .contact-hero{ padding:40px 0 20px; }
+}

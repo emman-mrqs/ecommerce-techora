@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TECHORA — Seller Settings</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/sellerSettings.css">
+</head>
+<body>
+
+  <div class="main-content">
+    <%- include("../partials/sellerSideBarNav.ejs") %>
+
+    <div class="page-content">
+      <div class="page-header">
+        <h1 class="page-title">Seller Store Settings</h1>
+      </div>
+
+      <!-- Card -->
+      <div class="settings-card position-relative">
+
+        <!-- Pencil inside card -->
+        <button id="editToggleBtn" 
+                class="btn btn-sm btn-outline-dark position-absolute" 
+                style="top: 15px; right: 15px;">
+          <i class="fas fa-pen"></i>
+        </button>
+
+        <!-- Store Icon + Store Name -->
+        <div class="d-flex align-items-center mb-4">
+        <!-- Store Icon -->
+        <div class="store-icon-wrapper" id="storeIconWrapper">
+        <% if (seller?.store_icon) { %>
+            <img src="<%= seller.store_icon %>" alt="Store Icon" class="store-icon" id="storeIconPreview">
+        <% } else { %>
+            <div class="store-icon-placeholder" id="storeIconPreview">
+            <%= (seller?.store_name || "NA").substring(0,2).toUpperCase() %>
+            </div>
+        <% } %>
+        <div class="icon-overlay">
+            <i class="fas fa-edit"></i>
+        </div>
+        <!-- hidden file input -->
+        <input type="file" id="storeIconInput" name="store_icon" accept="image/*" class="d-none">
+        </div>
+          <div class="ms-4">
+            <h3 class="current-store-name"><%= seller?.store_name || "Your Store" %></h3>
+          </div>
+        </div>
+
+        <!-- Display Mode -->
+        <div id="infoDisplay">
+          <p><strong>Category:</strong> <%= seller?.category || "-" %></p>
+          <p><strong>Description:</strong> <%= seller?.description || "-" %></p>
+          <p><strong>Business Address:</strong> <%= seller?.business_address || "-" %></p>
+          <p><strong>Email:</strong> <%= seller?.store_email || "-" %></p>
+          <p><strong>Contact:</strong> <%= seller?.contact_number || "-" %></p>
+        </div>
+
+        <!-- Edit Mode (Hidden Initially) -->
+        <form id="editForm" class="row g-3 d-none" enctype="multipart/form-data">
+          <div class="col-md-6">
+            <label class="form-label">Store Name</label>
+            <input type="text" class="form-control" name="store_name" value="<%= seller?.store_name || '' %>">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Category</label>
+            <select class="form-control" name="category">
+              <option value="">Select Category</option>
+              <option <%= seller?.category==="Mobile Accessories"?"selected":"" %>>Mobile Accessories</option>
+              <option <%= seller?.category==="Laptops & Tablets"?"selected":"" %>>Laptops & Tablets</option>
+              <option <%= seller?.category==="Audio Devices"?"selected":"" %>>Audio Devices</option>
+              <option <%= seller?.category==="Smart Watches & Wearables"?"selected":"" %>>Smart Watches & Wearables</option>
+              <option <%= seller?.category==="Gaming Accessories"?"selected":"" %>>Gaming Accessories</option>
+              <option <%= seller?.category==="Computer Parts"?"selected":"" %>>Computer Parts</option>
+              <option <%= seller?.category==="Other Gadgets & Accessories"?"selected":"" %>>Other Gadgets & Accessories</option>
+            </select>
+          </div>
+          <div class="col-md-12">
+            <label class="form-label">Description</label>
+            <textarea class="form-control" name="description"><%= seller?.description || '' %></textarea>
+          </div>
+          <div class="col-md-12">
+            <label class="form-label">Business Address</label>
+            <textarea class="form-control" name="business_address"><%= seller?.business_address || '' %></textarea>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Store Email</label>
+            <input type="email" class="form-control" name="store_email" value="<%= seller?.store_email || '' %>">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Contact Number</label>
+            <input type="text" class="form-control" name="contact_number" value="<%= seller?.contact_number || '' %>">
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="d-flex justify-content-end gap-2 mt-3">
+            <button type="button" id="cancelBtn" class="btn btn-outline-dark">
+              <i class="fas fa-times me-1"></i> Cancel
+            </button>
+            <button type="submit" class="btn btn-dark">
+              <i class="fas fa-save me-1"></i> Save Changes
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+<!-- Toast Container -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+  <div id="liveToast" class="toast align-items-center text-white bg-success border-0" role="alert">
+    <div class="d-flex">
+      <div class="toast-body" id="toastMessage"></div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+    </div>
+  </div>
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="/js/sellerSettings.js"></script>
+</body>
+</html>

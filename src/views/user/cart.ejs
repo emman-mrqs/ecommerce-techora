@@ -6,87 +6,147 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
   <link rel="stylesheet" href="/css/cart.css" />
+  
 </head>
-<body>
+<body class="cart-page">
   <nav>
     <%- include("../partials/header.ejs") %>
   </nav>
 
-  <div class="cart-container">
+  <main class="cart-container">
     <div class="container">
-      <div class="row">
+
+      <!-- Top stripe -->
+      <div class="cart-top-stripe d-flex align-items-center justify-content-between" aria-hidden="true">
+        <div class="d-flex align-items-center gap-2">
+          <i class="fa-solid fa-shield-halved"></i><span>Secure checkout</span>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <i class="fa-solid fa-truck-fast"></i><span>Fast delivery</span>
+        </div>
+      </div>
+
+      <div class="row g-4">
         <div class="col-lg-8 col-md-7">
-          <div class="cart-card">
-            <div class="cart-header">
-              <h2 class="cart-title">YOUR CART</h2>
-              <p class="cart-subtitle"><span id="cart-count"><%= cart.count %></span> items in your cart</p>
-            </div>
+          <section class="cart-card" data-animate>
+            <header class="cart-header">
+              <div>
+                <h1 class="cart-title">YOUR CART</h1>
+                <p class="cart-subtitle"><span id="cart-count"><%= cart.count %></span> items in your cart</p>
+              </div>
+            </header>
 
             <% if (!cart.items || cart.items.length === 0) { %>
-              <div class="empty-cart" id="empty-cart">
-                <i class="fas fa-shopping-cart" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.3;"></i>
+              <div class="empty-cart" id="empty-cart" data-animate>
+                <i class="fas fa-shopping-cart empty-icon"></i>
                 <p>Your cart is empty</p>
                 <a class="empty-cart-link" href="/">Continue shopping</a>
               </div>
             <% } else { %>
               <div id="cart-items">
-                <% cart.items.forEach(function(it) { %>
-                  <div class="cart-item" data-id="<%= it.variantId %>" data-price="<%= it.unitPrice %>">
-                    <div class="item-image">
-                      <% if (it.image) { %>
-                        <img src="<%= it.image %>" alt="<%= it.name %>" style="width:48px;height:48px;object-fit:cover;border-radius:8px;"/>
-                      <% } else { %>
-                        <i class="fas fa-mobile-alt"></i>
-                      <% } %>
-                    </div>
-                    <div class="item-details">
-                      <div class="item-name"><%= it.name %></div>
-                      <div class="item-variant">
-                        <%= it.color %> • <%= it.ram %>GB RAM • <%= it.storage %>GB
-                      </div>
-                      <div class="item-price-unit">₱<%= it.unitPrice.toFixed(2) %> each</div>
-                    </div>
-                    <div class="quantity-controls">
-                      <button class="quantity-btn btn-decrease">-</button>
-                      <input type="text" class="quantity-input" value="<%= it.quantity %>" readonly>
-                      <button class="quantity-btn btn-increase">+</button>
-                    </div>
-                    <div class="item-total">₱<%= (it.unitPrice * it.quantity).toFixed(2) %></div>
-                    <div class="remove-btn btn-remove"><i class="fas fa-times"></i></div>
+                <% cart.items.forEach(function(it, idx) { %>
+                <article class="cart-item" data-animate data-id="<%= it.variantId %>" data-price="<%= it.unitPrice %>" aria-label="Cart item">
+                  <div class="item-image">
+                    <% if (it.image) { %>
+                      <img src="<%= it.image %>" alt="<%= it.name %>" />
+                    <% } else { %>
+                      <i class="fas fa-mobile-alt" aria-hidden="true"></i>
+                    <% } %>
                   </div>
+
+                  <div class="item-details">
+                    <div class="item-name"><%= it.name %></div>
+                    <div class="item-variant">
+                      <%= it.color %> • <%= it.ram %>GB RAM • <%= it.storage %>GB
+                    </div>
+                    <div class="item-price-unit">₱<%= it.unitPrice.toFixed(2) %> each</div>
+
+                    <!-- Per-item tax display -->
+                    <div class="item-tax text-muted small">
+                      Tax (3%): ₱<%= (it.unitPrice * it.quantity * 0.03).toFixed(2) %>
+                    </div>
+                  </div>
+
+                  <div class="quantity-controls" role="group" aria-label="Quantity controls">
+                    <button class="quantity-btn btn-decrease" type="button" title="Decrease quantity" aria-label="Decrease quantity">−</button>
+                    <input type="text" class="quantity-input" value="<%= it.quantity %>" readonly aria-live="polite" aria-label="Current quantity">
+                    <button class="quantity-btn btn-increase" type="button" title="Increase quantity" aria-label="Increase quantity">+</button>
+                  </div>
+
+                  <div class="item-total" aria-label="Item total">
+                    ₱<%= (it.unitPrice * it.quantity).toFixed(2) %>
+                  </div>
+
+                  <button class="remove-btn btn-remove" type="button" title="Remove item" aria-label="Remove item">
+                    <i class="fas fa-times"></i>
+                  </button>
+                </article>
                 <% }) %>
               </div>
             <% } %>
-          </div>
+          </section>
         </div>
 
-        <div class="col-lg-4 col-md-5">
-          <div class="order-summary">
-            <h3 class="summary-title">ORDER SUMMARY</h3>
+        <aside class="col-lg-4 col-md-5">
+          <section class="order-summary" data-animate aria-label="Order summary">
+            <h2 class="summary-title">ORDER SUMMARY</h2>
+
             <div class="summary-row"><span class="summary-label">Subtotal</span><span class="summary-value" id="subtotal">₱<%= cart.subtotal.toFixed(2) %></span></div>
             <div class="summary-row"><span class="summary-label">Shipping</span><span class="summary-value" id="shipping"><%= cart.shipping === 0 ? 'Free' : '₱' + cart.shipping.toFixed(2) %></span></div>
             <div class="summary-row"><span class="summary-label">Tax</span><span class="summary-value" id="tax">₱<%= cart.tax.toFixed(2) %></span></div>
             <div class="summary-divider"></div>
             <div class="summary-row total-row"><span class="summary-label">Total</span><span class="summary-value" id="total">₱<%= cart.total.toFixed(2) %></span></div>
 
-            <button class="checkout-btn"><a href="/checkout">PROCEED TO CHECKOUT</a></button>
-            <button class="continue-shopping"><a href="/">CONTINUE SHOPPING</a></button>
+            <a class="btn checkout-btn w-100" href="/checkout" role="button">PROCEED TO CHECKOUT</a>
+            <a class="btn continue-shopping w-100" href="/" role="button">CONTINUE SHOPPING</a>
 
             <div class="shipping-info">
               <div class="shipping-title"><i class="fas fa-shipping-fast"></i> Free Shipping</div>
-              <div class="shipping-desc">On orders over ₱1000. Fast and secure delivery to your doorstep.</div>
+              <div class="shipping-desc">On orders over ₱5000. Fast and secure delivery to your doorstep.</div>
             </div>
-          </div>
-        </div>
+          </section>
+        </aside>
       </div>
     </div>
-  </div>
+  </main>
 
   <footer>
     <%- include("../partials/footer.ejs") %>
   </footer>
 
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Keep your existing cart logic -->
   <script src="/js/cart.js"></script>
+
+  <!-- Small, page-scoped UX script (won’t conflict with your header) -->
+  <script>
+    (() => {
+      // Fade/slide-in on scroll
+      const els = document.querySelectorAll('.cart-page [data-animate]');
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach(e => {
+          if (e.isIntersecting) e.target.classList.add('in');
+        });
+      }, { threshold: 0.1 });
+      els.forEach(el => io.observe(el));
+
+      // Tiny “press” effect for quantity buttons (purely visual)
+      document.querySelectorAll('.cart-page .quantity-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          btn.classList.add('pressed');
+          setTimeout(() => btn.classList.remove('pressed'), 150);
+        });
+      });
+
+      // Optional: graceful remove animation hook
+      document.querySelectorAll('.cart-page .btn-remove').forEach(btn => {
+        btn.addEventListener('click', (ev) => {
+          const row = ev.currentTarget.closest('.cart-item');
+          row.classList.add('removing');
+          // Your /js/cart.js should still handle the actual removal + totals update.
+          // This only adds a quick visual cue.
+        });
+      });
+    })();
+  </script>
 </body>
 </html>

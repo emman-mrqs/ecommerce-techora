@@ -1,0 +1,79 @@
+/* =========================
+   PRODUCTS — Clean Responsive
+   ========================= */
+
+body { overflow-x: hidden; }
+
+/* Cards + header */
+.products-card { background:#fff; border:1px solid #e6e6e6; border-radius:12px; padding:16px; margin-bottom:18px; }
+.seller-header { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.seller-name { font-weight:700; margin:0; }
+.collapse-toggle { display:flex; align-items:center; gap:8px; }
+.collapse-toggle[aria-expanded="true"] i{ transform:rotate(180deg); transition:transform .2s ease; }
+.collapse-toggle[aria-expanded="false"] i{ transform:rotate(0deg);  transition:transform .2s ease; }
+
+/* Filters (desktop single row; mobile stacked) */
+.products-card .filters-row{
+  display:flex; flex-wrap:wrap; gap:.5rem; align-items:center;
+}
+.products-card .filters-row .filter{ width:100%; }
+.products-card .filters-row .filter-search .form-control{ border-radius:12px; }
+.products-card .filters-row .filter-compact .form-select{ border-radius:12px; }
+
+@media (min-width:992px){
+  .products-card .filters-row{ flex-wrap:nowrap; }
+  .products-card .filters-row .filter-search{ flex:1 1 auto; min-width:420px; }
+  .products-card .filters-row .filter-compact{ flex:0 0 180px; }
+}
+
+/* Table polish */
+.products-card .table{ min-width:760px; }
+@media (max-width:576px){ .products-card .table{ min-width:560px; } }
+
+.products-card .table-hover tbody tr:hover > *{ background:#f7f7f7 !important; }
+.products-card .table-striped > tbody > tr:nth-of-type(odd)  > *{ background:#fff; }
+.products-card .table-striped > tbody > tr:nth-of-type(even) > *{ background:#fbfbfb; }
+
+/* Sticky header */
+.products-card .table-responsive .sticky-top,
+.products-card .table .sticky-top{
+  position:sticky; top:0; z-index:10;
+  background:#fff; border-bottom:1px solid #eee; box-shadow:0 1px 0 rgba(0,0,0,.04);
+}
+
+/* Thumbnail */
+.img-thumb { width:56px; height:56px; object-fit:cover; border-radius:8px; border:1px solid #eee; }
+
+/* Actions */
+.table-actions button { border:1px solid #e1e1e1; background:#fff; border-radius:8px; padding:6px 9px; }
+@media (max-width:576px){
+  .table-actions button{ padding:.35rem .5rem; margin:2px; }
+}
+
+/* Status badges (keep your colors) */
+.status-active { padding:4px 8px; border-radius:999px; background:#e9f8ef; color:#1c7c3e; font-size:12px; }
+.status-low    { padding:4px 8px; border-radius:999px; background:#fff7e6; color:#b36b00; font-size:12px; }
+.status-out    { padding:4px 8px; border-radius:999px; background:#fde8e8; color:#b42318; font-size:12px; }
+.status-inactive { padding:4px 8px; border-radius:999px; background:#fde8e8; color:#b42318; font-size:12px; }
+.category-badge { padding:2px 8px; background:#f3f4f6; border-radius:999px; font-size:12px; }
+
+/* Column pruning for small screens
+   Columns: 1 thumb | 2 name | 3 price | 4 stock | 5 status | 6 actions */
+@media (max-width:768px){
+  /* hide Stock (keeps name/price/status/actions) */
+  .products-card .table thead th:nth-child(4),
+  .products-card .table tbody td:nth-child(4){ display:none !important; }
+}
+@media (max-width:576px){
+  /* also hide Price (keeps name/status/actions) */
+  .products-card .table thead th:nth-child(3),
+  .products-card .table tbody td:nth-child(3){ display:none !important; }
+}
+@media (max-width:420px){
+  /* if super narrow, hide Status (keeps name + actions) */
+  .products-card .table thead th:nth-child(5),
+  .products-card .table tbody td:nth-child(5){ display:none !important; }
+}
+
+/* Modal readonly fields */
+.modal .form-control[readonly], .modal .form-control:disabled { background:#f8f9fa; }

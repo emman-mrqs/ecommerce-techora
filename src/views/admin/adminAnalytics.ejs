@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Analytics - TECHORA</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/css/adminAnalytics.css">
+</head>
+<body class="admin-analytics-page">
+  <!-- Sidebar + Header -->
+  <%- include("../partials/adminSidebarNav", { activePage: "analytics", pageTitle: "Admin Analytics" }) %>
+
+  <!-- Main -->
+  <div class="main-content p-4">
+    <div class="container-fluid px-3 admin-analytics-wrap">
+
+      <!-- TITLE -->
+      <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+        <h5 class="fw-bold mb-0">Admin Analytics</h5>
+        <div class="text-muted small">Static preview • Last 30 days</div>
+      </div>
+
+      <!-- KPI CARDS -->
+      <div class="row g-3 mb-3">
+        <div class="col-12 col-md-6 col-xl-3">
+          <div class="analytics-card kpi kpi-dark">
+            <div class="kpi-label">Total Sales (All Sellers)</div>
+            <div class="kpi-value">₱<%= Number(kpi?.gross ?? 1245000).toLocaleString() %></div>
+            <div class="kpi-sub text-muted">Gross this month</div>
+          </div>
+        </div>
+
+        <div class="col-12 col-md-6 col-xl-3">
+          <div class="analytics-card kpi">
+            <div class="kpi-label">Monthly Rent Fee (5%)</div>
+            <div class="kpi-value">₱<%= Number(kpi?.rentFee ?? 62250).toLocaleString() %></div>
+            <div class="kpi-sub text-muted">Platform rent across sellers</div>
+          </div>
+        </div>
+
+        <div class="col-12 col-md-6 col-xl-3">
+          <div class="analytics-card kpi">
+            <div class="kpi-label">Transaction Fees (2%)</div>
+            <div class="kpi-value">₱<%= Number(kpi?.txnFees ?? 24900).toLocaleString() %></div>
+            <div class="kpi-sub text-muted">Payment processing</div>
+          </div>
+        </div>
+
+        <div class="col-12 col-md-6 col-xl-3">
+          <div class="analytics-card kpi kpi-success">
+            <div class="kpi-label">Admin Earnings</div>
+            <div class="kpi-value">₱<%= Number(kpi?.adminRev ?? 87150).toLocaleString() %></div>
+            <div class="kpi-sub text-muted">Rent + Txn fees</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SALES + ENGAGEMENT -->
+      <div class="row g-3 mb-3">
+        <div class="col-12 col-xl-8">
+          <div class="analytics-card h-100">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <h6 class="mb-0">Daily Sales — Area (Revenue) + Line (Orders)</h6>
+              <span class="text-muted small">Hover points for details</span>
+            </div>
+
+            <!-- Keep the static SVG so layout is identical -->
+            <div class="chart-wrap">
+              <svg viewBox="0 0 1000 360" preserveAspectRatio="none" class="chart">
+                <path d="M0,300 L150,270 L300,250 L450,230 L600,200 L750,160 L900,120 L1000,110 L1000,360 L0,360 Z" class="area"></path>
+                <polyline points="0,300 150,270 300,250 450,230 600,200 750,160 900,120 1000,110" class="line"></polyline>
+                <g class="dots">
+                  <circle cx="150" cy="270" r="5"></circle>
+                  <circle cx="300" cy="250" r="5"></circle>
+                  <circle cx="450" cy="230" r="5"></circle>
+                  <circle cx="600" cy="200" r="5"></circle>
+                  <circle cx="750" cy="160" r="5"></circle>
+                  <circle cx="900" cy="120" r="5"></circle>
+                  <circle cx="1000" cy="110" r="5"></circle>
+                </g>
+              </svg>
+            </div>
+
+            <div class="small mt-2 text-muted d-flex flex-wrap gap-3">
+              <span><i class="fa-solid fa-receipt me-1"></i>Orders: <%= Number(kpi?.orders ?? 42) %></span>
+              <span><i class="fa-solid fa-boxes-stacked me-1"></i>Units: <%= Number(kpi?.units ?? 168) %></span>
+              <span><i class="fa-solid fa-bolt me-1"></i>Peak revenue ₱360,000.00</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12 col-xl-4">
+          <div class="analytics-card mb-3">
+            <h6 class="mb-3">Engagement (Last 30 days)</h6>
+
+            <div class="row g-3 align-items-start justify-content-center">
+              <!-- Website / Store / Product views: keep visuals static; you can wire dynamic numbers later if you like -->
+              <!-- Website Views -->
+            <div class="col-6">
+            <div class="ring" id="ring-site">
+                <div class="ring-track"></div>
+                <div class="ring-fill ring-teal"></div>
+                <div class="ring-center">0</div>
+            </div>
+            <div class="text-center small mt-2 text-muted">
+                <i class="fa-regular fa-eye me-1"></i>Website Views
+            </div>
+            </div>
+
+            <!-- Store Views -->
+            <div class="col-6">
+            <div class="ring" id="ring-store">
+                <div class="ring-track"></div>
+                <div class="ring-fill ring-green"></div>
+                <div class="ring-center">0</div>
+            </div>
+            <div class="text-center small mt-2 text-muted">
+                <i class="fa-regular fa-building me-1"></i>Store Views
+            </div>
+            </div>
+
+            <!-- Product Views -->
+            <div class="col-12 col-sm-8">
+            <div class="ring-sm mx-auto" id="ring-product">
+                <div class="ring-track"></div>
+                <div class="ring-fill ring-blue"></div>
+                <div class="ring-center">0</div>
+            </div>
+            <div class="text-center small mt-2 text-muted">
+                <i class="fa-regular fa-images me-1"></i>Product Views
+            </div>
+            </div>
+
+              <div class="w-100 my-1"></div>
+
+              <!-- Auth breakdown using your DB counts -->
+              <div class="col-6">
+                <div class="ring-sm">
+                  <div class="ring-track"></div>
+                  <div class="ring-fill ring-google" style="--pct:<%= Math.min(100, Number((authBreakdown?.google ?? 0))) %>"></div>
+                  <div class="ring-center"><%= Number(authBreakdown?.google ?? 0) %></div>
+                </div>
+                <div class="text-center small mt-2 text-muted">
+                  <i class="fa-brands fa-google me-1"></i>Google OAuth Users
+                </div>
+              </div>
+
+              <div class="col-6">
+                <div class="ring-sm">
+                  <div class="ring-track"></div>
+                  <div class="ring-fill ring-local" style="--pct:<%= Math.min(100, Number((authBreakdown?.local ?? 0))) %>"></div>
+                  <div class="ring-center"><%= Number(authBreakdown?.local ?? 0) %></div>
+                </div>
+                <div class="text-center small mt-2 text-muted">
+                  <i class="fa-regular fa-user me-1"></i>Local Users
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="analytics-card">
+            <h6 class="mb-3">Weekly Sales (Last 12 weeks)</h6>
+            <div class="bars">
+              <div style="--h:25%"></div>
+              <div style="--h:40%"></div>
+              <div style="--h:55%"></div>
+              <div style="--h:30%"></div>
+              <div style="--h:70%"></div>
+              <div style="--h:45%"></div>
+              <div style="--h:90%"></div>
+              <div style="--h:35%"></div>
+              <div style="--h:20%"></div>
+              <div style="--h:60%"></div>
+              <div style="--h:50%"></div>
+              <div style="--h:80%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SELLER ORDER TRENDS -->
+      <div class="analytics-card mb-3">
+        <div class="d-flex align-items-center justify-content-between">
+          <h6 class="mb-0">Orders by Seller (Last 30 days)</h6>
+          <span class="text-muted small">Each panel shows order trend</span>
+        </div>
+        <div class="row g-3 mt-1 seller-scroll">
+          <% (sellers || []).forEach(s => { %>
+            <div class="col-12 col-md-6 col-xl-3">
+                <div class="mini-seller">
+                <div class="mini-head"><i class="fa-solid fa-store me-2"></i><%= s.store_name %></div>
+
+                <!-- tiny sparkline canvas -->
+                <div style="height:36px">
+                    <canvas class="sparkline" id="spark-<%= s.seller_id %>"></canvas>
+                </div>
+
+                <div class="mini-meta"><span>Orders</span><strong><%= Number(s.orders || 0) %></strong></div>
+                </div>
+            </div>
+          <% }) %>
+          <% if (!(sellers && sellers.length)) { %>
+            <!-- Fallback to your original four static tiles -->
+            <div class="col-12 col-md-6 col-xl-3">
+              <div class="mini-seller">
+                <div class="mini-head"><i class="fa-solid fa-store me-2"></i>Emman Store</div>
+                <svg viewBox="0 0 100 36" class="spark"><polyline points="0,30 15,28 30,27 45,24 60,21 75,16 90,10 100,8" /></svg>
+                <div class="mini-meta"><span>Orders</span><strong>18</strong></div>
+              </div>
+            </div>
+            <div class="col-12 col-md-6 col-xl-3">
+              <div class="mini-seller">
+                <div class="mini-head"><i class="fa-solid fa-store me-2"></i>Hacker Store</div>
+                <svg viewBox="0 0 100 36" class="spark"><polyline points="0,30 15,31 30,29 45,27 60,26 75,25 90,20 100,16" /></svg>
+                <div class="mini-meta"><span>Orders</span><strong>11</strong></div>
+              </div>
+            </div>
+            <div class="col-12 col-md-6 col-xl-3">
+              <div class="mini-seller">
+                <div class="mini-head"><i class="fa-solid fa-store me-2"></i>Gizmo Hub</div>
+                <svg viewBox="0 0 100 36" class="spark"><polyline points="0,30 15,27 30,23 45,20 60,18 75,17 90,15 100,12" /></svg>
+                <div class="mini-meta"><span>Orders</span><strong>9</strong></div>
+              </div>
+            </div>
+            <div class="col-12 col-md-6 col-xl-3">
+              <div class="mini-seller">
+                <div class="mini-head"><i class="fa-solid fa-store me-2"></i>Tech Corner</div>
+                <svg viewBox="0 0 100 36" class="spark"><polyline points="0,30 15,29 30,25 45,24 60,22 75,20 90,19 100,15" /></svg>
+                <div class="mini-meta"><span>Orders</span><strong>7</strong></div>
+              </div>
+            </div>
+          <% } %>
+        </div>
+      </div>
+
+      <!-- TOP LISTS -->
+      <div class="row g-3 mb-3">
+        <div class="col-12 col-lg-7">
+          <div class="analytics-card h-100">
+            <h6 class="mb-2">Top Products (Based on Revenue)</h6>
+            <div class="table-responsive table-scroll">
+              <table class="table table-sm align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th>Product</th>
+                    <th>Seller</th>
+                    <th class="text-end">Units</th>
+                    <th class="text-end">Revenue</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% if (topProducts && topProducts.length) { %>
+                    <% topProducts.forEach(r => { %>
+                      <tr>
+                        <td><%= r.product_name %></td>
+                        <td><%= r.store_name %></td>
+                        <td class="text-end"><%= Number(r.units ?? 0) %></td>
+                        <td class="text-end">₱<%= Number(r.revenue ?? 0).toLocaleString() %></td>
+                      </tr>
+                    <% }) %>
+                  <% } else { %>
+                    <tr>
+                      <td>Samsung S22</td>
+                      <td>Emman Store</td>
+                      <td class="text-end">15</td>
+                      <td class="text-end">₱360,000.00</td>
+                    </tr>
+                    <tr>
+                      <td>Samsung S22 Ultra</td>
+                      <td>Emman Store</td>
+                      <td class="text-end">1</td>
+                      <td class="text-end">₱85,000.00</td>
+                    </tr>
+                    <tr>
+                      <td>Pixel 8a</td>
+                      <td>Gizmo Hub</td>
+                      <td class="text-end">6</td>
+                      <td class="text-end">₱168,000.00</td>
+                    </tr>
+                    <tr>
+                      <td>iPhone 14</td>
+                      <td>Tech Corner</td>
+                      <td class="text-end">4</td>
+                      <td class="text-end">₱220,000.00</td>
+                    </tr>
+                  <% } %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12 col-lg-5">
+          <div class="analytics-card h-100">
+            <h6 class="mb-2">Top Sellers</h6>
+            <div class="table-responsive table-scroll">
+              <table class="table table-sm align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th>Seller</th>
+                    <th class="text-end">Orders</th>
+                    <th class="text-end">Revenue</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% if (topSellers && topSellers.length) { %>
+                    <% topSellers.forEach(r => { %>
+                      <tr>
+                        <td><i class="fa-solid fa-store me-2"></i><%= r.store_name %></td>
+                        <td class="text-end"><%= Number(r.orders ?? 0) %></td>
+                        <td class="text-end">₱<%= Number(r.revenue ?? 0).toLocaleString() %></td>
+                      </tr>
+                    <% }) %>
+                  <% } else { %>
+                    <tr>
+                      <td><i class="fa-solid fa-store me-2"></i>Emman Store</td>
+                      <td class="text-end">20</td>
+                      <td class="text-end">₱445,000.00</td>
+                    </tr>
+                    <tr>
+                      <td><i class="fa-solid fa-store me-2"></i>Gizmo Hub</td>
+                      <td class="text-end">12</td>
+                      <td class="text-end">₱280,000.00</td>
+                    </tr>
+                    <tr>
+                      <td><i class="fa-solid fa-store me-2"></i>Tech Corner</td>
+                      <td class="text-end">10</td>
+                      <td class="text-end">₱210,000.00</td>
+                    </tr>
+                    <tr>
+                      <td><i class="fa-solid fa-store me-2"></i>Hacker Store</td>
+                      <td class="text-end">8</td>
+                      <td class="text-end">₱150,000.00</td>
+                    </tr>
+                  <% } %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SUMMARY STRIP -->
+      <div class="row g-3">
+        <div class="col-12 col-md-4">
+          <div class="analytics-card kpi text-center">
+            <div class="kpi-label">Total Products Sold</div>
+            <div class="kpi-value"><%= Number(kpi?.units ?? 184) %></div>
+            <div class="kpi-sub text-muted">All sellers • 30 days</div>
+          </div>
+        </div>
+        <div class="col-12 col-md-4">
+          <div class="analytics-card kpi text-center">
+            <div class="kpi-label">Average Sale Value</div>
+            <div class="kpi-value">₱<%= Number((kpi?.gross ?? 0) / (kpi?.orders || 1)).toLocaleString() %></div>
+            <div class="kpi-sub text-muted">Gross / Orders</div>
+          </div>
+        </div>
+        <div class="col-12 col-md-4">
+          <div class="analytics-card kpi text-center">
+            <div class="kpi-label">Total Transactions</div>
+            <div class="kpi-value"><%= Number(kpi?.orders ?? 52) %></div>
+            <div class="kpi-sub text-muted">Completed + pending</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+<!-- Chart.js (single include) -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+<!-- 1) Inline JSON (no JS parser involved so no red squiggles) -->
+<!-- Single data payload for charts -->
+<script id="analytics-data" type="application/json">
+<%- JSON.stringify({
+  dailySales:        dailySales        || [],
+  siteViews:         siteViews         || [],
+  storeViews:        storeViews        || [],
+  productViews:      productViews      || [],
+  engagementTotals:  engagementTotals  || { site:0, store:0, product:0 },
+  authBreakdown:     authBreakdown     || { google:0, local:0, other:0 },
+  trendsBySeller: (typeof trendsBySeller !== 'undefined' && trendsBySeller) || {}
+}).replace(/</g,'\\u003c') %>
+</script>
+
+</script>
+
+<!-- 2) Small boot script (pure JS, no EJS) -->
+<script>
+  const el = document.getElementById('analytics-data');
+  window.__analyticsData = el ? JSON.parse(el.textContent) : {};
+  document.addEventListener('DOMContentLoaded', () => {
+    window.initAdminAnalytics?.(window.__analyticsData);
+  });
+</script>
+
+
+
+
+<!-- 3) Your external charts file -->
+<script src="/js/adminAnalyticsCharts.js"></script>
+
+
+
+</body>
+</html>

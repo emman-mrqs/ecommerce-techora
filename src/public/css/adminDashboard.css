@@ -1,0 +1,40 @@
+    .stat-card {
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 20px;
+      background: #fff;
+    }
+    .stat-card h3 {
+      margin: 0;
+      font-weight: 600;
+    }
+    .stat-card small {
+      color: #6b7280;
+    }
+    .sales-overview {
+      min-height: 300px;
+    }
+    .recent-orders .list-group-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 14px;
+    }
+    .order-status {
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .status-completed { 
+        background: #d1fae5; 
+        color: #065f46; 
+    }
+    .status-processing { 
+        background: #fef3c7; 
+        color: #92400e; 
+    }
+    .status-shipped { 
+        background: #bfdbfe; 
+        color: #1e40af; 
+    }

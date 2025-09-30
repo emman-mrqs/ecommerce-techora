@@ -1,277 +1,211 @@
-        body {
-            background-color: #f8f9fa;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        }
-        
+/* ====== Page base ====== */
+body {
+  background-color: #f8f9fa;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
 
-        
-        .top-header {
-            background: white;
-            padding: 15px 30px;
-            border-bottom: 1px solid #e5e7eb;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .logo {
-            font-weight: bold;
-            font-size: 18px;
-        }
-        
-        .user-actions {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-        
-        .notification-badge {
-            position: relative;
-            cursor: pointer;
-        }
-        
-        .notification-badge::after {
-            content: '1';
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            background: #ef4444;
-            color: white;
-            border-radius: 50%;
-            width: 18px;
-            height: 18px;
-            font-size: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .avatar {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background: #f97316;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-        }
-        
-        .dashboard-content {
-            padding: 30px;
-        }
-        
-        .stat-card {
-            background: white;
-            border-radius: 8px;
-            padding: 20px;
-            border: 1px solid #e5e7eb;
-            height: 100%;
-        }
-        
-        .stat-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            margin-bottom: 15px;
-        }
-        
-        .stat-icon.earnings { background: #f97316; }
-        .stat-icon.orders { background: #3b82f6; }
-        .stat-icon.products { background: #10b981; }
-        .stat-icon.pending { background: #8b5cf6; }
-        
-        .stat-value {
-            font-size: 28px;
-            font-weight: bold;
-            margin-bottom: 5px;
-            color: #1f2937;
-        }
-        
-        .stat-change {
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-        
-        .stat-change.positive { color: #10b981; }
-        .stat-change.negative { color: #ef4444; }
-        
-        .chart-container {
-            background: white;
-            border-radius: 8px;
-            padding: 25px;
-            border: 1px solid #e5e7eb;
-            margin-top: 25px;
-        }
-        
-        .chart-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-        
-        .chart-title {
-            font-size: 18px;
-            font-weight: 600;
-            color: #1f2937;
-        }
-        
-        .chart-value {
-            font-size: 24px;
-            font-weight: bold;
-            color: #1f2937;
-        }
-        
-        .chart-subtitle {
-            color: #6b7280;
-            font-size: 14px;
-        }
-        
-        .chart-placeholder {
-            height: 200px;
-            background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
-            border-radius: 4px;
-            display: flex;
-            align-items: end;
-            padding: 20px;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .chart-bars {
-            display: flex;
-            align-items: end;
-            gap: 3px;
-            width: 100%;
-            height: 100%;
-        }
-        
-        .chart-bar {
-            background: #d1d5db;
-            border-radius: 2px;
-            flex: 1;
-            min-height: 10px;
-            opacity: 0.7;
-        }
-        
-        .product-views-list {
-            background: white;
-            border-radius: 8px;
-            padding: 25px;
-            border: 1px solid #e5e7eb;
-            margin-top: 25px;
-        }
-        
-        .product-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 0;
-            border-bottom: 1px solid #f3f4f6;
-        }
-        
-        .product-item:last-child {
-            border-bottom: none;
-        }
-        
-        .orders-table {
-            background: white;
-            border-radius: 8px;
-            padding: 25px;
-            border: 1px solid #e5e7eb;
-            margin-top: 25px;
-        }
-        
-        .table-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-        
-        .view-all-link {
-            color: #3b82f6;
-            text-decoration: none;
-            font-size: 14px;
-        }
-        
-        .status-badge {
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 500;
-        }
-        
-        .status-pending {
-            background: #fef3c7;
-            color: #92400e;
-        }
-        
-        .status-shipped {
-            background: #d1fae5;
-            color: #065f46;
-        }
-        
-        .status-delivered {
-            background: #dbeafe;
-            color: #1e40af;
-        }
-        
-        .quick-actions {
-            background: white;
-            border-radius: 8px;
-            padding: 25px;
-            border: 1px solid #e5e7eb;
-            margin-top: 25px;
-        }
-        
-        .action-btn {
-            background: #1f2937;
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 6px;
-            margin-bottom: 10px;
-            width: 100%;
-            text-align: left;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        
-        .action-btn:hover {
-            background: #374151;
-        }
-        
-        .recent-activity {
-            background: white;
-            border-radius: 8px;
-            padding: 25px;
-            border: 1px solid #e5e7eb;
-            margin-top: 25px;
-        }
-        
-        .activity-item {
-            display: flex;
-            align-items: center;
-            padding: 8px 0;
-            gap: 10px;
-        }
-        
-        .activity-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            flex-shrink: 0;
-        }
-        
-        .activity-dot.placed { background: #6b7280; }
-        .activity-dot.updated { background: #f97316; }
-        .activity-dot.received { background: #3b82f6; }
+/* Keep spacing consistent inside dashboard area only */
+.dashboard-content { padding: 30px; }
+
+.page-heading h2 {
+  color: #0a0a0a;
+  font-weight: 700;
+}
+
+/* ====== Cards / sections ====== */
+.stat-card,
+.chart-container,
+.product-views-list,
+.orders-table,
+.quick-actions,
+.recent-activity {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 22px 22px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 0 rgba(16,24,40,0.02);
+  height: 100%;
+}
+
+/* ====== Stat cards ====== */
+.stat-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  margin-bottom: 12px;
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.stat-icon.earnings { background: #111111; } /* monochrome accent */
+.stat-icon.orders   { background: #1e73ff; }
+.stat-icon.products { background: #0b8f66; }
+.stat-icon.pending  { background: #6a59d1; }
+
+.stat-value {
+  font-size: 28px;
+  font-weight: 800;
+  margin-bottom: 6px;
+  color: #0a0a0a;
+}
+
+.stat-change {
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  padding: 4px 8px;
+  background: #f5f7fb;
+  border: 1px solid #e8ebf0;
+}
+
+.stat-change.positive { color: #0b8f66; }
+stat-change.negative { color: #ef4444; }
+
+/* ====== Chart card ====== */
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.chart-title { font-size: 18px; font-weight: 700; color: #0a0a0a; }
+.chart-dot { width: 10px; height: 10px; background: #1e73ff; border-radius: 50%; }
+.chart-value { font-size: 24px; font-weight: 800; color: #0a0a0a; }
+.chart-subtitle { color: #6b7280; font-size: 12px; }
+
+/* Placeholder wrapper to hold grid + bars + labels */
+.chart-placeholder {
+  background: linear-gradient(180deg, #fbfbfc 0%, #f3f4f6 100%);
+  border: 1px solid #eef1f5;
+  border-radius: 10px;
+  padding: 10px 6px 2px;
+  position: relative;
+}
+
+/* ---- Monthly column chart ---- */
+.chart-vertical { position: relative; height: 300px; width: 100%; }
+.chart-grid { position: absolute; inset: 0 0 28px 0; }
+.chart-grid .grid-row {
+  position: absolute; left: 0; right: 0; height: 0;
+  border-top: 1px dashed #D7DCE1;
+}
+.chart-grid .grid-row .grid-label {
+  position: absolute; right: 100%; transform: translateX(-10px);
+  top: -9px; font-size: 11px; color: #708090; white-space: nowrap;
+}
+
+/* bar area */
+.chart-bars {
+  position: absolute;
+  inset: 0 0 28px 46px; /* left space for labels; bottom for X axis */
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  align-items: end;
+  gap: 12px;
+  padding: 0 8px;
+}
+.chart-bars .bar {
+  position: relative; background: #1e73ff;
+  border-radius: 8px 8px 0 0; min-height: 4px;
+  transition: transform .12s ease, filter .12s ease, box-shadow .12s ease;
+  box-shadow: 0 1px 0 rgba(0,0,0,.02);
+}
+.chart-bars .bar:hover { transform: translateY(-2px); filter: brightness(1.07); }
+
+/* value pill above each bar */
+.chart-bars .bar .bar-value {
+  position: absolute; left: 50%; bottom: 100%; transform: translate(-50%, -6px);
+  font-size: 11px; color: #0a0a0a; background: #ffffff;
+  border: 1px solid #E6E9EE; border-radius: 6px; padding: 2px 6px;
+  pointer-events: none; white-space: nowrap;
+}
+
+/* X labels */
+.chart-xlabels {
+  display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 12px;
+  padding: 6px 8px 0 54px;
+}
+.chart-xlabels .xlabel { text-align: center; font-size: 12px; color: #4d4d4d; }
+
+/* ====== Product views list ====== */
+.product-views-list h5 { font-weight: 700; color: #0a0a0a; }
+.product-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 9px 0; border-bottom: 1px solid #f1f3f6; font-size: 14px;
+}
+.product-item:last-child { border-bottom: none; }
+
+/* ====== Orders table ====== */
+.table-header h5 { font-weight: 700; color: #0a0a0a; }
+.view-all-link { color: #1e73ff; text-decoration: none; font-size: 14px; }
+.view-all-link:hover { text-decoration: underline; }
+
+.status-badge {
+  padding: 4px 8px; border-radius: 999px; font-size: 12px; font-weight: 600;
+  border: 1px solid #e7ebf2; background: #f8fafc; color: #344054;
+}
+.status-pending   { background: #fff7ed; color: #92400e; }
+.status-processing{ background: #eef2ff; color: #3730a3; }
+.status-to_ship   { background: #e0f2fe; color: #075985; }
+.status-completed,
+.status-delivered { background: #e6f4ea; color: #14532d; }
+
+/* ====== Quick actions / simple recent activity card ====== */
+.action-btn {
+  background: #0a0a0a; color: #ffffff; border: 1px solid #0a0a0a;
+  padding: 10px 14px; border-radius: 10px; margin-bottom: 10px; width: 100%;
+  text-align: left; cursor: pointer; transition: background .15s ease, color .15s ease, transform .06s ease;
+}
+.action-btn:hover { background: #222; }
+.action-btn:active { transform: translateY(1px); }
+
+.activity-item { display: flex; align-items: center; padding: 8px 0; gap: 10px; }
+.activity-dot { width: 8px; height: 8px; border-radius: 50%; }
+.activity-dot.placed   { background: #6b7280; }
+.activity-dot.updated  { background: #0a0a0a; }
+.activity-dot.received { background: #1e73ff; }
+
+/* ====== Scroll helpers (local) ====== */
+.card-scroll { overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; }
+.maxh-360 { max-height: 360px; }
+.maxh-420 { max-height: 420px; }
+
+/* subtle scrollbars */
+.card-scroll::-webkit-scrollbar { width: 8px; }
+.card-scroll::-webkit-scrollbar-thumb { background: #d9dde3; border-radius: 8px; }
+.card-scroll::-webkit-scrollbar-thumb:hover { background: #c7ccd3; }
+.card-scroll::-webkit-scrollbar-track { background: transparent; }
+
+/* ====== FULL-WIDTH Recent Activity feed ====== */
+.activity-feed .feed-list { padding-right: 6px; }
+.activity-feed .feed-item {
+  display: grid; grid-template-columns: 36px 1fr; gap: 10px;
+  padding: 10px 4px; border-bottom: 1px solid #f1f3f6;
+}
+.activity-feed .feed-item:last-child { border-bottom: 0; }
+
+.activity-feed .feed-icon {
+  width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; color: #fff;
+}
+.activity-feed .feed-icon i { font-size: 14px; }
+.activity-feed .feed-icon.type-order     { background: #1e73ff; }
+.activity-feed .feed-icon.type-payment   { background: #0a0a0a; }
+.activity-feed .feed-icon.type-review    { background: #f59e0b; }
+.activity-feed .feed-icon.type-product   { background: #0b8f66; }
+.activity-feed .feed-icon.type-promotion { background: #6a59d1; }
+
+.activity-feed .feed-title { color: #0a0a0a; font-size: 14px; }
+.activity-feed .feed-meta  { font-size: 12px; }
+
+/* ====== Utilities ====== */
+.truncate-1 {
+  max-width: 240px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}

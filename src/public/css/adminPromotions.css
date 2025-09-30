@@ -1,0 +1,67 @@
+/* =========================
+   PROMOTIONS — Responsive UI
+   Namespaced to avoid collisions
+   ========================= */
+
+.promotions-page { overflow-x: hidden; }
+
+/* Card shell */
+.promotions-card {
+  background:#fff;
+  border:1px solid #e6e6e6;
+  border-radius:12px;
+  padding:16px;
+  margin-bottom:18px;
+}
+
+/* Header */
+.seller-header{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.seller-name{ font-weight:700; margin:0; }
+.collapse-toggle{ display:flex; align-items:center; gap:8px; }
+.collapse-toggle[aria-expanded="true"] i{ transform:rotate(180deg); transition:transform .2s ease; }
+.collapse-toggle[aria-expanded="false"] i{ transform:rotate(0deg);  transition:transform .2s ease; }
+
+/* Status pills */
+.status-badge{ padding:4px 8px; border-radius:999px; font-size:12px; border:1px solid transparent; white-space:nowrap; }
+.status-active   { background:#e9f8ef; color:#1c7c3e; border-color:#bbf7d0; }
+.status-expired  { background:#fde8e8; color:#b42318; border-color:#fecaca; }
+.status-disabled { background:#f1f5f9; color:#475569; border-color:#e5e7eb; }
+.status-exhausted{ background:#fff7e6; color:#b36b00; border-color:#fde68a; }
+
+/* Actions */
+.table-actions .btn{ border:1px solid #e1e1e1; background:#fff; border-radius:8px; padding:6px 9px; }
+@media (max-width:576px){
+  .table-actions .btn{ padding:.35rem .5rem; margin:2px; }
+}
+
+/* Tables */
+.promotions-card .table-hover tbody tr:hover > *{ background:#f7f7f7 !important; }
+.promotions-card .table-striped > tbody > tr:nth-of-type(odd)  > *{ background:#fff; }
+.promotions-card .table-striped > tbody > tr:nth-of-type(even) > *{ background:#fbfbfb; }
+
+.promotions-card .table-responsive .sticky-top,
+.promotions-card .table .sticky-top{
+  position:sticky; top:0; z-index:10;
+  background:#fff; border-bottom:1px solid #eee; box-shadow:0 1px 0 rgba(0,0,0,.04);
+}
+
+/* Keep columns readable on small screens */
+.promotions-card .table{ min-width: 720px; }
+@media (max-width:576px){ .promotions-card .table{ min-width: 600px; } }
+
+/* Column pruning for very small screens
+   Columns: 1 Code | 2 Type | 3 Value | 4 Expiry | 5 Usage | 6 Status | 7 Actions */
+@media (max-width:768px){
+  /* hide Usage on tablets/phones */
+  .promotions-card table thead th:nth-child(5),
+  .promotions-card table tbody td:nth-child(5){ display:none !important; }
+}
+@media (max-width:576px){
+  /* also hide Expiry */
+  .promotions-card table thead th:nth-child(4),
+  .promotions-card table tbody td:nth-child(4){ display:none !important; }
+}
+
+/* Modal: keep consistent look */
+.modal .form-control[readonly],
+.modal .form-control:disabled{ background:#f8f9fa; }

@@ -1,0 +1,61 @@
+/* =========================
+   ADMIN EARNINGS — Static UI
+   Namespaced to avoid collisions
+   ========================= */
+
+.earnings-page { overflow-x: hidden; }
+
+/* Card shell */
+.earnings-card{
+  background:#fff;
+  border:1px solid #e5e7eb;
+  border-radius:16px;
+  padding:16px;
+}
+
+/* KPI cards */
+.kpi { height: 100%; }
+.kpi .kpi-label{ font-size:.9rem; color:#6b7280; }
+.kpi .kpi-value{ font-size:1.5rem; font-weight:800; color:#0a0a0a; }
+.kpi .kpi-sub{ font-size:.75rem; color:#9ca3af; }
+.kpi-dark{
+  background:#0b0b0b;
+  color:#fff;
+  border-color:#0b0b0b;
+  border-radius:16px;
+}
+
+/* Admin earnings banner */
+.banner-net{
+  background:#ecfdf5;
+  border:1px solid #bbf7d0;
+}
+
+/* Mini pills */
+.mini-pill{
+  border:1px solid #e5e7eb;
+  border-radius:12px;
+  padding:14px 10px;
+  background:#fafafa;
+}
+.mini-pill .mini-value{ font-weight:800; font-size:1.1rem; }
+.mini-pill .mini-label{ font-size:.75rem; color:#6b7280; }
+
+/* Tables */
+.earnings-card .table-hover tbody tr:hover > *{ background:#f7f7f7 !important; }
+.earnings-card .table-striped > tbody > tr:nth-of-type(odd)  > *{ background:#fff; }
+.earnings-card .table-striped > tbody > tr:nth-of-type(even) > *{ background:#fbfbfb; }
+
+.earnings-card .table-responsive .sticky-top,
+.earnings-card .table .sticky-top{
+  position:sticky; top:0; z-index:10;
+  background:#fff; border-bottom:1px solid #eee; box-shadow:0 1px 0 rgba(0,0,0,.04);
+}
+
+/* Responsive column pruning helpers:
+   - d-col-lg: hide at <992px
+   - d-col-md: hide at <768px
+   - d-col-sm: hide at <576px */
+@media (max-width:991.98px){ .d-col-lg{ display:none !important; } }
+@media (max-width:767.98px){ .d-col-md{ display:none !important; } }
+@media (max-width:575.98px){ .d-col-sm{ display:none !important; } }

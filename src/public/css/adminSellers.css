@@ -1,0 +1,108 @@
+/* ===== Correct stacking order (no frozen modals) ===== */
+/* Sticky header below overlays */
+.table-responsive .sticky-top,
+.table .sticky-top {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #FAFAFA;
+  box-shadow: 0 1px 0 rgba(0,0,0,.04);
+}
+
+/* Offcanvas under modal (Bootstrap defaults) */
+.offcanvas,
+.offcanvas.show { z-index: 1045; }
+.offcanvas-backdrop { z-index: 1040; }
+
+/* Modal above everything else */
+.modal,
+.modal.show { z-index: 1055; }
+.modal-backdrop { z-index: 1050; }
+
+/* Content context */
+/* undo stacking context that traps the modal */
+.main-content { position: static !important; z-index: auto !important; }
+body { overflow-x: hidden; }
+
+/* ===== Card & table polish (B/W Techora) ===== */
+.sellers-card {
+  background: #FAFAFA;
+  border: 1px solid #E0E0E0;
+  border-radius: 16px;
+}
+.sellers-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.sellers-card .table { min-width: 720px; }
+.table-striped > tbody > tr:nth-of-type(odd)  > * { background: #FFFFFF; }
+.table-striped > tbody > tr:nth-of-type(even) > * { background: #FBFBFB; }
+.table-hover tbody tr:hover > * { background: #F5F5F5 !important; }
+.table thead.sticky-top th { background:#FAFAFA; border-bottom:1px solid #E0E0E0; }
+
+/* Long text sanity */
+.table td:nth-child(2),
+.table td:nth-child(3) {
+  word-break: normal;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+/* ===== Chips (page counters) ===== */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  padding: .25rem .55rem;
+  font-size: .85rem;
+  border-radius: 999px;
+  border: 1px solid #E0E0E0;
+  background: #fff;
+  color: #0A0A0A;
+}
+.chip-muted  { opacity: .85; }
+.chip-success{ border-color: #D1FAE5; background: #ECFDF5; }
+.chip-danger { border-color: #FEE2E2; background: #FEF2F2; }
+.chip-warn   { border-color: #FDE68A; background: #FEF3C7; }
+
+/* ===== Status badges (consistent naming with Users page) ===== */
+.status-pill,
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: .2rem .6rem;
+  border-radius: 999px;
+  font-size: .8rem;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+.status-active    { background:#ECFDF5; border-color:#A7F3D0; color:#065F46; }
+.status-suspended { background:#FEF2F2; border-color:#FECACA; color:#7F1D1D; }
+.status-pending   { background:#FEF3C7; border-color:#FDE68A; color:#92400E; }
+
+/* ===== Action buttons: compact on mobile ===== */
+.table-actions { white-space: nowrap; }
+.table-actions .btn { border-radius: 10px; }
+@media (max-width: 576px) {
+  .table-actions .btn {
+    padding: .35rem .5rem;
+    margin: 2px;
+    border: 1px solid #E5E7EB;
+    background: #fff;
+  }
+}
+
+/* ===== Responsive helpers ===== */
+@media (max-width: 768px) {
+  .stack-md { flex-wrap: wrap; gap: .5rem !important; }
+}
+@media (max-width: 420px) {
+  th.col-address,
+  td.col-address { display: none; } /* hide long address on tiny screens */
+}
+
+/* Focus rings (accessible, monochrome) */
+.btn:focus,
+.form-control:focus,
+.form-select:focus {
+  outline: none;
+  box-shadow: 0 0 0 .2rem rgba(0,0,0,.08);
+  border-color: #CFCFCF;
+}

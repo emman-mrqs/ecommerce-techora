@@ -8,9 +8,14 @@ import { fileURLToPath } from "url";
 import session from "express-session";
 import fs from "fs";
 import  { cartCountMiddleware } from "./src/middleware/cartMiddleware.js";
+import { wishlistCountMiddleware } from "./src/middleware/wishlistMiddleware.js";
+
 // import path from "path";
 import passport from "./src/config/passport.js"; // adjust path
 import { attachSeller } from "./src/middleware/attachSeller.js";
+import { suspensionGuard } from "./src/middleware/suspensionGuard.js";
+
+import websiteViewsTracker from "./src/middleware/websiteViewsTracker.js";
 
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -30,6 +35,8 @@ app.use(session({
   },
 }));
 
+// Only if you're behind nginx/Heroku/etc.
+// app.set('trust proxy', 1);
 
 // Serve /src/public as your static root
 app.use(express.static(join(__dirname, "src", "public")));
@@ -52,14 +59,17 @@ app.use(express.static(join(__dirname, "src", "public")));
 // Middleware
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(cookieParser());
+app.use(cookieParser(process.env.COOKIE_SECRET));
 app.use(cartCountMiddleware); // cart count
+app.use(wishlistCountMiddleware);  // wishlist count
+
 app.use(passport.initialize());
 app.use(passport.session());
 app.use(attachSeller);
 
+app.use(suspensionGuard);
 
-
+app.use(websiteViewsTracker());
 
 // This will make the current path available in all EJS views
 app.use((req, res, next) => {
@@ -77,7 +87,12 @@ import sellerRoute from "./src/routes/sellerRoutes.js";
 import userRoute from "./src/routes/userRoutes.js";
 import { verify } from 'crypto';
 import cartRoutes from './src/routes/cartRoutes.js'; // ✅ NEW
+import adminRoutes from "./src/routes/adminRoutes.js";
 
+
+// app.js additions
+import adminAuthRoutes from "./src/routes/adminAuthRoutes.js";
+import { requireAdmin } from "./src/middleware/adminJwt.js";
 
 //auth Routes
 app.use("/", loginRoutes);
@@ -92,6 +107,20 @@ app.use("/", userRoute);
 
 //cart Routes CRUD
 app.use('/', cartRoutes); // ✅ Mount cart
+
+//Admin Routes
+// 1) Tokenized admin login/logout (UNPROTECTED)
+app.use("/", adminAuthRoutes);
+
+// 2) PROTECT everything under /admin with JWT
+app.use("/admin", requireAdmin);
+
+// 3) Now mount the actual admin feature routes
+app.use("/", adminRoutes);
+
+
+
+
 
 app.listen(port, () => {
   console.log(`Backend server is running on http://localhost:${port}`);

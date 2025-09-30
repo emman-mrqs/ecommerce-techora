@@ -1,273 +1,141 @@
-        :root {
-            --primary-color: #000;
-            --secondary-color: #fff;
-            --accent-color: #6c757d;
-            --light-gray: #f8f9fa;
-        }
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Arial', sans-serif;
-            line-height: 1.6;
-            color: #333;
-        }
-        
-        /* Hero Section */
-        .hero-section {
-            padding: 4rem 0;
-            background: white;
-        }
-        
-        .hero-content h1 {
-            font-size: 3.5rem;
-            font-weight: bold;
-            color: var(--primary-color);
-            margin-bottom: 1.5rem;
-        }
-        
-        .hero-content p {
-            font-size: 1.1rem;
-            color: var(--accent-color);
-            margin-bottom: 2rem;
-            line-height: 1.8;
-        }
-        
-        .btn-primary {
-            background: var(--primary-color);
-            border: var(--primary-color);
-            padding: 12px 30px;
-            font-weight: 600;
-            margin-right: 1rem;
-        }
-        
-        .btn-outline-primary {
-            color: var(--primary-color);
-            border: 2px solid var(--primary-color);
-            padding: 10px 30px;
-            font-weight: 600;
-        }
-        
-        .hero-image {
-            background: #e9ecef;
-            min-height: 400px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 8px;
-        }
-        
-        .hero-image h2 {
-            font-size: 4rem;
-            color: var(--accent-color);
-            font-weight: 300;
-        }
-        
-        /* Promotions Section */
-        .promotions-section {
-            padding: 4rem 0;
-            background: var(--primary-color);
-            color: white;
-        }
-        
-        .section-title {
-            text-align: center;
-            margin-bottom: 3rem;
-        }
-        
-        .section-title h2 {
-            font-size: 2.5rem;
-            font-weight: bold;
-            margin-bottom: 1rem;
-        }
-        
-        .section-subtitle {
-            color: var(--accent-color);
-            font-size: 1.1rem;
-        }
-        
-        .promotions-section .section-subtitle {
-            color: rgba(255,255,255,0.8);
-        }
-        
-        .promo-card {
-            background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 12px;
-            padding: 2rem;
-            text-align: center;
-            transition: transform 0.3s ease;
-            margin-bottom: 2rem;
-            backdrop-filter: blur(10px);
-        }
-        
-        .promo-card:hover {
-            transform: translateY(-5px);
-        }
-        
-        .promo-badge {
-            background: #dc3545;
-            color: white;
-            padding: 5px 15px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: bold;
-            display: inline-block;
-            margin-bottom: 1rem;
-        }
-        
-        .promo-title {
-            font-size: 1.3rem;
-            font-weight: bold;
-            margin-bottom: 1rem;
-            color: white;
-        }
-        
-        .promo-description {
-            color: rgba(255,255,255,0.8);
-            margin-bottom: 1.5rem;
-        }
-        
-        .promo-btn {
-            background: white;
-            color: var(--primary-color);
-            border: none;
-            padding: 10px 25px;
-            border-radius: 6px;
-            font-weight: 600;
-        }
-        
-        /* Featured Products */
-        .featured-section {
-            padding: 4rem 0;
-            background: var(--light-gray);
-        }
-        
-        .product-card {
-            background: white;
-            border-radius: 12px;
-            padding: 2rem;
-            text-align: center;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            transition: transform 0.3s ease;
-            margin-bottom: 2rem;
-        }
-        
-        .product-card:hover {
-            transform: translateY(-5px);
-        }
-        
-        .product-icon {
-            font-size: 3rem;
-            margin-bottom: 1.5rem;
-            color: var(--primary-color);
-        }
-        
-        .product-title {
-            font-size: 1.3rem;
-            font-weight: bold;
-            margin-bottom: 1rem;
-        }
-        
-        .product-price {
-            font-size: 1.2rem;
-            font-weight: bold;
-            margin-bottom: 1rem;
-        }
-        
-        .product-rating {
-            margin-bottom: 1rem;
-        }
-        
-        .rating-stars {
-            color: #ffc107;
-        }
-        
-        .product-badge {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            background: #28a745;
-            color: white;
-            padding: 3px 8px;
-            border-radius: 15px;
-            font-size: 0.7rem;
-            font-weight: bold;
-        }
-        
-        .product-badge.popular {
-            background: #ff6b35;
-        }
-        
-        .product-card {
-            position: relative;
-        }
-        
-        /* Popular Products */
-        .popular-section {
-            padding: 4rem 0;
-            background: white;
-        }
-        
-        /* Newsletter */
-        .newsletter-section {
-            background: var(--primary-color);
-            color: white;
-            padding: 4rem 0;
-        }
-        
-        .newsletter-content {
-            text-align: center;
-        }
-        
-        .newsletter-content h3 {
-            font-size: 2rem;
-            margin-bottom: 1rem;
-        }
-        
-        .newsletter-content p {
-            margin-bottom: 2rem;
-            opacity: 0.9;
-        }
-        
-        .newsletter-form {
-            max-width: 500px;
-            margin: 0 auto;
-            display: flex;
-            gap: 1rem;
-        }
-        
-        .newsletter-form input {
-            flex: 1;
-            padding: 12px 20px;
-            border: none;
-            border-radius: 6px;
-        }
-        
-        .newsletter-form button {
-            background: white;
-            color: var(--primary-color);
-            border: none;
-            padding: 12px 30px;
-            border-radius: 6px;
-            font-weight: 600;
-        }
-        
-        /* Responsive */
-        @media (max-width: 768px) {
-            .hero-content h1 {
-                font-size: 2.5rem;
-            }
-            
-            .hero-image h2 {
-                font-size: 2.5rem;
-            }
-            
-            .newsletter-form {
-                flex-direction: column;
-            }
-        }
+:root{
+      --bg: #FFFFFF;
+      --ink: #0A0A0A;
+      --muted: #4D4D4D;
+      --line: #E0E0E0;
+      --card: #FAFAFA;
+      --shadow: 0 10px 30px rgba(0,0,0,.08);
+      --radius: 16px;
+    }
+
+    /* ===== Global polish ===== */
+    body{ background:var(--bg); color:var(--ink); }
+    .section-title h2{
+      font-weight:800; letter-spacing:.2px;
+      margin-bottom:.5rem;
+    }
+    .section-title .section-subtitle{
+      color:var(--muted);
+      max-width:720px; margin:0 auto 1.5rem;
+    }
+    .section-title .underline{
+      width:88px;height:3px;background:#000;margin:.75rem auto 0;border-radius:999px;
+    }
+
+    /* ===== Banner (full-bleed) ===== */
+    .banner-hero{ margin:0; width:100%; position:relative; isolation:isolate; }
+    .banner-hero .banner-img{
+      display:block; width:100%;
+      height: clamp(280px, 45vw, 640px);
+      object-fit: cover; object-position: 50% 35%;
+      transform: translateZ(0);
+      will-change: transform;
+      transition: transform .6s cubic-bezier(.2,.8,.2,1);
+    }
+    .banner-hero::after{
+      /* soft top fade so the banner blends under the header */
+      content:""; position:absolute; inset:0 0 auto 0; height:120px;
+      background: linear-gradient(180deg, rgba(0,0,0,.25), transparent);
+      pointer-events:none;
+    }
+    .banner-hero:hover .banner-img{ transform: scale(1.01); }
+
+    /* Optional caption chip (feel free to remove if you want pure image) */
+    .banner-chip{
+      position:absolute; left:24px; bottom:24px;
+      background: rgba(255,255,255,.9);
+      color:#000; padding:.5rem .9rem; border-radius:999px;
+      box-shadow: var(--shadow); font-weight:600; font-size:.9rem;
+      backdrop-filter: blur(4px);
+    }
+
+    /* ===== “Limited Time Promotions” ===== */
+    .promotions-section{
+      padding: 64px 0;
+      background: #000; color:#fff;
+      position:relative; overflow:hidden;
+    }
+    .promotions-section::before{
+      content:""; position:absolute; inset:-40% -20% auto -20%; height:240px;
+      background: radial-gradient(60% 80% at 20% 40%, rgba(255,255,255,.08), transparent 60%);
+      pointer-events:none;
+      transform: rotate(-5deg);
+    }
+    .promo-card{
+      position:relative; background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.18);
+      border-radius: var(--radius); padding:24px;
+      backdrop-filter: blur(6px);
+      box-shadow: 0 8px 24px rgba(0,0,0,.25);
+      transform: translateY(8px);
+      transition: transform .4s cubic-bezier(.2,.8,.2,1), box-shadow .3s;
+    }
+    .promo-card:hover{
+      transform: translateY(-4px);
+      box-shadow: 0 18px 40px rgba(0,0,0,.35);
+    }
+    .promo-badge{
+      position:absolute; top:16px; right:16px;
+      background:#fff; color:#000; font-weight:800;
+      padding:6px 12px; border-radius:999px; font-size:.8rem;
+    }
+    .promo-btn{
+      background:#fff; border:0; color:#000; font-weight:700;
+      padding:10px 18px; border-radius:10px;
+      transition: transform .2s ease;
+    }
+    .promo-btn:active{ transform: translateY(1px) scale(.98); }
+
+    /* ===== Product grids (New Arrivals & Popular) ===== */
+    .featured-section{ background:var(--card); padding:64px 0; }
+    .popular-section{ background:#fff; padding:64px 0; }
+
+    .product-card{
+      background:#fff; border:1px solid var(--line);
+      border-radius: var(--radius); overflow:hidden;
+      box-shadow: var(--shadow);
+      transition: transform .35s cubic-bezier(.2,.8,.2,1), box-shadow .3s;
+      position:relative;
+    }
+    .product-card:hover{
+      transform: translateY(-6px);
+      box-shadow: 0 14px 30px rgba(0,0,0,.12);
+    }
+    .product-card img{
+      width:100%; aspect-ratio: 4/3; object-fit: cover;
+      background:#f3f3f3;
+      transition: transform .5s ease;
+    }
+    .product-card:hover img{ transform: scale(1.03); }
+    .product-card .content{ padding:16px 18px 18px; }
+    .product-title{ font-size:1.02rem; font-weight:700; margin:.25rem 0 .35rem; }
+    .product-price{ font-weight:800; margin:0; }
+    .badge-corner{
+      position:absolute; top:12px; left:12px;
+      background:#000; color:#fff; padding:4px 10px; border-radius:999px;
+      font-size:.7rem; font-weight:800; letter-spacing:.3px;
+    }
+    .btn-primary, .btn-dark{
+      border-radius:10px; font-weight:700; letter-spacing:.2px;
+      box-shadow:none; border:1px solid #000;
+    }
+    .btn-primary{ background:#000; }
+    .btn-primary:hover{ background:#111; border-color:#111; }
+
+    /* ===== Newsletter ===== */
+    .newsletter-section{
+      background:#000; color:#fff; padding:72px 0;
+    }
+    .newsletter-form{
+      max-width:600px; margin-inline:auto; display:flex; gap:12px;
+    }
+    .newsletter-form input{
+      background:#fff; border:0; border-radius:12px; padding:14px 16px;
+    }
+    .newsletter-form .btn{
+      background:#fff; color:#000; font-weight:800; border-radius:12px; padding:12px 20px;
+    }
+
+    /* ===== Reveal-on-scroll ===== */
+    [data-animate]{ opacity:0; transform: translateY(18px); transition: all .7s cubic-bezier(.2,.8,.2,1); }
+    [data-animate].in{ opacity:1; transform: none; }

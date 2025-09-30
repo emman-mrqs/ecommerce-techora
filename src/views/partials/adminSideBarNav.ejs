@@ -1,0 +1,102 @@
+<head>
+  <link rel="stylesheet" href="/css/adminSideBarNav.css">
+  <script src="/js/adminSideBarNav.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Make sure your page already includes Bootstrap JS bundle somewhere (for dropdown) -->
+</head>
+
+<!-- Sidebar Overlay (mobile only) -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+<!-- Sidebar -->
+<div class="sidebar" id="sidebar">
+  <div class="p-3">
+    <!-- Logo -->
+    <div class="d-flex align-items-center mb-4">
+      <div class="me-2" style="background:#111;width:32px;height:32px;border-radius:4px;display:flex;align-items:center;justify-content:center;">
+        <a href="/admin"><span style="color:#fff;font-weight:bold;font-size:14px;">A</span></a>
+      </div>
+      <a href="/admin"><span style="color:#fff;font-weight:bold;">ADMIN PANEL</span></a>
+    </div>
+
+    <!-- Nav Links -->
+    <nav class="nav flex-column">
+      <a class="nav-link <%= activePage === 'dashboard' ? 'active' : '' %>" href="/admin">
+        <i class="fas fa-chart-line"></i> Dashboard
+      </a>
+      <a class="nav-link <%= activePage === 'users' ? 'active' : '' %>" href="/admin/users">
+        <i class="fas fa-users"></i> Users
+      </a>
+      <a class="nav-link <%= activePage === 'sellers' ? 'active' : '' %>" href="/admin/sellers">
+        <i class="fas fa-store"></i> Sellers
+      </a>
+      <a class="nav-link <%= activePage === 'products' ? 'active' : '' %>" href="/admin/products">
+        <i class="fas fa-box"></i> Products
+      </a>
+      <a class="nav-link <%= activePage === 'orders' ? 'active' : '' %>" href="/admin/orders">
+        <i class="fas fa-shopping-cart"></i> Orders
+      </a>
+      <a class="nav-link <%= activePage === 'earnings' ? 'active' : '' %>" href="/admin/earnings">
+        <i class="fas fa-credit-card"></i> Earnings
+      </a>
+      <a class="nav-link <%= activePage === 'promotions' ? 'active' : '' %>" href="/admin/promotions">
+        <i class="fas fa-tags"></i> Promotions
+      </a>
+      <a class="nav-link <%= activePage === 'analytics' ? 'active' : '' %>" href="/admin/analytics">
+        <i class="fas fa-chart-bar"></i> Analytics
+      </a>
+      <a class="nav-link <%= activePage === 'cms' ? 'active' : '' %>" href="/admin/cms">
+        <i class="fas fa-file-alt"></i> CMS
+      </a>
+      <a class="nav-link <%= activePage === 'settings' ? 'active' : '' %>" href="/admin/settings">
+        <i class="fas fa-cog"></i> Settings
+      </a>
+      <a class="nav-link <%= activePage === 'audit' ? 'active' : '' %>" href="/admin/audit">
+        <i class="fas fa-shield-alt"></i> Audit Logs
+      </a>
+    </nav>
+  </div>
+</div>
+
+<!-- Top Header -->
+<div class="top-header d-flex justify-content-between align-items-center">
+  <div class="d-flex align-items-center">
+    <!-- Mobile hamburger -->
+    <button class="mobile-menu-btn me-3" onclick="toggleSidebar()">
+      <i class="fas fa-bars"></i>
+    </button>
+    <!-- Dynamic Title -->
+    <span class="fw-bold"><%= pageTitle %></span>
+  </div>
+
+  <% 
+    const adminEmail = (typeof admin !== 'undefined' && admin && admin.email) ? admin.email : null;
+    const adminInitials = adminEmail ? adminEmail.slice(0,2).toUpperCase() : 'AD';
+  %>
+  <div class="user-actions d-flex align-items-center gap-3">
+    <div class="notification-badge">
+      <i class="fas fa-bell text-muted"></i>
+    </div>
+    <i class="fas fa-envelope text-muted"></i>
+
+    <!-- Avatar + dropdown -->
+    <div class="dropdown">
+      <button class="btn btn-light d-flex align-items-center gap-2 px-2 py-1" data-bs-toggle="dropdown" aria-expanded="false">
+        <div class="avatar"><%= adminInitials %></div>
+        <i class="fa-solid fa-chevron-down small text-muted"></i>
+      </button>
+      <ul class="dropdown-menu dropdown-menu-end shadow">
+        <li class="dropdown-header small">
+          <div class="fw-semibold"><%= adminEmail || 'Admin' %></div>
+        </li>
+        <li><a class="dropdown-item" href="/admin"><i class="fa-solid fa-gauge-high me-2"></i>Dashboard</a></li>
+        <li><hr class="dropdown-divider"></li>
+        <li>
+          <a class="dropdown-item text-danger" href="/admin/logout">
+            <i class="fa-solid fa-right-from-bracket me-2"></i> Logout
+          </a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>

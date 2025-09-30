@@ -1,199 +1,172 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>TECHORA - Shop Now</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="css/index.css">
 
-</head>
-<body>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+    <link rel="stylesheet" href="css/index.css"/>
+
+    </head>
+
+    <body>
     <!-- Header -->
-    <nav>
-        <%- include("../partials/header.ejs") %>
-    </nav>
+    <nav><%- include("../partials/header.ejs") %></nav>
 
-    <!-- Hero Section -->
-    <section class="hero-section" id="home">
-        <div class="container">
-            <div class="row align-items-center">
-                <div class="col-lg-6">
-                    <div class="hero-content">
-                        <h1>Shop Now!</h1>
-                        <p>Discover our curated collection of cutting-edge electronics designed to enhance your lifestyle with uncompromising quality and style.</p>
-                        <div class="hero-buttons">
-                            <button class="btn btn-primary">Shop Now</button>
-                            <button class="btn btn-outline-primary">Learn More</button>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-lg-6">
-                    <div class="hero-image">
-                        <h2>Hero 3</h2>
-                    </div>
-                </div>
-            </div>
+    <!-- Full-bleed Banner -->
+    <section class="banner-hero" id="home">
+        <div class="container-fluid p-0">
+        <img src="/uploads/img/Techora%20Banner.png" alt="Techora banner" class="w-100 d-block banner-img" data-parallax/>
+        <!-- Optional chip; remove if you want pure image -->
+        <div class="banner-chip d-none d-md-inline-flex">
+            <i class="fa-solid fa-bolt me-2"></i> New drops weekly
+        </div>
         </div>
     </section>
+<!-- Featured Products -->
+<section class="featured-section" id="featured">
+  <div class="container" data-animate>
+    <div class="section-title text-center">
+      <h2>Featured Products</h2>
+      <div class="underline"></div>
+      <p class="section-subtitle">Handpicked and best-selling gadgets right now.</p>
+    </div>
 
-    <!-- Promotions Section -->
-    <section class="promotions-section" id="promotions">
-        <div class="container">
-            <div class="section-title">
-                <h2>Limited Time Promotions</h2>
-                <p class="section-subtitle">Don't miss out on these incredible deals and exclusive offers!</p>
+    <div class="row g-4">
+      <% if (featuredProducts && featuredProducts.length) { %>
+        <% featuredProducts.forEach(p => { %>
+          <div class="col-lg-3 col-md-6">
+            <div class="product-card">
+              <span class="badge-corner">FEATURED</span>
+              <img
+                src="<%= p.img_url || '/images/no-image.png' %>"
+                alt="<%= p.name %>">
+              <div class="content">
+                <h4 class="product-title"><%= p.name %></h4>
+                <p class="product-price">₱<%= p.price %></p>
+                <% if (typeof p.order_count !== 'undefined') { %>
+                  <small class="text-muted d-block mb-1">
+                    <%= p.order_count %> sold (30d)
+                  </small>
+                <% } %>
+                <a href="/buy/<%= p.id %>" class="btn btn-primary btn-sm">Shop Now</a>
+              </div>
             </div>
-            
-            <div class="row">
-                <div class="col-lg-4 col-md-6">
-                    <div class="promo-card">
-                        <div class="promo-badge">50% OFF</div>
-                        <h4 class="promo-title">Weekend Sale</h4>
-                        <p class="promo-description">Get 50% off on all headphones and speakers this weekend only!</p>
-                        <button class="btn promo-btn">Shop Sale</button>
-                    </div>
-                </div>
-                
-                <div class="col-lg-4 col-md-6">
-                    <div class="promo-card">
-                        <div class="promo-badge">BUY 2 GET 1</div>
-                        <h4 class="promo-title">Accessories Deal</h4>
-                        <p class="promo-description">Buy any 2 chargers and get the third one absolutely free!</p>
-                        <button class="btn promo-btn">Shop Now</button>
-                    </div>
-                </div>
-                
-                <div class="col-lg-4 col-md-6">
-                    <div class="promo-card">
-                        <div class="promo-badge">FREE SHIPPING</div>
-                        <h4 class="promo-title">Orders Over ₱2,000</h4>
-                        <p class="promo-description">Enjoy free shipping on all orders above ₱2,000. Limited time offer!</p>
-                        <button class="btn promo-btn">Shop Now</button>
-                    </div>
-                </div>
-            </div>
+          </div>
+        <% }) %>
+      <% } else { %>
+        <div class="col-12">
+          <div class="text-center text-muted py-4">
+            No featured products yet—check back soon.
+          </div>
         </div>
-    </section>
+      <% } %>
+    </div>
+  </div>
+</section>
 
-    <!-- New Arrivals Section -->
+
+    <!-- New Arrivals -->
     <section class="featured-section" id="new-arrivals">
-        <div class="container">
-            <div class="section-title">
-                <h2>New Arrivals</h2>
-                <p class="section-subtitle">Fresh additions to our collection - be the first to get your hands on these latest tech innovations.</p>
-            </div>
-            
-           <div class="row">
+        <div class="container" data-animate>
+        <div class="section-title text-center">
+            <h2>New Arrivals</h2>
+            <div class="underline"></div>
+            <p class="section-subtitle">Fresh additions to our collection—be first to grab the latest tech.</p>
+        </div>
+
+        <div class="row g-4">
             <% newArrivals.forEach(p => { %>
-                <div class="col-lg-3 col-md-6">
+            <div class="col-lg-3 col-md-6">
                 <div class="product-card">
-                    <img src="<%= p.img_url || '/images/no-image.png' %>" 
-                        alt="<%= p.name %>" class="img-fluid">
+                <span class="badge-corner">NEW</span>
+                <img src="<%= p.img_url || '/images/no-image.png' %>" alt="<%= p.name %>">
+                <div class="content">
                     <h4 class="product-title"><%= p.name %></h4>
                     <p class="product-price">₱<%= p.price %></p>
                     <a href="/buy/<%= p.id %>" class="btn btn-primary btn-sm">Shop Now</a>
                 </div>
                 </div>
+            </div>
             <% }) %>
-            </div>
+        </div>
         </div>
     </section>
 
-    <!-- Popular Products Section -->
+    <!-- Popular -->
     <section class="popular-section" id="popular">
-    <div class="container">
-        <div class="section-title">
-        <h2>Popular Products</h2>
-        <p class="section-subtitle">Customer favorites based on real orders.</p>
+        <div class="container" data-animate>
+        <div class="section-title text-center">
+            <h2>Popular Products</h2>
+            <div class="underline"></div>
+            <p class="section-subtitle">Customer favorites based on real orders.</p>
         </div>
 
-        <div class="row">
-        <% popularProducts.forEach(p => { %>
+        <div class="row g-4">
+            <% popularProducts.forEach(p => { %>
             <div class="col-lg-3 col-md-6">
-            <div class="product-card">
-                <img src="<%= p.img_url || '/images/no-image.png' %>" 
-                    alt="<%= p.name %>" class="img-fluid">
-                <h4 class="product-title"><%= p.name %></h4>
-                <p class="product-price">₱<%= p.price %></p>
-                <small class="text-muted">Ordered <%= p.order_count %> times</small>
-                <a href="/buy/<%= p.id %>" class="btn btn-primary btn-sm mt-2">Shop Now</a>
+                <div class="product-card">
+                <span class="badge-corner">TOP</span>
+                <img src="<%= p.img_url || '/images/no-image.png' %>" alt="<%= p.name %>">
+                <div class="content">
+                    <h4 class="product-title"><%= p.name %></h4>
+                    <p class="product-price">₱<%= p.price %></p>
+                    <small class="text-muted">Ordered <%= p.order_count %> times</small><br>
+                    <a href="/buy/<%= p.id %>" class="btn btn-primary btn-sm mt-2">Shop Now</a>
+                </div>
+                </div>
             </div>
-            </div>
-        <% }) %>
+            <% }) %>
         </div>
-    </div>
+        </div>
     </section>
-
 
     <!-- Newsletter -->
     <section class="newsletter-section">
-        <div class="container">
-            <div class="newsletter-content">
-                <h3>Stay Updated</h3>
-                <p>Subscribe to our newsletter for exclusive deals, new product launches, and tech insights.</p>
-                <div class="newsletter-form">
-                    <input type="email" placeholder="Enter your email address" class="form-control">
-                    <button type="submit" class="btn">Subscribe</button>
-                </div>
-            </div>
+        <div class="container" data-animate>
+        <div class="newsletter-content text-center">
+            <h3 class="fw-bold">Stay Updated</h3>
+            <p>Subscribe for exclusive deals, new product launches, and tech insights.</p>
+            <form class="newsletter-form" id="newsletterForm">
+            <input type="email" placeholder="Enter your email address" class="form-control" required/>
+            <button type="submit" class="btn">Subscribe</button>
+            </form>
+        </div>
         </div>
     </section>
-    
-    <footer>
-        <%- include("../partials/footer.ejs") %>
-    </footer>
 
-<!-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script> -->
+    <footer><%- include("../partials/footer.ejs") %></footer>
 
-    
-    <!-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Smooth scrolling for navigation links
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
-                }
-            });
-        });
+        // Reveal on scroll
+        const io = new IntersectionObserver(entries=>{
+        entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); }});
+        }, {threshold: .12});
+        document.querySelectorAll('[data-animate]').forEach(el=>io.observe(el));
 
-        // Newsletter subscription
-        document.querySelector('.newsletter-form button').addEventListener('click', function(e) {
+        // Tiny parallax on banner
+        const banner = document.querySelector('[data-parallax]');
+        if(banner){
+        window.addEventListener('scroll', ()=>{
+            const y = Math.min(40, window.scrollY * 0.06);
+            banner.style.transform = `translateY(${y}px) scale(1.01)`;
+        }, {passive:true});
+        }
+
+        // Newsletter UX (non-blocking, no backend changes)
+        const nf = document.getElementById('newsletterForm');
+        if(nf){
+        nf.addEventListener('submit', e=>{
             e.preventDefault();
-            const email = document.querySelector('.newsletter-form input').value;
-            if (email) {
-                alert('Thank you for subscribing! You will receive updates at ' + email);
-                document.querySelector('.newsletter-form input').value = '';
-            } else {
-                alert('Please enter a valid email address.');
+            const email = nf.querySelector('input').value.trim();
+            if(email){
+            alert('Thanks for subscribing! We’ll send updates to ' + email);
+            nf.reset();
             }
         });
-
-        // Product card hover effects
-        document.querySelectorAll('.product-card').forEach(card => {
-            card.addEventListener('mouseenter', function() {
-                this.style.transform = 'translateY(-10px)';
-            });
-            
-            card.addEventListener('mouseleave', function() {
-                this.style.transform = 'translateY(0)';
-            });
-        });
-
-        // Add to cart functionality for product buttons
-        document.querySelectorAll('.product-card .btn').forEach(button => {
-            button.addEventListener('click', function() {
-                const productName = this.closest('.product-card').querySelector('.product-title').textContent;
-                alert(productName + ' added to cart!');
-            });
-        });
-    </script> -->
-</body>
-</html>
+        }
+    </script>
+    </body>
+    </html>

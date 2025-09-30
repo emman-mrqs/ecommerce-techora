@@ -1,6 +1,6 @@
 import db from "../database/db.js";
 
-const TAX_RATE = Number(process.env.TAX_RATE ?? 0.12);
+// const TAX_RATE = Number(process.env.TAX_RATE ?? 0.12);
 
 // --- cookie helpers ---
 function readCookieCart(req) {
@@ -26,9 +26,24 @@ function writeCookieCart(res, cart) {
 
 function calcTotals(items) {
   const subtotal = items.reduce((s, it) => s + it.unitPrice * it.quantity, 0);
-  const tax = Math.round(subtotal * TAX_RATE * 100) / 100;
-  return { subtotal, tax, shipping: 0, total: subtotal + tax };
+
+  // 3% tax per product (kept)
+  const tax = items.reduce((s, it) => s + (it.unitPrice * it.quantity * 0.03), 0);
+  const taxRounded = Math.round(tax * 100) / 100;
+
+  // 🚚 Shipping: FREE if subtotal > 5000, else 50
+  const shipping = subtotal > 5000 ? 0 : (subtotal > 0 ? 50 : 0);
+
+  const total = subtotal + taxRounded + shipping;
+
+  return {
+    subtotal,
+    tax: taxRounded,
+    shipping,
+    total
+  };
 }
+
 
 async function ensureUserCart(userId) {
   const { rows } = await db.query("SELECT id FROM cart WHERE user_id = $1", [
@@ -43,27 +58,45 @@ async function ensureUserCart(userId) {
 }
 
 async function fetchVariant(variantId) {
-  const q = `SELECT pv.id, pv.product_id, pv.price, pv.color, pv.ram, pv.storage, pv.stock_quantity,
-                    p.name,
-                    COALESCE((SELECT img_url FROM product_images WHERE product_id=p.id AND (is_primary = TRUE OR position = 1) ORDER BY is_primary DESC, position ASC, id ASC LIMIT 1), NULL) AS image
-             FROM product_variant pv
-             JOIN products p ON p.id = pv.product_id
-             WHERE pv.id = $1`;
+  const q = `
+    SELECT pv.id, pv.product_id, pv.price, pv.color, pv.ram, pv.storage, pv.stock_quantity,
+           p.name,
+           COALESCE(
+             (SELECT img_url FROM product_images 
+              WHERE product_variant_id = pv.id 
+              ORDER BY is_primary DESC, position ASC, id ASC LIMIT 1),
+             (SELECT img_url FROM product_images 
+              WHERE product_id = p.id AND product_variant_id IS NULL 
+              ORDER BY is_primary DESC, position ASC, id ASC LIMIT 1)
+           ) AS image
+    FROM product_variant pv
+    JOIN products p ON p.id = pv.product_id
+    WHERE pv.id = $1
+  `;
   const { rows } = await db.query(q, [variantId]);
   return rows[0] || null;
 }
 
 async function loadUserCartItems(userId) {
-  const q = `SELECT ci.variant_id AS item_id, ci.quantity,
-                    pv.product_id, pv.color, pv.ram, pv.storage, pv.price AS unit_price, pv.stock_quantity,
-                    p.name,
-                    COALESCE((SELECT img_url FROM product_images WHERE product_id=p.id AND (is_primary = TRUE OR position = 1) ORDER BY is_primary DESC, position ASC, id ASC LIMIT 1), NULL) AS image
-             FROM cart c
-             JOIN cart_items ci ON ci.cart_id = c.id
-             JOIN product_variant pv ON pv.id = ci.variant_id
-             JOIN products p ON p.id = pv.product_id
-             WHERE c.user_id = $1
-             ORDER BY ci.id ASC`;
+  const q = `
+    SELECT ci.variant_id AS item_id, ci.quantity,
+           pv.product_id, pv.color, pv.ram, pv.storage, pv.price AS unit_price, pv.stock_quantity,
+           p.name,
+           COALESCE(
+             (SELECT img_url FROM product_images 
+              WHERE product_variant_id = pv.id 
+              ORDER BY is_primary DESC, position ASC, id ASC LIMIT 1),
+             (SELECT img_url FROM product_images 
+              WHERE product_id = p.id AND product_variant_id IS NULL 
+              ORDER BY is_primary DESC, position ASC, id ASC LIMIT 1)
+           ) AS image
+    FROM cart c
+    JOIN cart_items ci ON ci.cart_id = c.id
+    JOIN product_variant pv ON pv.id = ci.variant_id
+    JOIN products p ON p.id = pv.product_id
+    WHERE c.user_id = $1
+    ORDER BY ci.id ASC
+  `;
   const { rows } = await db.query(q, [userId]);
   return rows.map((r) => ({
     itemId: String(r.item_id),
@@ -71,7 +104,7 @@ async function loadUserCartItems(userId) {
     variantId: String(r.item_id),
     name: r.name,
     color: r.color,
-    ram: Number(r.ram), // ✅ include RAM
+    ram: Number(r.ram),
     storage: Number(r.storage),
     unitPrice: Number(r.unit_price),
     quantity: Number(r.quantity),
@@ -79,6 +112,7 @@ async function loadUserCartItems(userId) {
     stock: Number(r.stock_quantity),
   }));
 }
+
 
 export async function renderCart(req, res) {
   try {

@@ -5,7 +5,7 @@ export const loginVerify = async (req, res) => {
   const { email } = req.body;
 
   try {
-    // 1. Find the user
+    // 1) Find the user
     const result = await db.query("SELECT * FROM users WHERE email = $1", [email]);
 
     if (result.rows.length === 0) {
@@ -16,7 +16,14 @@ export const loginVerify = async (req, res) => {
 
     const user = result.rows[0];
 
-    // 2. Check provider
+    // 2) HARD BLOCK: if suspended, stop here regardless of provider
+    if (user.is_suspended) {
+      return res.render("auth/loginVerify", {
+        error: "This account has been suspended. Please check your email for details."
+      });
+    }
+
+    // 3) Route by provider (same as before)
     if (user.auth_provider === "local") {
       // Save email in session so /login knows who
       req.session.pendingEmail = email;
@@ -36,7 +43,7 @@ export const loginVerify = async (req, res) => {
     });
   } catch (err) {
     console.error("Login verify error:", err);
-    res.render("auth/loginVerify", {
+    return res.render("auth/loginVerify", {
       error: "Something went wrong. Please try again."
     });
   }

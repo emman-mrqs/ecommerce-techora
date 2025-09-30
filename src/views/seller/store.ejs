@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title><%= seller.store_name %> — Store | TECHORA</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/store.css">
+  <link rel="stylesheet" href="/css/footer.css">
+</head>
+<body>
+  <header><%- include("../partials/header.ejs") %></header>
+
+  <main class="store-page">
+    <!-- HERO / STORE HEADER -->
+    <section class="store-hero" data-animate>
+      <div class="hero-bg" aria-hidden="true"></div>
+
+      <div class="hero-row container px-3 px-md-4">
+        <div class="d-flex align-items-start gap-3 flex-wrap w-100">
+          <div class="avatar shadow-sm" id="storeAvatar" data-initials="<%= (seller.store_name||'S').slice(0,2).toUpperCase() %>">
+            <% if (seller.store_icon) { %>
+              <img src="<%= seller.store_icon %>" alt="<%= seller.store_name %>"
+                   onerror="this.remove();document.getElementById('storeAvatar').textContent='<%= (seller.store_name||'S').slice(0,2).toUpperCase() %>';"/>
+            <% } %>
+          </div>
+
+          <div class="flex-grow-1">
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+              <h1 class="h4 m-0 hero-title"><%= seller.store_name %></h1>
+              <span class="badge badge-soft px-2 py-1">
+                <i class="fa-solid fa-circle-check text-success me-1"></i>Verified seller
+              </span>
+            </div>
+            <p class="text-muted small mb-2"><%= seller.description || '—' %></p>
+
+            <div class="d-flex gap-2">
+              <button class="btn btn-dark btn-sm"><i class="fa-regular fa-message me-1"></i>Chat</button>
+              <button class="btn btn-outline-dark btn-sm"><i class="fa-regular fa-user me-1"></i>Follow</button>
+            </div>
+          </div>
+
+          <div class="ms-auto">
+            <div class="chip"><i class="fa-regular fa-clock"></i><span class="ms-1">Response: within minutes</span></div>
+          </div>
+        </div>
+
+        <div class="divider my-3"></div>
+
+        <!-- STATS -->
+        <div class="row g-3 stats">
+          <div class="col-6 col-md-2">
+            <div class="stat-card">
+              <div class="value"><%= stats.product_count %></div>
+              <div class="muted tiny">Products</div>
+            </div>
+          </div>
+          <div class="col-6 col-md-2">
+            <div class="stat-card">
+              <div class="value">0</div>
+              <div class="muted tiny">Followers</div>
+            </div>
+          </div>
+          <div class="col-6 col-md-2">
+            <div class="stat-card">
+              <div class="value">0</div>
+              <div class="muted tiny">Following</div>
+            </div>
+          </div>
+          <div class="col-6 col-md-2">
+            <div class="stat-card">
+              <div class="value"><%= Number(stats.avg_rating||0).toFixed(1) %> ★</div>
+              <div class="muted tiny">Rating</div>
+            </div>
+          </div>
+          <div class="col-6 col-md-2">
+            <div class="stat-card">
+              <div class="value"><%= stats.store_age %></div>
+              <div class="muted tiny">Store age</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VOUCHERS -->
+    <section class="container px-3 px-md-4" data-animate>
+      <div class="store-card p-3 p-md-4 mb-4">
+        <div class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2">
+          <div class="d-flex align-items-center gap-2">
+            <div class="chip"><i class="fa-solid fa-ticket"></i><span class="ms-1">Store vouchers</span></div>
+            <small class="text-muted">Scroll to see more</small>
+          </div>
+          <span class="badge bg-light text-dark border"><%= vouchers.length %> available</span>
+        </div>
+
+        <div class="voucher-rail">
+          <% if ((vouchers||[]).length) { %>
+            <% vouchers.forEach(v => { %>
+              <div class="voucher">
+                <div class="top">
+                  <div class="pct">
+                    <% if (v.discount_type === 'percent') { %>
+                      <%= v.discount_value %>% OFF
+                    <% } else { %>
+                      ₱<%= Number(v.discount_value).toLocaleString() %> OFF
+                    <% } %>
+                  </div>
+                  <div class="text-muted small"><code><%= v.voucher_code %></code></div>
+                </div>
+                <div class="meta mt-1">Expires <%= v.expiry_date ? new Date(v.expiry_date).toLocaleDateString() : '—' %></div>
+                <div class="meta mt-1">Used <%= v.used_count || 0 %> / <%= v.usage_limit ?? '∞' %></div>
+                <div class="bar mt-2">
+                  <span style="width:<%= Math.min(100, Math.round(100*(v.used_count||0)/Math.max(1,(v.usage_limit||1)))) %>%"></span>
+                </div>
+              </div>
+            <% }) %>
+          <% } else { %>
+            <div class="text-muted small">No vouchers available right now.</div>
+          <% } %>
+        </div>
+      </div>
+    </section>
+
+    <!-- FILTERS (sticky on scroll) -->
+    <section class="container px-3 px-md-4" data-animate>
+      <div class="store-card p-3 p-md-4 mb-3 sticky-filters" id="stickyFilters">
+        <form id="storeFilterForm" class="row g-3 align-items-end" method="get" action="<%= requestPath %>">
+          <div class="col-12 col-lg-6">
+            <label class="form-label tiny">Search products</label>
+            <input type="text" name="q" value="<%= q %>" class="form-control" placeholder="Search in this store" autocomplete="off">
+          </div>
+
+          <div class="col-6 col-md-3 col-lg-2">
+            <label class="form-label tiny">Min rating</label>
+            <select name="minRating" class="form-select">
+              <option value="0" <%= minRating==0?'selected':'' %>>Any</option>
+              <option value="3" <%= minRating==3?'selected':'' %>>3★ & up</option>
+              <option value="4" <%= minRating==4?'selected':'' %>>4★ & up</option>
+              <option value="5" <%= minRating==5?'selected':'' %>>5★</option>
+            </select>
+          </div>
+
+          <div class="col-6 col-md-3 col-lg-2">
+            <label class="form-label tiny">Featured sort</label>
+            <select name="sort" class="form-select">
+              <option value="featured"  <%= sort==='featured'?'selected':'' %>>Featured</option>
+              <option value="price-asc" <%= sort==='price-asc'?'selected':'' %>>Price: Low to High</option>
+              <option value="price-desc"<%= sort==='price-desc'?'selected':'' %>>Price: High to Low</option>
+              <option value="newest"    <%= sort==='newest'?'selected':'' %>>Newest</option>
+              <option value="rating"    <%= sort==='rating'?'selected':'' %>>Best rating</option>
+            </select>
+          </div>
+
+          <div class="col-12 col-lg-2 d-flex gap-2">
+            <button class="btn btn-dark w-100" type="submit">Apply</button>
+            <a class="btn btn-outline-dark w-100" href="<%= requestPath %>">Clear</a>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- PRODUCTS -->
+    <section class="container px-3 px-md-4" data-animate>
+      <div class="d-flex align-items-center justify-content-between mb-2">
+        <h2 class="h5 m-0">Products</h2>
+        <small class="text-muted"><span id="itemsCount"><%= total %></span> items</small>
+      </div>
+
+      <div id="productsWrap">
+        <div class="row g-3 g-md-4">
+          <% if ((products||[]).length) { %>
+            <% products.forEach(p => { %>
+              <div class="col-12 col-sm-6 col-lg-4">
+                <a href="/buy/<%= p.id %>" class="text-decoration-none text-reset">
+                  <div class="p-card" data-animate-heart>
+                    <div class="wish" title="Wishlist (static)">
+                      <i class="fa-solid fa-heart"></i>
+                    </div>
+
+                    <div class="p-img">
+                      <% if (p.img_url) { %>
+                        <img src="<%= p.img_url %>" alt="<%= p.name %>" onerror="this.src='/images/default.png'">
+                      <% } else { %> 🛍️ <% } %>
+                    </div>
+
+                    <div class="p-info">
+                      <p class="p-title"><%= p.name %></p>
+                      <div class="d-flex align-items-center gap-2 mb-1">
+                        <div class="p-price">₱<%= Number(p.price||0).toLocaleString() %></div>
+                      </div>
+                      <div class="p-meta d-flex justify-content-between">
+                        <span><%= Number(p.avg_rating||0).toFixed(1) %> ★</span>
+                        <span><%= p.sold || 0 %> sold</span>
+                      </div>
+                    </div>
+                  </div>
+                </a>
+              </div>
+            <% }) %>
+          <% } else { %>
+            <div class="text-muted">No products matched your filters.</div>
+          <% } %>
+        </div>
+
+        <!-- Pagination -->
+        <%
+          const baseParams = { q, minRating, priceMin, priceMax, sort };
+          const makeHref = (pp) => {
+            const sp = new URLSearchParams(baseParams);
+            for (const [k,v] of [...sp.entries()]) { if (v===undefined || v===null || v==='') sp.delete(k); }
+            sp.set('page', String(pp));
+            return `${requestPath}?${sp.toString()}`;
+          };
+        %>
+        <nav class="mt-4">
+          <ul class="pagination justify-content-center flex-wrap">
+            <li class="page-item <%= page<=1?'disabled':'' %>">
+              <a class="page-link" href="<%= page<=1 ? '#' : makeHref(page-1) %>">&laquo;</a>
+            </li>
+            <% for(let p=Math.max(1,page-3); p<=Math.min(totalPages,page+3); p++){ %>
+              <li class="page-item <%= p===page?'active':'' %>">
+                <a class="page-link" href="<%= makeHref(p) %>"><%= p %></a>
+              </li>
+            <% } %>
+            <li class="page-item <%= page>=totalPages?'disabled':'' %>">
+              <a class="page-link" href="<%= page>=totalPages ? '#' : makeHref(page+1) %>">&raquo;</a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </section>
+  </main>
+
+  <footer><%- include("../partials/footer.ejs") %></footer>
+
+  <script src="/js/store.js"></script>
+</body>
+</html>

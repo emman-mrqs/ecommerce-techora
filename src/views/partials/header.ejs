@@ -8,30 +8,45 @@
         <div class="container">
             <div class="d-flex justify-content-between align-items-center">
                   <div class="d-flex">
-                    <% if (!user) { %>
-                      <!-- Not logged in -->
-                      <a href="/seller-application" class="nav-link">Start Selling</a>
+                  <% if (!user) { %>  
+                  <!-- Not logged in -->
+                  <a href="/seller-application" class="nav-link">Start Selling</a>
 
-                    <% } else if (seller && seller.status === "approved") { %>
-                      <!-- Seller approved -->
-                      <a href="/seller" class="nav-link">My Store</a>
+                <% } else if (seller && seller.status === "approved") { %>
+                  <!-- Seller approved -->
+                  <a href="/seller" class="nav-link">My Store</a>
 
-                    <% } else if (seller && seller.status === "pending") { %>
-                      <!-- Seller applied but waiting -->
-                      <a href="/seller-application" class="nav-link text-warning">Application Pending</a>
+                <% } else if (seller && seller.status === "pending") { %>
+                  <!-- Seller applied but waiting -->
+                  <a href="/seller-application" class="nav-link text-warning">
+                    <i class="bi bi-hourglass-split me-1"></i> Application Pending
+                  </a>
 
-                    <% } else if (seller && seller.status === "rejected") { %>
-                      <!-- Seller rejected -->
-                      <a href="/seller-application" class="nav-link text-danger">Re-Apply</a>
-                      <!-- OR: <span class="nav-link text-danger">Application Rejected</span> -->
+                <% } else if (seller && seller.status === "rejected") { %>
+                  <!-- Seller rejected -->
+                  <a href="/seller-application" class="nav-link text-danger">
+                    <i class="bi bi-x-circle me-1"></i> Re-Apply
+                  </a>
 
-                    <% } else { %>
-                      <!-- Logged in but not applied -->
-                      <a href="/seller-application" class="nav-link">Start Selling</a>
-                    <% } %>
+                <% } else if (seller && seller.status === "suspended") { %>
+                  <!-- Seller suspended -->
+                  <span class="nav-link text-danger d-inline-flex align-items-center" title="Your store is suspended. Please check your email or contact support.">
+                    <i class="bi bi-slash-circle me-1"></i> Store Suspended
+                  </span>
+                  <!-- If you prefer a link to a help page or appeal form, use this instead:
+                  <a href="/seller-application" class="nav-link text-danger">
+                    <i class="bi bi-slash-circle me-1"></i> Store Suspended (Details)
+                  </a>
+                  -->
 
-                    <a href="#" class="nav-link">About</a>
-                    <a href="#" class="nav-link">Contact</a>
+                <% } else { %>
+                  <!-- Logged in but not applied -->
+                  <a href="/seller-application" class="nav-link">Start Selling</a>
+                <% } %>
+
+
+                    <a href="/about" class="nav-link">About</a>
+                    <a href="/contact" class="nav-link">Contact</a>
                   </div>
 
                   <div class="auth-links position-relative">
@@ -86,17 +101,30 @@
 
                 <!-- Header Actions -->
                 <div class="col-lg-3 col-md-4 col-sm-12">
-                    <div class="header-actions justify-content-end">
-                        <div class="auth-links d-none d-md-block">
-                        </div>
-                        <button class="icon-btn">
-                            <a href="#"><i class="bi bi-heart-fill"></i></a>
-                        </button>
-                        <button class="icon-btn">
-                          <a href="/cart"><i class="fas fa-shopping-cart"></i></a>
-                          <span class="cart-badge"><%= cartCount %></span>
-                        </button>
-                    </div>
+                  <div class="header-actions justify-content-end">
+                    <div class="auth-links d-none d-md-block"></div>
+
+                    <% 
+                      const _wl = Number(typeof wishlistCount !== 'undefined' ? wishlistCount : 0);
+                      const _cart = Number(typeof cartCount !== 'undefined' ? cartCount : 0);
+                    %>
+
+                    <!-- Wishlist -->
+                    <a href="/wishlist" class="icon-btn position-relative" aria-label="Wishlist">
+                      <i class="bi bi-heart-fill"></i>
+                      <% if (_wl > 0) { %>
+                        <span class="cart-badge" aria-label="<%= _wl %> items in wishlist"><%= _wl %></span>
+                      <% } %>
+                    </a>
+
+                    <!-- Cart -->
+                    <a href="/cart" class="icon-btn position-relative" aria-label="Cart">
+                      <i class="fas fa-shopping-cart"></i>
+                      <% if (_cart > 0) { %>
+                        <span class="cart-badge" aria-label="<%= _cart %> items in cart"><%= _cart %></span>
+                      <% } %>
+                    </a>
+                  </div>
                 </div>
             </div>
         </div>

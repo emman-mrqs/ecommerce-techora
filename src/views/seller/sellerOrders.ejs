@@ -43,9 +43,9 @@
                 <div class="filter-group">
                 <label class="filter-label">Date Range</label>
                 <select class="filter-select" id="filterDate">
-                    <option value="">Last 30 days</option>
+                    <option value="">All Dates</option>
                     <option value="7">Last 7 days</option>
-                    <option value="30">Last 30 days</option>
+                    <option value="30" selected>Last 30 days</option>
                     <option value="90">Last 90 days</option>
                     <option value="365">Last year</option>
                 </select>
@@ -111,6 +111,12 @@
                     data-order='<%- JSON.stringify(order) %>'>
                     <i class="fas fa-eye me-1"></i>
                     </button>
+                    <button 
+                    class="action-btn delete-order-btn" 
+                    title="Delete"
+                    data-order-id="<%= order.order_id %>">
+                    <i class="fas fa-trash"></i>
+                    </button>
                     </div>
                 </div>
                 <% }) %>
@@ -135,10 +141,14 @@
 
                     <!-- Right side -->
                     <div class="d-flex gap-2">
-                        <button id="downloadLabel" class="btn btn-dark">Download PDF</button>
-                        <button class="btn btn-outline-dark" data-bs-dismiss="modal">Close</button>
+                        <button id="downloadLabel" class="btn btn-dark">
+                            <i class="fas fa-file-download me-1"></i> Download PDF
+                        </button>
+                        <button id="printInvoice" class="btn btn-outline-dark">
+                            <i class="fas fa-print me-1"></i> Print
+                        </button>
                     </div>
-                    </div>
+                </div>
                 </div>
             </div>
             </div>
@@ -175,6 +185,39 @@
             </div>
             </div>
 
+            <!-- Delete Confirm Modal -->
+            <div class="modal fade" id="deleteOrderModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered delete-modal-md"><!-- custom width -->
+                <div class="modal-content border-0 shadow-sm rounded-3">
+                <div class="modal-header bg-white border-bottom">
+                    <h5 class="modal-title fw-semibold">Delete Order Items</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body text-start">
+                    <p class="mb-0">Are you sure you want to delete your products from this order?</p>
+                    <input type="hidden" id="deleteOrderId">
+                </div>
+
+                <div class="modal-footer bg-white border-top justify-content-end">
+                    <button type="button" class="btn btn-outline-secondary rounded-2" data-bs-dismiss="modal">Close</button>
+                    <button type="button" id="confirmDeleteOrder" class="btn btn-danger rounded-2">Delete</button>
+                </div>
+                </div>
+            </div>
+            </div>
+
+            <!-- Toast (reuse your existing container if you have one) -->
+            <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index:1100;">
+            <div id="deleteToast" class="toast align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="d-flex">
+                <div class="toast-body">Deleted successfully.</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            </div>
+            </div>
+
+
             <!-- Toast Notification -->
             <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1100;">
             <div id="statusToast" class="toast align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
@@ -188,20 +231,53 @@
             </div>
 
             <!-- Pagination -->
+            <!-- Pagination -->
             <div class="pagination-container">
-                <div class="pagination-info">Showing 1-8 of 64orders</div>
-                <div class="pagination">
-                    <button class="pagination-btn" disabled>
-                        <i class="fas fa-chevron-left"></i>
-                    </button>
-                    <button class="pagination-btn active">1</button>
-                    <button class="pagination-btn">2</button>
-                    <button class="pagination-btn">3</button>
-                    <button class="pagination-btn">
-                        <i class="fas fa-chevron-right"></i>
-                    </button>
-                </div>
+            <div class="pagination-info">
+                <% 
+                const startIdx = totalOrders === 0 ? 0 : ( (page - 1) * perPage + 1 );
+                const endIdx = Math.min(page * perPage, totalOrders);
+                %>
+                Showing <%= startIdx %>-<%= endIdx %> of <%= totalOrders %> orders
             </div>
+
+            <div class="pagination">
+                <!-- Prev -->
+                <a 
+                class="pagination-btn <%= page <= 1 ? 'disabled' : '' %>" 
+                href="<%= page <= 1 ? '#' : ('?page=' + (page - 1)) %>"
+                aria-disabled="<%= page <= 1 %>"
+                >
+                <i class="fas fa-chevron-left"></i>
+                </a>
+
+                <!-- Page numbers (simple window) -->
+                <% 
+                const windowSize = 5;
+                let startPage = Math.max(1, page - Math.floor(windowSize/2));
+                let endPage = Math.min(totalPages, startPage + windowSize - 1);
+                if (endPage - startPage + 1 < windowSize) {
+                    startPage = Math.max(1, endPage - windowSize + 1);
+                }
+                for (let p = startPage; p <= endPage; p++) { 
+                %>
+                <a 
+                    class="pagination-btn <%= p === page ? 'active' : '' %>" 
+                    href="?page=<%= p %>"
+                ><%= p %></a>
+                <% } %>
+
+                <!-- Next -->
+                <a 
+                class="pagination-btn <%= page >= totalPages ? 'disabled' : '' %>" 
+                href="<%= page >= totalPages ? '#' : ('?page=' + (page + 1)) %>"
+                aria-disabled="<%= page >= totalPages %>"
+                >
+                <i class="fas fa-chevron-right"></i>
+                </a>
+            </div>
+            </div>
+
         </div>
     </div>
 

@@ -40,7 +40,77 @@ window.addEventListener('resize', function() {
       });
     });
 
-    // View invoice button
+    /*===========================
+    Download PDF from invoice modal
+    ================================== */
+    document.getElementById("downloadLabel").addEventListener("click", async () => {
+      const { jsPDF } = window.jspdf;
+
+      const invoice = document.getElementById("invoiceContent");
+      if (!invoice) return;
+
+      // Use html2canvas to capture the invoice content
+      const canvas = await html2canvas(invoice, { scale: 2 });
+      const imgData = canvas.toDataURL("image/png");
+
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+
+      // Scale image to fit PDF
+      const imgWidth = pageWidth - 20; // margins
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      pdf.addImage(imgData, "PNG", 10, 10, imgWidth, imgHeight);
+
+      // Save file with invoice number if available
+      const invoiceTitle = document.querySelector("#invoiceContent h5")?.innerText || "Invoice";
+      pdf.save(`${invoiceTitle.replace(/\s+/g, "_")}.pdf`);
+    });
+
+    /*=========================
+      Print Invoice (reuse modal table)
+    ========================*/
+    document.getElementById("printInvoice").addEventListener("click", () => {
+      const invoiceContent = document.getElementById("invoiceContent").innerHTML;
+
+      const printWindow = window.open("", "_blank");
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Invoice</title>
+            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+            <style>
+              body { padding: 20px; font-family: Arial, sans-serif; }
+              .invoice-card { border: 1px solid #dee2e6; border-radius: 6px; padding: 20px; }
+              .invoice-header { margin-bottom: 20px; }
+              .invoice-header h5 { margin: 0; font-size: 20px; }
+              .table th { background: #f8f9fa; }
+              .status-badge { padding: 4px 8px; border-radius: 12px; font-size: 11px; }
+              .status-confirmed { background: #dbeafe; color: #1d4ed8; }
+              .status-completed { background: #dcfce7; color: #166534; }
+              .status-cancelled { background: #fee2e2; color: #991b1b; }
+            </style>
+          </head>
+          <body>
+            <div class="invoice-card">
+              ${invoiceContent}
+            </div>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+
+      // Print and close automatically
+      printWindow.focus();
+      printWindow.print();
+      printWindow.close();
+    });
+
+
+    /*=========================
+     View invoice button
+     ========================*/
     document.querySelectorAll(".view-invoice-btn").forEach(btn => {
     btn.addEventListener("click", () => {
         const order = JSON.parse(btn.getAttribute("data-order"));
@@ -117,7 +187,7 @@ window.addEventListener('resize', function() {
     if (result.success) {
       toastEl.classList.remove("text-bg-danger");
       toastEl.classList.add("text-bg-success");
-      toastEl.querySelector(".toast-body").textContent = "✅ Order status updated!";
+      toastEl.querySelector(".toast-body").textContent = "Order status updated!";
 
       statusModal.hide();
       toast.show();
@@ -219,3 +289,84 @@ window.addEventListener('resize', function() {
   // Initial bind
   bindOrderActions();
 });
+
+
+// ===== Delete seller items from order =====
+(function () {
+  const deleteModalEl = document.getElementById("deleteOrderModal");
+  const deleteOrderIdInput = document.getElementById("deleteOrderId");
+  const confirmDeleteBtn = document.getElementById("confirmDeleteOrder");
+  const deleteToastEl = document.getElementById("deleteToast");
+
+  if (!deleteModalEl || !confirmDeleteBtn) return;
+
+  const deleteModal = new bootstrap.Modal(deleteModalEl);
+  const deleteToast = deleteToastEl ? new bootstrap.Toast(deleteToastEl) : null;
+
+  // open modal
+  document.addEventListener("click", (e) => {
+    const btn = e.target.closest(".delete-order-btn");
+    if (!btn) return;
+    const orderId = btn.getAttribute("data-order-id");
+    deleteOrderIdInput.value = orderId;
+    deleteModal.show();
+  });
+
+  // confirm delete
+  confirmDeleteBtn.addEventListener("click", async () => {
+    const orderId = deleteOrderIdInput.value;
+    if (!orderId) return;
+
+    try {
+      const res = await fetch("/seller/orders/delete", {
+        method: "POST", // ← use POST to avoid DELETE+body issues
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ order_id: orderId })
+      });
+
+      // Robust parse: prefer JSON; fallback to text
+      let payload;
+      const ct = res.headers.get("content-type") || "";
+      if (ct.includes("application/json")) {
+        payload = await res.json();
+      } else {
+        const text = await res.text();
+        payload = { success: res.ok, message: text };
+      }
+
+      if (!res.ok || !payload?.success) {
+        alert(payload?.message || `Failed to delete (HTTP ${res.status}).`);
+        return;
+      }
+
+      // Remove the row using the button's data attribute
+      const btn = document.querySelector(`.delete-order-btn[data-order-id="${orderId}"]`);
+      const rowEl = btn ? btn.closest(".order-row") : null;
+      if (rowEl) rowEl.remove();
+
+      deleteModal.hide();
+      if (deleteToast) {
+        deleteToastEl.querySelector(".toast-body").textContent =
+          payload.message || "Deleted successfully.";
+        deleteToast.show();
+      } else {
+        alert(payload.message || "Deleted successfully.");
+      }
+
+      // If the page is empty now, go back a page (if possible) or reload
+      if (!document.querySelector(".orders-table .order-row")) {
+        const url = new URL(window.location.href);
+        const page = parseInt(url.searchParams.get("page") || "1", 10);
+        if (page > 1) {
+          url.searchParams.set("page", String(page - 1));
+          window.location.href = url.toString();
+        } else {
+          window.location.reload();
+        }
+      }
+    } catch (err) {
+      console.error("Delete error:", err);
+      alert("Network or parsing error. Check DevTools → Network for details.");
+    }
+  });
+})();

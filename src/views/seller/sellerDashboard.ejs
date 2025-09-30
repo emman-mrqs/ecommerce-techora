@@ -1,260 +1,274 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TECHORA - Seller Dashboard</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="css/sellerDashboard.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= pageTitle || "TECHORA - Seller Dashboard" %></title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/sellerDashboard.css">
 </head>
 <body>
-    
-    <!-- Main Content -->
-    <div class="main-content">
-        <!-- Top Header and SideBar -->
-        <%- include("../partials/sellerSideBarNav.ejs") %>
+  <div class="main-content">
+    <!-- Top Header and SideBar -->
+    <%- include("../partials/sellerSideBarNav.ejs") %>
 
-        
-        <!-- Dashboard Content -->
-        <div class="dashboard-content">
-            <div class="mb-4">
-                <h2 class="mb-2">Dashboard Overview</h2>
-                <p class="text-muted">Welcome back! Here's what's happening with your store today.</p>
-            </div>
-            
-            <!-- Stats Row -->
-            <div class="row g-3 mb-4">
-                <div class="col-md-3">
-                    <div class="stat-card">
-                        <div class="stat-icon earnings">₱</div>
-                        <div class="stat-value">₱45,280.00</div>
-                        <div class="text-muted small mb-1">TOTAL EARNINGS</div>
-                        <div class="stat-change positive">
-                            <i class="fas fa-arrow-up"></i>
-                            +18.3% vs last month
-                        </div>
-                        <div class="text-muted small">Previous month: ₱38,950.00</div>
-                    </div>
-                </div>
-                
-                <div class="col-md-3">
-                    <div class="stat-card">
-                        <div class="stat-icon orders">
-                            <i class="fas fa-shopping-cart"></i>
-                        </div>
-                        <div class="stat-value">1,247</div>
-                        <div class="text-muted small mb-1">TOTAL ORDERS</div>
-                        <div class="stat-change positive">
-                            <i class="fas fa-arrow-up"></i>
-                            +8.2% vs last month
-                        </div>
-                        <div class="text-muted small">Previous month: 1,153</div>
-                    </div>
-                </div>
-                
-                <div class="col-md-3">
-                    <div class="stat-card">
-                        <div class="stat-icon products">
-                            <i class="fas fa-box"></i>
-                        </div>
-                        <div class="stat-value">89</div>
-                        <div class="text-muted small mb-1">TOTAL PRODUCTS</div>
-                        <div class="stat-change negative">
-                            <i class="fas fa-arrow-down"></i>
-                            -3.1% vs last month
-                        </div>
-                        <div class="text-muted small">Previous month: 92</div>
-                    </div>
-                </div>
-                
-                <div class="col-md-3">
-                    <div class="stat-card">
-                        <div class="stat-icon pending">
-                            <i class="fas fa-clock"></i>
-                        </div>
-                        <div class="stat-value">23</div>
-                        <div class="text-muted small mb-1">PENDING ORDERS</div>
-                        <div class="stat-change positive">
-                            <i class="fas fa-arrow-up"></i>
-                            +15.0% vs last month
-                        </div>
-                        <div class="text-muted small">Previous month: 20</div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Charts Row -->
-            <div class="row g-3">
-                <div class="col-md-8">
-                    <div class="chart-container">
-                        <div class="chart-header">
-                            <div>
-                                <div class="chart-title">Store Visits</div>
-                            </div>
-                            <div class="text-end">
-                                <div class="chart-value">12,847</div>
-                                <div class="chart-subtitle">This Month</div>
-                            </div>
-                        </div>
-                        <div class="chart-placeholder">
-                            <div class="chart-bars">
-                                <div class="chart-bar" style="height: 30%;"></div>
-                                <div class="chart-bar" style="height: 45%;"></div>
-                                <div class="chart-bar" style="height: 35%;"></div>
-                                <div class="chart-bar" style="height: 60%;"></div>
-                                <div class="chart-bar" style="height: 55%;"></div>
-                                <div class="chart-bar" style="height: 70%;"></div>
-                                <div class="chart-bar" style="height: 65%;"></div>
-                                <div class="chart-bar" style="height: 80%;"></div>
-                                <div class="chart-bar" style="height: 75%;"></div>
-                                <div class="chart-bar" style="height: 90%;"></div>
-                                <div class="chart-bar" style="height: 85%;"></div>
-                                <div class="chart-bar" style="height: 95%;"></div>
-                                <div class="chart-bar" style="height: 100%;"></div>
-                                <div class="chart-bar" style="height: 90%;"></div>
-                                <div class="chart-bar" style="height: 95%;"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="col-md-4">
-                    <div class="product-views-list">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="mb-0">Product Views</h5>
-                        </div>
-                        <div class="text-center mb-3">
-                            <div class="chart-value">15,847</div>
-                            <div class="stat-change positive">
-                                <i class="fas fa-arrow-up"></i>
-                                +12.5% vs last month
-                            </div>
-                        </div>
-                        <div class="product-item">
-                            <span>Headphones</span>
-                            <strong>4,521</strong>
-                        </div>
-                        <div class="product-item">
-                            <span>Watches</span>
-                            <strong>3,847</strong>
-                        </div>
-                        <div class="product-item">
-                            <span>Speakers</span>
-                            <strong>2,846</strong>
-                        </div>
-                        <div class="product-item">
-                            <span>Accessories</span>
-                            <strong>4,633</strong>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Bottom Row -->
-            <div class="row g-3 mt-2">
-                <div class="col-md-8">
-                    <div class="orders-table">
-                        <div class="table-header">
-                            <h5 class="mb-0">Recent Orders</h5>
-                            <a href="#" class="view-all-link">View All Orders</a>
-                        </div>
-                        
-                        <div class="table-responsive">
-                            <table class="table table-sm">
-                                <thead>
-                                    <tr class="text-muted">
-                                        <th>ORDER ID</th>
-                                        <th>CUSTOMER</th>
-                                        <th>PRODUCT</th>
-                                        <th>DATE</th>
-                                        <th>STATUS</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>ORD-2025-001</td>
-                                        <td>Sarah Johnson</td>
-                                        <td>Premium Wireless Headphones</td>
-                                        <td>2025-01-15</td>
-                                        <td><span class="status-badge status-pending">Pending</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>ORD-2025-002</td>
-                                        <td>Michael Chen</td>
-                                        <td>Smart Fitness Watch</td>
-                                        <td>2025-01-15</td>
-                                        <td><span class="status-badge status-shipped">Shipped</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>ORD-2025-003</td>
-                                        <td>Emma Davis</td>
-                                        <td>Bluetooth Speaker Pro</td>
-                                        <td>2025-01-14</td>
-                                        <td><span class="status-badge status-delivered">Delivered</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>ORD-2025-004</td>
-                                        <td>David Wilson</td>
-                                        <td>Wireless Charging Pad</td>
-                                        <td>2025-01-14</td>
-                                        <td><span class="status-badge status-pending">Pending</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>ORD-2025-005</td>
-                                        <td>Lisa Anderson</td>
-                                        <td>USB-C Hub</td>
-                                        <td>2025-01-13</td>
-                                        <td><span class="status-badge status-shipped">Shipped</span></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="col-md-4">
-                    <div class="quick-actions">
-                        <h5 class="mb-3">Quick Actions</h5>
-                        <button class="action-btn">
-                            <i class="fas fa-plus me-2"></i>
-                            Add New Product
-                        </button>
-                        <button class="action-btn">
-                            <i class="fas fa-box me-2"></i>
-                            Manage Products
-                        </button>
-                        <button class="action-btn">
-                            <i class="fas fa-list me-2"></i>
-                            View All Orders
-                        </button>
-                        <button class="action-btn">
-                            <i class="fas fa-chart-line me-2"></i>
-                            View Analytics
-                        </button>
-                    </div>
-                    
-                    <div class="recent-activity">
-                        <h5 class="mb-3">Recent Activity</h5>
-                        <div class="activity-item">
-                            <div class="activity-dot placed"></div>
-                            <div class="small">Order #ORD-2025-050 was placed</div>
-                        </div>
-                        <div class="activity-item">
-                            <div class="activity-dot updated"></div>
-                            <div class="small">Product "Wireless Headphones" updated</div>
-                        </div>
-                        <div class="activity-item">
-                            <div class="activity-dot received"></div>
-                            <div class="small">Payment received for order #ORD-2025-002</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+    <!-- Dashboard Content -->
+    <div class="dashboard-content container-fluid">
+      <div class="mb-4 page-heading">
+        <div>
+          <h2 class="mb-1">Dashboard Overview</h2>
+          <p class="text-muted mb-0">Welcome back! Here's what's happening with your store today.</p>
         </div>
+      </div>
+
+      <!-- Stats Row -->
+      <div class="row g-3 mb-4">
+        <!-- Earnings -->
+        <div class="col-md-3">
+          <div class="stat-card">
+            <div class="stat-icon earnings">₱</div>
+            <div class="stat-value">
+              ₱<%= Number(stats.earnings.current||0).toLocaleString('en-PH',{minimumFractionDigits:2}) %>
+            </div>
+            <div class="text-muted small mb-1">TOTAL EARNINGS (This Month)</div>
+            <div class="stat-change <%= (stats.earnings.deltaPct>=0?'positive':'negative') %>">
+              <i class="fas fa-arrow-<%= (stats.earnings.deltaPct>=0?'up':'down') %>"></i>
+              <%= (stats.earnings.deltaPct>=0?'+':'') %><%= (Math.abs(stats.earnings.deltaPct)).toFixed(1) %>% vs last month
+            </div>
+            <div class="text-muted small">
+              Previous month: ₱<%= Number(stats.earnings.previous||0).toLocaleString('en-PH',{minimumFractionDigits:2}) %>
+            </div>
+          </div>
+        </div>
+
+        <!-- Orders -->
+        <div class="col-md-3">
+          <div class="stat-card">
+            <div class="stat-icon orders"><i class="fas fa-shopping-cart"></i></div>
+            <div class="stat-value"><%= Number(stats.orders.total||0).toLocaleString() %></div>
+            <div class="text-muted small mb-1">TOTAL ORDERS</div>
+            <div class="stat-change <%= (stats.orders.deltaPct>=0?'positive':'negative') %>">
+              <i class="fas fa-arrow-<%= (stats.orders.deltaPct>=0?'up':'down') %>"></i>
+              <%= (stats.orders.deltaPct>=0?'+':'') %><%= (Math.abs(stats.orders.deltaPct)).toFixed(1) %>% vs last month
+            </div>
+            <div class="text-muted small">
+              Previous month: <%= Number(stats.orders.previous||0).toLocaleString() %>
+            </div>
+          </div>
+        </div>
+
+        <!-- Products -->
+        <div class="col-md-3">
+          <div class="stat-card">
+            <div class="stat-icon products"><i class="fas fa-box"></i></div>
+            <div class="stat-value"><%= Number(stats.products.total||0).toLocaleString() %></div>
+            <div class="text-muted small mb-1">TOTAL PRODUCTS</div>
+            <div class="stat-change <%= (stats.products.deltaPct>=0?'positive':'negative') %>">
+              <i class="fas fa-arrow-<%= (stats.products.deltaPct>=0?'up':'down') %>"></i>
+              <%= (stats.products.deltaPct>=0?'+':'') %><%= (Math.abs(stats.products.deltaPct)).toFixed(1) %>% vs last month
+            </div>
+            <div class="text-muted small">
+              Previous month: <%= Number(stats.products.previousTotal||0).toLocaleString() %>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pending -->
+        <div class="col-md-3">
+          <div class="stat-card">
+            <div class="stat-icon pending"><i class="fas fa-clock"></i></div>
+            <div class="stat-value"><%= Number(stats.pending.current||0).toLocaleString() %></div>
+            <div class="text-muted small mb-1">PENDING ORDERS</div>
+            <div class="stat-change <%= (stats.pending.deltaPct>=0?'positive':'negative') %>">
+              <i class="fas fa-arrow-<%= (stats.pending.deltaPct>=0?'up':'down') %>"></i>
+              <%= (stats.pending.deltaPct>=0?'+':'') %><%= (Math.abs(stats.pending.deltaPct)).toFixed(1) %>% vs last month
+            </div>
+            <div class="text-muted small">
+              Previous month: <%= Number(stats.pending.previous||0).toLocaleString() %>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts Row -->
+      <div class="row g-3 align-items-stretch">
+        <div class="col-md-8">
+          <div class="chart-container">
+            <div class="chart-header">
+              <div class="d-flex align-items-center gap-2">
+                <div class="chart-dot"></div>
+                <div class="chart-title">Store Visits</div>
+              </div>
+              <div class="text-end">
+                <div class="chart-value"><%= Number(stats.storeVisitsThisMonth||0).toLocaleString() %></div>
+                <div class="chart-subtitle">This Month</div>
+              </div>
+            </div>
+
+            <!-- Monthly column chart (like the sample) -->
+            <div class="chart-placeholder">
+              <div class="chart-vertical">
+                <div class="chart-grid" id="visits-monthly-grid"></div>
+                <div class="chart-bars" id="visits-monthly-bars"></div>
+              </div>
+              <div class="chart-xlabels" id="visits-monthly-labels"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-4">
+          <div class="product-views-list h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h5 class="mb-0">Product Views</h5>
+            </div>
+            <div class="text-center mb-2">
+              <div class="chart-value"><%= Number(stats.totalProductViewsThisMonth||0).toLocaleString() %></div>
+              <div class="small text-muted">This Month</div>
+            </div>
+
+            <!-- Scrollable product list -->
+            <div class="card-scroll maxh-360">
+              <% if ((topViewed||[]).length === 0) { %>
+                <div class="text-muted small">No product views yet this month.</div>
+              <% } %>
+              <% (topViewed||[]).forEach(r => { %>
+                <div class="product-item">
+                  <span class="truncate-1"><%= r.name %></span>
+                  <strong><%= Number(r.views||0).toLocaleString() %></strong>
+                </div>
+              <% }) %>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Orders -->
+      <div class="row g-3 mt-2">
+        <div class="col-md-8">
+          <div class="orders-table">
+            <div class="table-header">
+              <h5 class="mb-0">Recent Orders</h5>
+              <a href="/seller/orders" class="view-all-link">View All Orders</a>
+            </div>
+
+            <div class="table-responsive card-scroll maxh-360">
+              <table class="table table-sm align-middle">
+                <thead>
+                  <tr class="text-muted">
+                    <th>ORDER ID</th>
+                    <th>CUSTOMER</th>
+                    <th>PRODUCT</th>
+                    <th>DATE</th>
+                    <th>STATUS</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% if ((recentOrders||[]).length === 0) { %>
+                    <tr><td colspan="5" class="text-muted">No recent orders.</td></tr>
+                  <% } %>
+                  <% (recentOrders||[]).forEach(r => { %>
+                    <tr>
+                      <td>ORD-<%= new Date().getFullYear() %>-<%= String(r.id).padStart(3,'0') %></td>
+                      <td class="truncate-1"><%= r.customer %></td>
+                      <td class="truncate-1"><%= r.product_name %></td>
+                      <td><%= r.date %></td>
+                      <td>
+                        <% const st = String(r.order_status||'').toLowerCase(); %>
+                        <span class="status-badge status-<%= st %>"><%= r.order_status %></span>
+                      </td>
+                    </tr>
+                  <% }) %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick actions -->
+        <div class="col-md-4">
+          <div class="quick-actions">
+            <h5 class="mb-3">Quick Actions</h5>
+            <a href="/seller/add"><button class="action-btn">
+              <i class="fas fa-plus me-2"></i> Add New Product
+            </button></a>
+            <a href="/seller/products"><button class="action-btn">
+              <i class="fas fa-box me-2"></i> Manage Products
+            </button></a>
+            <a href="/seller/orders"><button class="action-btn">
+              <i class="fas fa-list me-2"></i> View All Orders
+            </button></a>
+            <a href="/seller/analytics"><button class="action-btn">
+              <i class="fas fa-chart-line me-2"></i> View Analytics
+            </button></a>
+          </div>
+
+          <div class="recent-activity">
+            <h5 class="mb-3">Recent Activity</h5>
+            <div class="activity-item">
+              <div class="activity-dot placed"></div>
+              <div class="small text-muted">New orders & updates appear here.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FULL-WIDTH Recent Activity feed -->
+      <div class="row g-3 mt-2">
+        <div class="col-12">
+          <div class="recent-activity activity-feed">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h5 class="mb-0">Recent Activity</h5>
+              <span class="text-muted small">Last 30 events</span>
+            </div>
+
+            <div class="feed-list card-scroll maxh-420">
+              <% if ((recentActivity||[]).length === 0) { %>
+                <div class="text-muted small">No activity yet.</div>
+              <% } %>
+
+              <% (recentActivity||[]).forEach(a => { %>
+                <div class="feed-item">
+                  <div class="feed-icon type-<%= a.type %>">
+                    <% if (a.type==='order') { %><i class="fas fa-receipt"></i><% } %>
+                    <% if (a.type==='payment') { %><i class="fas fa-wallet"></i><% } %>
+                    <% if (a.type==='review') { %><i class="fas fa-star"></i><% } %>
+                    <% if (a.type==='product') { %><i class="fas fa-box"></i><% } %>
+                    <% if (a.type==='promotion') { %><i class="fas fa-tags"></i><% } %>
+                  </div>
+                  <div class="feed-content">
+                    <div class="feed-title">
+                      <strong><%= a.title %></strong>
+                      <span class="text-muted">•</span>
+                      <span class="muted"><%= a.meta1 %></span>
+                      <% if (a.meta2) { %>
+                        <span class="badge bg-light text-dark ms-1"><%= a.meta2 %></span>
+                      <% } %>
+                    </div>
+                    <div class="feed-meta text-muted small">
+                      <%= new Date(a.ts).toLocaleString('en-PH',{ hour12:false }) %>
+                      <% if (a.type==='order' && a.qty!=null) { %> · <%= a.qty %> item(s)<% } %>
+                      <% if (a.ref_id) { %> ·
+                        <a href="/seller/orders?focus=<%= a.ref_id %>" class="link-dark text-decoration-underline">view</a>
+                      <% } %>
+                    </div>
+                  </div>
+                </div>
+              <% }) %>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
+  </div>
 
+  <!-- Data blobs -->
+  <script type="application/json" id="storeVisitsLast30"><%- JSON.stringify(storeVisitsLast30 || []) %></script>
+  <script type="application/json" id="visitsByMonth"><%- JSON.stringify(visitsByMonth || []) %></script>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/js/sellerDashboard.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

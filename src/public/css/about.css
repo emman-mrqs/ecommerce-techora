@@ -1,0 +1,126 @@
+:root{
+  --bg:#FFFFFF;
+  --ink:#0A0A0A;
+  --muted:#4D4D4D;
+  --accent:#1A1A1A;
+  --line:#E0E0E0;
+  --card:#FAFAFA;
+  --btn:#000000;
+  --btnText:#FFFFFF;
+  --hover:#333333;
+  --alert:#CC0000;
+  --radius:16px;
+  --shadow:0 12px 32px rgba(0,0,0,.08);
+}
+
+body{ color:var(--ink); background:var(--bg); }
+
+/* ---------- Hero ---------- */
+.about-hero{
+  padding:64px 0 32px;
+  position:relative;
+  overflow:hidden;
+  background: linear-gradient(180deg, #fff, #fafafa);
+  border-bottom:1px solid var(--line);
+}
+.hero-card{
+  position:relative; background:#fff; border:1px solid var(--line);
+  border-radius:var(--radius); overflow:hidden; box-shadow:var(--shadow);
+}
+.hero-img{
+  width:100%; height:100%; object-fit:cover; aspect-ratio: 16/12;
+  transform: translateZ(0); transition: transform .6s cubic-bezier(.2,.8,.2,1);
+}
+.hero-card:hover .hero-img{ transform: scale(1.02); }
+.badge-chip{
+  position:absolute; top:12px; left:12px; z-index:2;
+  background:rgba(255,255,255,.9); color:#000; font-weight:700;
+  padding:.35rem .7rem; border-radius:999px; box-shadow:var(--shadow);
+}
+
+/* Floating shapes */
+.shape{
+  position:absolute; border-radius:999px; filter: blur(6px); opacity:.25; pointer-events:none;
+}
+.shape-1{ width:260px; height:260px; right:-80px; top:-60px; background:#000; }
+.shape-2{ width:180px; height:180px; left:-70px; bottom:-40px; background:#000; }
+
+/* ---------- Stats ---------- */
+.stats-strip{ padding:28px 0; background:#fff; border-bottom:1px solid var(--line); }
+.stat-card{
+  background:#fff; border:1px solid var(--line); border-radius:14px; padding:16px;
+  box-shadow:var(--shadow);
+}
+.stat-num{ font-weight:900; font-size:2rem; line-height:1; }
+.stat-label{ color:var(--muted); font-size:.9rem; margin-top:.25rem; }
+
+/* ---------- Story & Values ---------- */
+.story{ padding:64px 0 24px; background:#fff; }
+.story-card{
+  background:var(--card); border:1px solid var(--line); padding:24px;
+  border-radius:var(--radius); box-shadow:var(--shadow);
+}
+.values{ display:grid; gap:14px; }
+.value-item{
+  display:flex; gap:14px; align-items:flex-start;
+  background:#fff; border:1px solid var(--line); padding:16px 18px;
+  border-radius:14px; transition: transform .25s ease, box-shadow .25s ease;
+}
+.value-item:hover{ transform: translateY(-3px); box-shadow:0 10px 24px rgba(0,0,0,.08); }
+.value-item i{
+  width:44px; height:44px; display:grid; place-items:center; border-radius:12px;
+  background:#000; color:#fff; font-size:1.05rem;
+}
+
+/* ---------- Why ---------- */
+.why{ padding:56px 0; background:#fff; }
+.underline{ width:90px; height:3px; background:#000; border-radius:999px; }
+.why-card{
+  background:#fff; border:1px solid var(--line); border-radius:16px; padding:22px;
+  text-align:center; box-shadow:var(--shadow);
+  transition: transform .3s cubic-bezier(.2,.8,.2,1);
+}
+.why-card:hover{ transform: translateY(-6px); }
+.why-card i{
+  font-size:20px; background:#000; color:#fff; border-radius:10px; width:42px; height:42px; display:grid; place-items:center; margin:0 auto 10px;
+}
+
+/* ---------- Seller ---------- */
+.seller{ padding:64px 0; background:#FAFAFA; border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
+.steps{ margin:18px 0 22px; }
+.steps li{ display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+.steps li span{
+  display:inline-grid; place-items:center; width:28px; height:28px; border-radius:999px;
+  background:#000; color:#fff; font-weight:800; font-size:.9rem;
+}
+.seller-card{
+  background:#fff; border:1px solid var(--line); border-radius:16px; padding:16px; box-shadow:var(--shadow);
+}
+.tile{ background:#000; height:100px; border-radius:12px; }
+.tile.dim{ background:#1A1A1A; }
+
+/* ---------- FAQ ---------- */
+.faq{ padding:56px 0; background:#fff; }
+.accordion-button{ font-weight:600; }
+.accordion-button:focus{ box-shadow:none; }
+
+/* ---------- Buttons (theme) ---------- */
+.btn-dark{
+  background:var(--btn); color:var(--btnText); border:1px solid var(--btn);
+}
+.btn-dark:hover{ background:var(--hover); border-color:var(--hover); }
+.btn-outline-dark{ border-color:#000; color:#000; }
+.btn-outline-dark:hover{ background:#000; color:#fff; }
+
+/* ---------- Reveal animation ---------- */
+.reveal{
+  opacity:0; transform: translateY(18px); transition: all .7s cubic-bezier(.2,.8,.2,1);
+}
+.reveal.in{ opacity:1; transform:none; }
+.reveal[style*="--d"]{ transition-delay: var(--d); }
+
+/* ---------- Responsive tweaks ---------- */
+@media (max-width: 992px){
+  .about-hero{ padding:48px 0 24px; }
+  .hero-img{ aspect-ratio: 16/10; }
+}

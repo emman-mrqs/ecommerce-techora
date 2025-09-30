@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Products Management - TECHORA</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/css/adminProducts.css">
+</head>
+<body>
+  <!-- Sidebar + Header -->
+  <%- include("../partials/adminSidebarNav", { activePage: "products", pageTitle: "Products Management" }) %>
+
+  <!-- Main Content -->
+  <div class="main-content p-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5 class="fw-bold">Products Management</h5>
+    </div>
+
+    <!-- Search + Filter -->
+    <div class="products-card mb-4">
+      <div class="filters-row">
+        <div class="filter filter-search">
+          <input id="prodSearch" type="text" class="form-control" placeholder="Search Product name">
+        </div>
+        <div class="filter filter-compact">
+          <select id="prodStatus" class="form-select">
+            <option value="">All Statuses</option>
+            <option value="active">Active</option>
+            <option value="low_stock">Low Stocks</option>
+            <option value="out_of_stock">Out of Stock</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sellers loop: one collapsible table per seller -->
+    <% if (sellers && sellers.length) { %>
+      <div class="accordion" id="sellersAccordion">
+        <% sellers.forEach((seller, idx) => { 
+             const collapseId = `sellerCollapse${seller.seller_id}`;
+             const headingId  = `sellerHeading${seller.seller_id}`;
+        %>
+          <div class="products-card">
+            <div class="seller-header">
+              <h6 class="seller-name" id="<%= headingId %>">
+                <i class="fa-solid fa-store me-2"></i><%= seller.store_name %>
+              </h6>
+              <button class="btn btn-sm btn-outline-dark collapse-toggle"
+                      type="button"
+                      data-bs-toggle="collapse"
+                      data-bs-target="#<%= collapseId %>"
+                      aria-expanded="<%= idx === 0 ? 'true' : 'false' %>"
+                      aria-controls="<%= collapseId %>">
+                <i class="fa-solid fa-chevron-down me-1"></i> Toggle
+              </button>
+            </div>
+
+            <div id="<%= collapseId %>" class="collapse <%= idx === 0 ? 'show' : '' %>" data-bs-parent="#sellersAccordion">
+              <div class="pt-3">
+                <div class="table-responsive">
+                  <table class="table align-middle table-hover table-borderless table-striped mb-0">
+                    <caption class="visually-hidden">Products for <%= seller.store_name %></caption>
+                    <thead class="table-light sticky-top">
+                      <tr>
+                        <th style="width:56px;"></th>
+                        <th>Product Name</th>
+                        <th>Price</th>
+                        <th>Stock</th>
+                        <th>Status</th>
+                        <th class="text-center">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <% if (seller.products && seller.products.length) { %>
+                        <% seller.products.forEach(p => { %>
+                          <tr
+                            class="product-row"
+                            data-search="<%= (p.name || '').toLowerCase() %>"
+                            data-status="<%= p.status %>">
+                            <td>
+                              <% if (p.primary_image) { %>
+                                <img class="img-thumb" src="<%= p.primary_image %>" alt="">
+                              <% } else { %>
+                                <div class="img-thumb d-flex align-items-center justify-content-center text-muted">
+                                  <i class="fa-regular fa-image"></i>
+                                </div>
+                              <% } %>
+                            </td>
+                            <td class="fw-medium"><%= p.name %></td>
+                            <td>
+                              <% if (Number(p.min_price) === Number(p.max_price)) { %>
+                                ₱<%= Number(p.min_price).toLocaleString() %>
+                              <% } else { %>
+                                ₱<%= Number(p.min_price).toLocaleString() %> – ₱<%= Number(p.max_price).toLocaleString() %>
+                              <% } %>
+                            </td>
+                            <td><%= Number(p.total_stock).toLocaleString() %></td>
+                            <td>
+                              <% if (p.status === 'out_of_stock') { %>
+                                <span class="status-out">Out of stock</span>
+                              <% } else if (p.status === 'low_stock') { %>
+                                <span class="status-low">Low stock</span>
+                              <% } else { %>
+                                <span class="status-active">Active</span>
+                              <% } %>
+                            </td>
+                            <td class="text-center table-actions">
+                              <button type="button" class="btn btn-outline-primary btn-sm me-1 js-view"
+                                      title="View product"
+                                      data-id="<%= p.id %>">
+                                <i class="fas fa-eye"></i>
+                              </button>
+                              <button type="button" class="btn btn-outline-secondary btn-sm me-1 js-edit"
+                                      title="Edit product"
+                                      data-id="<%= p.id %>">
+                                <i class="fas fa-pen"></i>
+                              </button>
+                              <button type="button" class="btn btn-outline-danger btn-sm js-delete"
+                                      title="Delete product"
+                                      data-id="<%= p.id %>"
+                                      data-name="<%= p.name %>">
+                                <i class="fas fa-trash"></i>
+                              </button>
+                            </td>
+                          </tr>
+                        <% }) %>
+                      <% } else { %>
+                        <tr><td colspan="6" class="text-center text-muted">No products</td></tr>
+                      <% } %>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        <% }) %>
+      </div>
+    <% } else { %>
+      <div class="alert alert-light border">No sellers found.</div>
+    <% } %>
+
+  </div>
+
+  <!-- Product View/Edit Modal -->
+  <div class="modal fade" id="productModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+      <div class="modal-content">
+        <form id="productForm" method="post">
+          <div class="modal-header">
+            <h5 class="modal-title">
+              <span id="pmodeBadge" class="badge bg-secondary me-2">VIEW</span>
+              <span id="pTitle">Product</span>
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+
+          <div class="modal-body">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Product Name</label>
+                <input id="pName" name="name" class="form-control" type="text" placeholder="Name" readonly>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Store</label>
+                <input id="pStore" class="form-control" type="text" readonly>
+              </div>
+              <div class="col-12">
+                <label class="form-label">Description</label>
+                <textarea id="pDesc" name="description" class="form-control" rows="3" placeholder="Description" readonly></textarea>
+              </div>
+            </div>
+
+            <div class="mt-4">
+              <h6 class="fw-bold mb-2">Variants</h6>
+              <div class="table-responsive">
+                <table class="table table-sm align-middle">
+                  <thead class="table-light">
+                    <tr>
+                      <th>#</th>
+                      <th>Storage</th>
+                      <th>RAM</th>
+                      <th>Color</th>
+                      <th style="width:160px;">Price</th>
+                      <th style="width:140px;">Stock</th>
+                    </tr>
+                  </thead>
+                  <tbody id="variantsBody"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="mt-3">
+              <h6 class="fw-bold mb-2">Images</h6>
+              <div id="imagesRow" class="d-flex flex-wrap gap-2"></div>
+            </div>
+          </div>
+
+          <div class="modal-footer justify-content-end">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <button id="saveBtn" type="submit" class="btn btn-primary d-none">
+              <i class="fa-solid fa-floppy-disk me-1"></i> Save Changes
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirm Action Modal (Delete) -->
+  <div class="modal fade" id="confirmActionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <form id="confirmActionForm" method="post">
+          <div class="modal-header">
+            <h5 class="modal-title" id="confirmTitle">Confirm</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body text-start">
+            <p class="mb-0">
+              <span id="confirmMsg">Are you sure?</span>
+              <strong id="confirmName" class="ms-1"></strong>
+            </p>
+          </div>
+          <div class="modal-footer justify-content-end">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button id="confirmSubmit" type="submit" class="btn btn-danger">Delete</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <%- include("../partials/toast", { toast }) %>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/js/adminProducts.js"></script>
+</body>
+</html>

@@ -23,19 +23,31 @@
     <% const _avatarSeed = (_user.name && _user.name.trim().length) ? _user.name : 'TU'; %>
 
     <div class="me" id="meBox">
-      <div class="avatar" id="meAvatar"><%= _avatarSeed.slice(0,2).toUpperCase() %></div>
+      <div class="avatar-wrapper">
+        <% if (_user.avatar_url) { %>
+          <img src="<%= _user.avatar_url %>" alt="Avatar" class="avatar-img">
+        <% } else { %>
+          <div class="avatar-fallback"><%= _avatarSeed.slice(0,2).toUpperCase() %></div>
+        <% } %>
+
+        <!-- Pencil overlay -->
+        <div class="avatar-overlay" title="Change avatar">
+          <i class="fa fa-pencil-alt"></i>
+          <input type="file" id="avatarInput" name="avatar" accept="image/*" hidden>
+        </div>
+      </div>
+
       <div class="meta">
-        <strong id="meName"><%= _user.name || 'Techora User' %></strong>
-        <small id="meEmail"><%= _user.email || 'user@example.com' %></small>
-        <!-- <small class="text-muted">Session: <%= typeof sessionID !== 'undefined' ? sessionID : '' %></small> -->
+        <strong id="meName"><%= _user.name %></strong>
+        <small id="meEmail" title="<%= _user.email %>"><%= _user.email %></small>
       </div>
     </div>
 
+
     <nav class="nav" role="navigation" aria-label="Account sections">
-      <button class="active" data-view="profile"><span class="icon">👤</span> Profile</button>
-      <button data-view="orders"><span class="icon">🧾</span> My Orders</button>
-      <button data-view="settings"><span class="icon">⚙️</span> Settings</button>
-      <button data-action="logout" class="ghost" style="margin-top:8px"><span class="icon">↪</span> Logout</button>
+      <button class="active" data-view="profile"><span class="icon"><i class="bi bi-person-fill"></i></span> Profile</button>
+      <button data-view="orders"><i class="bi bi-box-fill"></i></span> My Orders</button>
+      <button data-view="settings"><i class="bi bi-gear-fill"></i></span> Settings</button>
     </nav>
   </aside>
 
@@ -45,43 +57,20 @@
     <!-- PROFILE -->
     <section data-route="profile" class="route">
       <div class="page-title"><h2>Profile</h2></div>
-
       <div class="panel">
-        <div class="head"><strong>Personal Info</strong>
-          <div class="actions">
-            <button class="btn outline" id="btnEditProfile">Edit</button>
-            <button class="btn" id="btnSaveProfile" style="display:none">Save</button>
-          </div>
+        <div class="head">
+          <strong>Personal Info</strong>
+        <div class="actions">
+          <button class="btn outline" id="btnEditName">Edit</button>
+          <button class="btn" id="btnSaveName" style="display:none">Save</button>
+          <button class="btn ghost" id="btnCancelName" style="display:none">Cancel</button>
+        </div>
+
         </div>
         <div class="body">
-          <div class="grid-3">
-            <div class="stack">
-              <label for="pfName">Full Name</label>
-              <input id="pfName" type="text" placeholder="Your name" disabled>
-            </div>
-            <div class="stack">
-              <label for="pfEmail">Email</label>
-              <input id="pfEmail" type="email" placeholder="you@domain.com" disabled>
-            </div>
-            <div class="stack">
-              <label for="pfPhone">Phone</label>
-              <input id="pfPhone" type="tel" placeholder="+63 900 000 0000" disabled>
-            </div>
-          </div>
-
-          <div class="grid-3" style="margin-top:12px">
-            <div class="stack">
-              <label for="pfUsername">Username</label>
-              <input id="pfUsername" type="text" placeholder="username" disabled>
-            </div>
-            <div class="stack">
-              <label for="pfBio">About</label>
-              <input id="pfBio" type="text" placeholder="Tell us about you" disabled>
-            </div>
-            <div class="stack">
-              <label for="pfAvatar">Avatar (initials)</label>
-              <input id="pfAvatar" maxlength="2" placeholder="e.g. TM" disabled>
-            </div>
+          <div class="stack">
+            <label for="pfName">Full Name</label>
+            <input id="pfName" type="text" value="<%= user.name %>" disabled>
           </div>
         </div>
       </div>
@@ -89,21 +78,25 @@
       <div class="panel" style="margin-top:14px">
         <div class="head"><strong>Security</strong></div>
         <div class="body">
-          <div class="grid-3">
-            <div class="stack">
-              <label for="pfPasswordNow">Current Password</label>
-              <input id="pfPasswordNow" type="password" placeholder="••••••••">
+          <% if (user.auth_provider === 'google') { %>
+            <p>You are connected with <strong>Google Sign-In</strong>. 
+            Password changes must be done through your Google Account.</p>
+          <% } else { %>
+            <div class="grid-3">
+              <div class="stack">
+                <label for="pfPasswordNow">Current Password</label>
+                <input id="pfPasswordNow" type="password" placeholder="••••••••">
+              </div>
+              <div class="stack">
+                <label for="pfPasswordNew">New Password</label>
+                <input id="pfPasswordNew" type="password" placeholder="Minimum 6 chars">
+              </div>
+              <div class="stack">
+                <label>&nbsp;</label>
+                <button class="btn" id="btnChangePassword">Change Password</button>
+              </div>
             </div>
-            <div class="stack">
-              <label for="pfPasswordNew">New Password</label>
-              <input id="pfPasswordNew" type="password" placeholder="Minimum 6 chars">
-            </div>
-            <div class="stack">
-              <label>&nbsp;</label>
-              <button class="btn" id="btnChangePassword">Change Password</button>
-            </div>
-          </div>
-          <small class="muted" style="color:var(--muted)">Passwords are stored locally in your browser for demo purposes only.</small>
+          <% } %>
         </div>
       </div>
     </section>
@@ -129,7 +122,24 @@
             <div class="row">
               <div>
                 <strong>Order</strong> • <span class="badge"><%= o.ui_status %></span><br>
-                <small style="color:var(--muted)">Order ID: <%= o.id %> · <%= new Date(o.created_at).toLocaleString() %></small>
+                <!-- rate completed -->
+              <% if (o.ui_status === 'Completed') { %>
+                <div class="mt-2">
+                  <small class="text-success">Rate your product(s):</small>
+                  <div class="d-flex flex-wrap gap-2 mt-1">
+                    <% 
+                      const __seen = new Set();
+                      o.items.forEach(it => {
+                        if (!it.product_id || __seen.has(it.product_id)) return;
+                        __seen.add(it.product_id);
+                    %>
+                      <a href="/buy/<%= it.product_id %>" class="btn btn-sm btn-outline-warning">
+                        <i class="fa-solid fa-star me-1"></i> Rate this product
+                      </a>
+                    <% }) %>
+                  </div>
+                </div>
+              <% } %>
               </div>
               <div class="actions">
                 <% if (o.ui_status === 'Pending') { %>
@@ -137,14 +147,12 @@
                   <button class="btn outline btn-cancel-order" data-order-id="<%= o.id %>">Cancel</button>
                 <% } %>
                 <% if (o.ui_status === 'To Ship') { %>
-                  <a href="/track/<%= o.id %>" class="btn outline">Track</a>
                   <button class="btn outline btn-cancel-order" data-order-id="<%= o.id %>">Cancel</button>
                 <% } %>
-                <% if (o.ui_status === 'To Receive') { %>
-                  <form method="post" action="/api/orders/receive/<%= o.id %>">
-                    <button class="btn">Mark Received</button>
-                  </form>
-                <% } %>
+                  <% if (o.ui_status === 'To Receive') { %>
+                    <button class="btn btn-receive-order" data-order-id="<%= o.id %>">Mark Received</button>
+                    <button class="btn outline btn-refund-order" data-order-id="<%= o.id %>">Refund</button>
+                  <% } %>
               </div>
             </div>
 
@@ -256,7 +264,6 @@
               <label>Danger Zone</label>
               <div class="actions">
                 <button class="btn danger" id="btnDeleteAccount">Delete Account</button>
-                <button class="btn outline" data-action="logout">Logout</button>
               </div>
               <small class="muted" style="color:var(--muted)">Deleting account clears all local data (profile, orders, addresses).</small>
             </div>
@@ -269,28 +276,82 @@
 </div>
 
 <!-- Modal (reused) -->
-<div class="modal-bg" id="modalBg" role="dialog" aria-modal="true" aria-hidden="true">
-  <div class="modal" role="document" aria-labelledby="modalTitle">
-    <div class="head">
-      <strong id="modalTitle">Modal</strong>
-      <button class="btn ghost" id="modalClose" aria-label="Close">✕</button>
+<!-- Bootstrap Modal -->
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="confirmModalLabel">Confirm</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="confirmModalBody">Are you sure?</div>
+      <div class="modal-footer">
+        <!-- ✅ Cancel button style updated -->
+        <button type="button" class="btn btn-primary" id="confirmModalYes">Yes</button>
+      </div>
     </div>
-    <div class="body" id="modalBody"></div>
-    <div class="foot" id="modalFoot"></div>
+  </div>
+</div>
+<!-- Order Modal -->
+<div class="modal fade" id="addressModal" tabindex="-1" aria-labelledby="addressModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="addressModalLabel">Add New Address</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form id="addressForm">
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">First Name</label>
+              <input type="text" name="first_name" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Last Name</label>
+              <input type="text" name="last_name" class="form-control" required>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Street</label>
+              <input type="text" name="street" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">City</label>
+              <input type="text" name="city" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Province</label>
+                <select name="province" class="form-select" required>
+                  <option value="">Select Province</option>
+                  <option value="Cebu">Cebu</option>
+                  <option value="Manila">Manila</option>
+                  <option value="Davao">Davao</option>
+                </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">ZIP</label>
+              <input type="text" name="zip" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Phone</label>
+              <input type="text" name="phone" class="form-control" required>
+            </div>
+            <div class="col-md-12">
+              <label class="form-label">Email</label>
+              <input type="email" name="email" class="form-control" required>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Save Address</button>
+        </div>
+      </form>
+    </div>
   </div>
 </div>
 
-<!-- Logged-out overlay -->
-<div class="logout-overlay" id="logoutLayer">
-  <div class="logout-card">
-    <h3>You are logged out</h3>
-    <p class="muted" style="color:var(--muted)">This is a front-end demo. Click below to sign back in (restores your local data).</p>
-    <div class="actions">
-      <button class="btn" id="btnLoginAgain">Login</button>
-      <button class="btn outline" id="btnClearAll">Clear all data</button>
-    </div>
-  </div>
-</div>
+
+
 
 <!-- Toast -->
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -300,6 +361,8 @@
 </footer>
 
 <!-- IMPORTANT: no inline JS here. Let /js/profile.js attach handlers (incl. Cancel modal). -->
+ <!-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script> -->
+
 <script src="/js/profile.js"></script>
 </body>
 </html>

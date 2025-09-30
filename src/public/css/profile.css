@@ -119,12 +119,12 @@
   .toast.error{background:var(--danger)}
 
   /* Modal */
-  .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;padding:18px}
+  /* .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;padding:18px }
   .modal{background:#fff;border-radius:16px;min-width:clamp(320px,60vw,720px);box-shadow:var(--shadow);border:1px solid var(--border)}
   .modal .head{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
   .modal .body{padding:16px}
   .modal .foot{padding:14px 16px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px}
-  .modal-bg.show{display:flex}
+  .modal-bg.show{display:flex} */
 
   /* Logged-out overlay */
   .logout-overlay{position:fixed;inset:0;background:#fff;display:none;align-items:center;justify-content:center;padding:24px}
@@ -133,10 +133,126 @@
   .logout-card h3{margin:0 0 8px 0}
   .center{display:flex;align-items:center;justify-content:center}
 
+  /* avatar icon */
+  .me {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+}
+
+/* Avatar wrapper */
+.avatar-wrapper {
+  position: relative;
+  width: 50px;   /* fixed square */
+  height: 50px;
+  flex-shrink: 0;
+}
+
+/* Avatar image / fallback initials */
+.avatar-img,
+.avatar-fallback {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;   /* perfect circle */
+  object-fit: cover;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+  color: #fff;
+  font-weight: 700;
+  font-size: 18px;
+  text-transform: uppercase;
+}
+
+.avatar-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.avatar-overlay i {
+  color: #fff;
+  font-size: 16px;
+}
+
+.avatar-wrapper:hover .avatar-overlay {
+  opacity: 1;
+}
+
+.me .meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;      /* ✅ allow flexbox to shrink text */
+  flex: 1;           /* ✅ let meta take available space */
+  overflow: hidden;
+}
+
+.me .meta strong {
+  font-size: 15px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.me .meta small {
+  color: var(--muted);
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+  width: 100%;       /* ✅ ensures full width inside meta */
+}
+
+
   /* Responsive */
-  @media (max-width: 980px){
-    .wrap{grid-template-columns:1fr}
-    .sidebar{position:static;height:auto}
-    .grid-2,.grid-3{grid-template-columns:1fr}
-    .order .row{flex-direction:column;gap:8px}
+/* Responsive */
+@media (max-width: 980px){
+  .wrap {
+    grid-template-columns: 1fr;
   }
+  .sidebar {
+    position: static;
+    height: auto;
+  }
+  .grid-2, .grid-3 {
+    grid-template-columns: 1fr;
+  }
+  .order .row {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  /* ✅ Fix for Save/Cancel button wrapping */
+  .panel .head {
+    flex-direction: column;   /* stack title + actions */
+    align-items: flex-start;  /* left-align actions */
+    gap: 10px;
+  }
+  .panel .head .actions {
+    width: 100%;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end; /* keep buttons aligned right */
+  }
+  .panel .head .actions .btn {
+    flex: 1 1 auto;           /* buttons expand nicely */
+    max-width: 48%;           /* 2 per row */
+  }
+}
+
+
+

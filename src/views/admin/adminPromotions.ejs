@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Promotions Management - TECHORA</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/css/adminPromotions.css">
+</head>
+<body>
+  <!-- Sidebar + Header -->
+  <%- include("../partials/adminSidebarNav", { activePage: "promotions", pageTitle: "Promotions Management" }) %>
+
+  <!-- Main -->
+  <div class="main-content p-4 promotions-page">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5 class="fw-bold mb-0">Promotions Management</h5>
+    </div>
+
+    <!-- Filters -->
+    <div class="promotions-card mb-4">
+      <div class="row g-2 align-items-center">
+        <div class="col-md-6">
+          <input id="promoSearch" type="text" class="form-control" placeholder="Search by voucher code…">
+        </div>
+        <div class="col-md-3">
+          <select id="promoStatus" class="form-select">
+            <option value="">All Statuses</option>
+            <option value="active">Active</option>
+            <option value="expired">Expired</option>
+            <option value="disabled">Disabled</option>
+            <option value="exhausted">Exhausted</option>
+          </select>
+        </div>
+      </div>
+      <div class="small text-muted mt-2">Tip: Click the chevron to expand/collapse a seller’s vouchers.</div>
+    </div>
+
+    <!-- Sellers loop -->
+    <% if (sellers && sellers.length) { %>
+      <div class="accordion" id="promosAccordion">
+        <% sellers.forEach((seller, idx) => {
+             const collapseId = `sellerPromos${seller.seller_id}`;
+        %>
+          <div class="promotions-card">
+            <div class="seller-header">
+              <h6 class="seller-name mb-0"><i class="fa-solid fa-store me-2"></i><%= seller.store_name %></h6>
+              <button class="btn btn-sm btn-outline-dark collapse-toggle"
+                      type="button"
+                      data-bs-toggle="collapse"
+                      data-bs-target="#<%= collapseId %>"
+                      aria-expanded="<%= idx===0 ? 'true':'false' %>"
+                      aria-controls="<%= collapseId %>">
+                <i class="fa-solid fa-chevron-down me-1"></i> Toggle
+              </button>
+            </div>
+
+            <div id="<%= collapseId %>" class="collapse <%= idx===0 ? 'show' : '' %>" data-bs-parent="#promosAccordion">
+              <div class="pt-3">
+                <div class="table-responsive">
+                  <table class="table align-middle table-hover table-borderless table-striped mb-0">
+                    <caption class="visually-hidden">Vouchers for <%= seller.store_name %></caption>
+                    <thead class="table-light sticky-top">
+                      <tr>
+                        <th>Voucher Code</th>
+                        <th>Type</th>
+                        <th>Value</th>
+                        <th>Expiry Date</th>
+                        <th>Usage</th>
+                        <th>Status</th>
+                        <th class="text-center">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <% if (seller.promotions && seller.promotions.length) { %>
+                        <% seller.promotions.forEach(p => {
+                             const now = new Date();
+                             const exp = p.expiry_date ? new Date(p.expiry_date) : null;
+                             const isExpired  = !!exp && exp.getTime() < now.getTime();
+                             const isDisabled = (p.status || '').toLowerCase() === 'disabled';
+                             const exhausted  = (p.usage_limit != null) && (Number(p.used_count) >= Number(p.usage_limit));
+                             let statKey = 'active';
+                             if (isDisabled) statKey = 'disabled';
+                             else if (isExpired) statKey = 'expired';
+                             else if (exhausted) statKey = 'exhausted';
+                             const editRowId  = `editRow_${seller.seller_id}_${p.id}`;
+                             const viewId     = `viewPromo_${p.id}`;
+                             const delFormId  = `delForm_${p.id}`;
+                             const editFormId = `editForm_${p.id}`;
+                        %>
+                          <!-- display row -->
+                          <tr class="promo-row"
+                              data-search="<%= (p.voucher_code || '').toLowerCase() %>"
+                              data-status="<%= statKey %>">
+                            <td class="fw-medium"><%= p.voucher_code %></td>
+                            <td><%= (p.discount_type || '').charAt(0).toUpperCase() + (p.discount_type || '').slice(1) %></td>
+                            <td>
+                              <% if ((p.discount_type || '').toLowerCase() === 'percentage') { %>
+                                <%= Number(p.discount_value).toFixed(2) %>% 
+                              <% } else { %>
+                                ₱<%= Number(p.discount_value).toLocaleString() %>
+                              <% } %>
+                            </td>
+                            <td><%= p.expiry_date ? new Date(p.expiry_date).toDateString() : '—' %></td>
+                            <td><%= (p.used_count || 0) %> / <%= p.usage_limit == null ? '∞' : p.usage_limit %></td>
+                            <td>
+                              <% if (statKey === 'expired') { %>
+                                <span class="status-badge status-expired">Expired</span>
+                              <% } else if (statKey === 'disabled') { %>
+                                <span class="status-badge status-disabled">Disabled</span>
+                              <% } else if (statKey === 'exhausted') { %>
+                                <span class="status-badge status-exhausted">Exhausted</span>
+                              <% } else { %>
+                                <span class="status-badge status-active">Active</span>
+                              <% } %>
+                            </td>
+                            <td class="text-center table-actions">
+                              <!-- View -->
+                              <button type="button"
+                                      class="btn btn-outline-primary btn-sm me-1"
+                                      data-bs-toggle="modal"
+                                      data-bs-target="#<%= viewId %>"
+                                      title="View">
+                                <i class="fa-solid fa-eye"></i>
+                              </button>
+                              <!-- Edit (inline row) -->
+                              <button type="button"
+                                      class="btn btn-outline-secondary btn-sm me-1"
+                                      data-bs-toggle="collapse"
+                                      data-bs-target="#<%= editRowId %>"
+                                      aria-expanded="false"
+                                      aria-controls="<%= editRowId %>"
+                                      title="Edit">
+                                <i class="fa-solid fa-pen"></i>
+                              </button>
+                              <!-- Delete -->
+                              <form id="<%= delFormId %>" method="post" action="/admin/promotions/<%= p.id %>/delete" class="d-none"></form>
+                              <button type="button"
+                                      class="btn btn-outline-danger btn-sm js-promo-delete"
+                                      data-form="#<%= delFormId %>"
+                                      data-code="<%= p.voucher_code %>"
+                                      title="Delete">
+                                <i class="fa-solid fa-trash"></i>
+                              </button>
+                            </td>
+                          </tr>
+
+                          <!-- inline editor -->
+                          <tr class="collapse" id="<%= editRowId %>">
+                            <td colspan="7" class="bg-light">
+                              <form id="<%= editFormId %>" method="post" action="/admin/promotions/<%= p.id %>/update" class="p-3 js-confirm-on-submit">
+                                <div class="row g-3">
+                                  <div class="col-md-4">
+                                    <label class="form-label">Voucher Code</label>
+                                    <input name="voucher_code" class="form-control" value="<%= p.voucher_code || '' %>" required>
+                                  </div>
+                                  <div class="col-md-4">
+                                    <label class="form-label">Discount Type</label>
+                                    <select name="discount_type" class="form-select" required>
+                                      <option value="percentage" <%= (p.discount_type === 'percentage' ? 'selected' : '') %>>Percentage</option>
+                                      <option value="fixed" <%= (p.discount_type === 'fixed' ? 'selected' : '') %>>Fixed</option>
+                                    </select>
+                                  </div>
+                                  <div class="col-md-4">
+                                    <label class="form-label">Discount Value</label>
+                                    <input name="discount_value" type="number" step="0.01" min="0" class="form-control" value="<%= p.discount_value || 0 %>" required>
+                                  </div>
+                                  <div class="col-md-4">
+                                    <label class="form-label">Usage Limit (leave blank = unlimited)</label>
+                                    <input name="usage_limit" type="number" min="0" class="form-control" value="<%= p.usage_limit == null ? '' : p.usage_limit %>">
+                                  </div>
+                                  <div class="col-md-4">
+                                    <label class="form-label">Expiry Date</label>
+                                    <input name="expiry_date" type="date" class="form-control" value="<%= p.expiry_date ? new Date(p.expiry_date).toISOString().slice(0,10) : '' %>">
+                                  </div>
+                                  <div class="col-md-4">
+                                    <label class="form-label">Status</label>
+                                    <select name="status" class="form-select">
+                                      <option value="active"   <%= (p.status === 'active'   ? 'selected' : '') %>>Active</option>
+                                      <option value="disabled" <%= (p.status === 'disabled' ? 'selected' : '') %>>Disabled</option>
+                                    </select>
+                                  </div>
+                                  <div class="col-12 d-flex gap-2">
+                                    <button type="submit" class="btn btn-primary">
+                                      <i class="fa-solid fa-floppy-disk me-1"></i> Save Changes
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary"
+                                            data-bs-toggle="collapse"
+                                            data-bs-target="#<%= editRowId %>">
+                                      Cancel
+                                    </button>
+                                  </div>
+                                </div>
+                              </form>
+                            </td>
+                          </tr>
+
+                          <!-- View modal -->
+                          <div class="modal fade" id="<%= viewId %>" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog modal-lg modal-dialog-centered">
+                              <div class="modal-content">
+                                <div class="modal-header">
+                                  <h5 class="modal-title"><i class="fa-solid fa-ticket me-2"></i>Voucher: <%= p.voucher_code %></h5>
+                                  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                  <div class="row g-3">
+                                    <div class="col-md-6">
+                                      <p class="mb-1"><strong>Store</strong></p>
+                                      <p class="text-muted"><%= seller.store_name %></p>
+                                    </div>
+                                    <div class="col-md-6">
+                                      <p class="mb-1"><strong>Status</strong></p>
+                                      <p class="text-muted text-capitalize"><%= statKey.replace('_',' ') %></p>
+                                    </div>
+                                    <div class="col-md-6">
+                                      <p class="mb-1"><strong>Discount Type</strong></p>
+                                      <p class="text-muted"><%= p.discount_type %></p>
+                                    </div>
+                                    <div class="col-md-6">
+                                      <p class="mb-1"><strong>Discount Value</strong></p>
+                                      <p class="text-muted">
+                                        <% if ((p.discount_type || '').toLowerCase() === 'percentage') { %>
+                                          <%= Number(p.discount_value).toFixed(2) %>%
+                                        <% } else { %>
+                                          ₱<%= Number(p.discount_value).toLocaleString() %>
+                                        <% } %>
+                                      </p>
+                                    </div>
+                                    <div class="col-md-6">
+                                      <p class="mb-1"><strong>Usage</strong></p>
+                                      <p class="text-muted"><%= p.used_count || 0 %> / <%= p.usage_limit == null ? 'Unlimited' : p.usage_limit %></p>
+                                    </div>
+                                    <div class="col-md-6">
+                                      <p class="mb-1"><strong>Expiry Date</strong></p>
+                                      <p class="text-muted"><%= p.expiry_date ? new Date(p.expiry_date).toLocaleString() : '—' %></p>
+                                    </div>
+                                    <div class="col-md-6">
+                                      <p class="mb-1"><strong>Created</strong></p>
+                                      <p class="text-muted"><%= p.created_at ? new Date(p.created_at).toLocaleString() : '—' %></p>
+                                    </div>
+                                    <div class="col-md-6">
+                                      <p class="mb-1"><strong>Last Updated</strong></p>
+                                      <p class="text-muted"><%= p.updated_at ? new Date(p.updated_at).toLocaleString() : '—' %></p>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div class="modal-footer">
+                                  <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        <% }) %>
+                      <% } else { %>
+                        <tr><td colspan="7" class="text-center text-muted">No promotions</td></tr>
+                      <% } %>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        <% }) %>
+      </div>
+    <% } else { %>
+      <div class="alert alert-light border">No sellers found.</div>
+    <% } %>
+  </div>
+
+  <!-- Confirm Action Modal (used for Delete & Edit Save) -->
+  <div class="modal fade" id="promoConfirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <form id="promoConfirmForm" method="post">
+          <div class="modal-header">
+            <h5 class="modal-title" id="promoConfirmTitle">Confirm</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body text-start">
+            <p class="mb-0">
+              <span id="promoConfirmMsg">Are you sure?</span>
+              <strong id="promoConfirmName" class="ms-1"></strong>
+            </p>
+          </div>
+          <div class="modal-footer justify-content-end">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button id="promoConfirmSubmit" type="submit" class="btn">Confirm</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <%- include("../partials/toast", { toast }) %>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/js/adminPromotions.js"></script>
+</body>
+</html>

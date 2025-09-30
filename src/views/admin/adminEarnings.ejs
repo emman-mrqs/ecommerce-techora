@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Earnings - TECHORA</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/css/adminEarnings.css">
+</head>
+<body>
+  <%- include("../partials/adminSidebarNav", { activePage: "earnings", pageTitle: "Earnings" }) %>
+
+  <div class="main-content p-4 earnings-page">
+    <h5 class="fw-bold mb-3">Earnings</h5>
+
+    <!-- KPIs -->
+    <div class="row g-3 mb-3">
+      <div class="col-lg-6">
+        <div class="earnings-card kpi kpi-dark">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <div class="kpi-label text-white-50">Total Sales (All Sellers)</div>
+              <div class="kpi-value text-white">₱<%= (kpis?.total_sales || 0).toLocaleString() %></div>
+              <div class="kpi-sub text-white-50">This Month</div>
+            </div>
+            <i class="fa-solid fa-coins text-white-50 fs-3"></i>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-3 col-sm-6">
+        <div class="earnings-card kpi">
+          <div class="kpi-label">Monthly Rent Fee</div>
+          <div class="kpi-value">₱<%= (kpis?.rent_fee || 0).toLocaleString() %></div>
+          <div class="kpi-sub">5% of total sales</div>
+        </div>
+      </div>
+
+      <div class="col-lg-3 col-sm-6">
+        <div class="earnings-card kpi">
+          <div class="kpi-label">Transaction Fees</div>
+          <div class="kpi-value">₱<%= (kpis?.txn_fee || 0).toLocaleString() %></div>
+          <div class="kpi-sub">2% per sale</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Admin Earnings (Rent + Fees) Banner -->
+    <div class="earnings-card banner-net mb-4">
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <div class="text-success fw-semibold">Admin Earnings</div>
+          <div class="small text-muted">Monthly rent fee + transaction fees</div>
+        </div>
+        <div class="display-6 text-success mb-0">₱<%= (kpis?.admin_earn || 0).toLocaleString() %></div>
+      </div>
+    </div>
+
+    <!-- Expand/Collapse all (optional) -->
+    <div class="d-flex gap-2 mb-3">
+      <button class="btn btn-outline-dark btn-sm js-expand-all"><i class="fa-solid fa-plus me-1"></i>Expand all</button>
+      <button class="btn btn-outline-dark btn-sm js-collapse-all"><i class="fa-solid fa-minus me-1"></i>Collapse all</button>
+    </div>
+
+    <% if (sellers && sellers.length) { %>
+      <div class="accordion" id="earningsAccordion">
+        <% sellers.forEach((s, idx) => { 
+          const cardId = `seller_${s.seller_id}`;
+          const itemsId = `items_${s.seller_id}`;
+          const monthsId = `months_${s.seller_id}`;
+        %>
+          <div class="earnings-card mb-4" data-seller-card="<%= s.seller_id %>">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+              <h6 class="fw-bold mb-0">
+                <i class="fa-solid fa-store me-2"></i><%= s.store_name %>
+              </h6>
+              <span class="badge text-bg-light">Seller ID: <%= s.seller_id %></span>
+            </div>
+
+            <!-- Toggles -->
+            <div class="d-flex gap-2 mb-2">
+              <button class="btn btn-sm btn-outline-dark js-tog" 
+                      data-target="#<%= itemsId %>" aria-expanded="true">
+                <i class="fa-solid fa-chevron-down me-1"></i> Current Month Sales
+              </button>
+              <button class="btn btn-sm btn-outline-dark js-tog"
+                      data-target="#<%= monthsId %>" aria-expanded="false">
+                <i class="fa-solid fa-chevron-right me-1"></i> Past Months
+              </button>
+            </div>
+
+
+            <!-- Current Month Sales (collapsible) -->
+            <div id="<%= itemsId %>" class="collapse show" data-bs-parent="#earningsAccordion">
+              <div class="table-responsive">
+                <table class="table align-middle table-hover table-borderless table-striped mb-3">
+                  <thead class="table-light sticky-top">
+                    <tr>
+                      <th>Product Name</th>
+                      <th class="text-end">Unit Price</th>
+                      <th class="text-center">Qty</th>
+                      <th class="text-end">Total Sale</th>
+                      <th class="text-end">Txn Fee (2%)</th>
+                      <th class="text-end d-col-md">Net (Seller)</th>
+                      <th class="d-col-lg">Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% 
+                      const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+                      const endOfMonth = new Date(new Date().getFullYear(), new Date().getMonth()+1, 1);
+                      const monthLines = (s.lines || []).filter(l => {
+                        const d = new Date(l.order_date);
+                        return d >= startOfMonth && d < endOfMonth;
+                      });
+                      if (monthLines.length) {
+                        monthLines.forEach(l => {
+                          const gross = Number(l.line_total || 0);
+                          const fee2  = +(gross * 0.02).toFixed(2);
+                          const net   = +(gross - fee2).toFixed(2);
+                    %>
+                      <tr>
+                        <td><%= l.product_name %></td>
+                        <td class="text-end">₱<%= Number(l.unit_price||0).toLocaleString() %></td>
+                        <td class="text-center"><%= l.quantity %></td>
+                        <td class="text-end">₱<%= gross.toLocaleString() %></td>
+                        <td class="text-end">-₱<%= fee2.toLocaleString() %></td>
+                        <td class="text-end d-col-md">₱<%= net.toLocaleString() %></td>
+                        <td class="d-col-lg"><%= new Date(l.order_date).toLocaleDateString() %></td>
+                      </tr>
+                    <%   });
+                      } else { %>
+                      <tr><td colspan="7" class="text-muted">No sales this month.</td></tr>
+                    <% } %>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Past Months (collapsible) -->
+            <div id="<%= monthsId %>" class="collapse" data-bs-parent="#earningsAccordion">
+              <div class="small text-muted mb-2">Past Months</div>
+              <div class="table-responsive">
+                <table class="table table-sm align-middle">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Month</th>
+                      <th>Orders</th>
+                      <th class="d-col-sm">Units</th>
+                      <th class="text-end">Gross Sales</th>
+                      <th class="text-end d-col-md">Rent (5%)</th>
+                      <th class="text-end d-col-md">Txn Fees (2%)</th>
+                      <th class="text-end">Admin Earn (7%)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% if (s.months && s.months.length) {
+                         s.months.forEach(m => { %>
+                      <tr>
+                        <td><%= new Date(m.month).toLocaleString('en-US', { month:'long', year:'numeric' }) %></td>
+                        <td><%= m.orders %></td>
+                        <td class="d-col-sm"><%= m.units %></td>
+                        <td class="text-end">₱<%= m.gross.toLocaleString() %></td>
+                        <td class="text-end d-col-md">-₱<%= m.rent.toLocaleString() %></td>
+                        <td class="text-end d-col-md">-₱<%= m.txn.toLocaleString() %></td>
+                        <td class="text-end">₱<%= m.admin.toLocaleString() %></td>
+                      </tr>
+                    <%   });
+                       } else { %>
+                      <tr><td colspan="7" class="text-muted">No history.</td></tr>
+                    <% } %>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Tiny stats -->
+            <div class="row text-center g-3">
+              <div class="col-sm-4">
+                <div class="mini-pill">
+                  <div class="mini-value"><%= s.mini.units %></div>
+                  <div class="mini-label">Total Products Sold</div>
+                </div>
+              </div>
+              <div class="col-sm-4">
+                <div class="mini-pill">
+                  <div class="mini-value">₱<%= s.mini.avgSale.toLocaleString() %></div>
+                  <div class="mini-label">Average Sale Value</div>
+                </div>
+              </div>
+              <div class="col-sm-4">
+                <div class="mini-pill">
+                  <div class="mini-value"><%= s.mini.transactions %></div>
+                  <div class="mini-label">Total Transactions</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        <% }) %>
+      </div>
+    <% } else { %>
+      <div class="alert alert-light border">No sellers found.</div>
+    <% } %>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/js/adminEarnings.js"></script>
+</body>
+</html>

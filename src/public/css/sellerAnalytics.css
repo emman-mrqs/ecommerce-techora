@@ -1,0 +1,100 @@
+/* ===== Analytics layout + cards (scoped) ===== */
+.anx-wrap .card { border-radius: 14px; border: 1px solid #eef2f7; }
+.anx-wrap .card h6 { font-weight: 600; color: #111827; }
+
+/* let charts/tooltip overflow outside the card */
+.anx-wrap .card,
+.anx-wrap .card > .card-body { overflow: visible; }
+
+/* equalize card content vertically */
+.anx-card-net,
+.anx-card-dark,
+.anx-card-light {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* dark / light card styles */
+.anx-card-dark { background:#0f172a; color:#fff; }
+.anx-card-dark .money { font-size: 28px; font-weight: 700; }
+.anx-card-light .money { font-size: 24px; font-weight: 700; color:#0f172a; }
+
+/* ===== Daily line chart ===== */
+.daily-line-wrap {
+  width:100%;
+  min-height:260px;
+  background:#fff;
+  border-radius:12px;
+  border:1px solid #eef2f7;
+  position:relative;
+  overflow:visible;           /* important */
+}
+#daily-line-chart .grid-line { stroke:#eef2f7; stroke-width:1; }
+#daily-line-chart .area-fill { fill:rgba(0,172,238,0.10); }
+#daily-line-chart .series-line { fill:none; stroke:#6c43d6; stroke-width:4; stroke-linecap:round; stroke-linejoin:round; }
+#daily-line-chart .dot { fill:#6c43d6; stroke:#fff; stroke-width:2.5; }
+#daily-line-chart .val-label { fill:#6c43d6; font-size:12px; font-weight:600; }
+#daily-line-chart .tick { fill:#95a3b8; font-size:11px; }
+
+/* tooltip */
+.line-tip{
+  position:absolute;
+  pointer-events:none;
+  background:#111827;
+  color:#fff;
+  border-radius:6px;
+  padding:6px 8px;
+  font-size:12px;
+  transform:translate(-50%, -120%);
+  white-space:nowrap;
+  opacity:0;
+  transition:opacity .12s ease;
+  z-index:5;                  /* ensure above neighbors */
+}
+.line-tip.left  { transform: translate(0, -120%); }
+.line-tip.right { transform: translate(-100%, -120%); }
+
+/* ===== Weekly bar chart ===== */
+.weekly-bar-wrap { position:relative; overflow:visible; } /* allow labels to spill */
+#weekly-bar-chart .grid-line {
+  stroke: rgba(0,0,0,.08);
+  stroke-width: 1;
+  shape-rendering: crispEdges;
+}
+#weekly-bar-chart .axis-tick { font-size: 11px; fill: #6b7280; }
+#weekly-bar-chart .value-label { font-size: 11px; font-weight: 600; fill: #1f2937; }
+#weekly-bar-chart .weekly-bar {
+  fill: #2563eb;              /* blue-600 */
+  opacity: 0.95;
+  transition: opacity .15s ease, transform .15s ease;
+}
+#weekly-bar-chart .weekly-bar:hover { opacity: 1; transform: translateY(-1px); }
+
+/* ===== Engagement (pure CSS rings) ===== */
+.ring {
+  width:120px; height:120px; border-radius:50%;
+  display:grid; place-items:center;
+  background:conic-gradient(#14b8a6 var(--pct,0%), #eef2f7 0);
+}
+.ring::after { content:""; width:88px; height:88px; border-radius:50%; background:#fff; }
+.ring-label { font-size:13px; color:#374151; }
+.ring-value { position:absolute; font-weight:700; color:#111827; }
+
+/* ===== Tables & numbers ===== */
+.table thead th { color:#374151; font-weight:600; }
+.currency { font-variant-numeric: tabular-nums; }
+
+/* ===== Summary footer ===== */
+.anx-summary .summary-value { font-size:24px; font-weight:700; }
+.anx-summary .summary-label { color:#6b7280; }
+
+/* ===== Net (This Month) card ===== */
+.anx-card-net { background: #e9f8ef; border-color: #d7f0df; }
+.anx-card-net .money {
+  color: #059669;             /* emerald-600 */
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0.2px;
+}

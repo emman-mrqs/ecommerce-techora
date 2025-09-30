@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title><%= pageTitle || "Store Analytics" %></title>
+
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/sellerAnalytics.css">
+</head>
+<body>
+  <div class="main-content">
+    <!-- Top Header + Sidebar -->
+    <%- include("../partials/sellerSideBarNav.ejs") %>
+
+    <!-- Page Content -->
+    <div class="page-content">
+      <div class="container-fluid anx-wrap py-3">
+
+        <h1 class="h4 mb-3"><%= pageTitle || "Store Analytics" %></h1>
+
+        <!-- Stat Cards -->
+        <div class="row g-3 mb-3 align-items-stretch"><!-- added align-items-stretch -->
+        <div class="col-xl-3 col-lg-6 d-flex"><!-- added d-flex -->
+            <div class="card anx-card-dark p-3 w-100 h-100"><!-- added w-100 h-100 -->
+            <div class="small opacity-75 mb-1">Gross Sales (This Month)</div>
+            <div class="money">₱<%= Number(monthNow?.grossSales || 0).toLocaleString("en-PH", {minimumFractionDigits:2}) %></div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-lg-6 d-flex">
+            <div class="card anx-card-light p-3 w-100 h-100">
+            <div class="small text-muted mb-1">Monthly Rent Fee</div>
+            <div class="money">₱<%= Number(monthNow?.rentFee || 0).toLocaleString("en-PH", {minimumFractionDigits:2}) %></div>
+            <div class="small text-muted">5% of sales</div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-lg-6 d-flex">
+            <div class="card anx-card-light p-3 w-100 h-100">
+            <div class="small text-muted mb-1">Transaction Fees</div>
+            <div class="money">₱<%= Number(monthNow?.txnFees || 0).toLocaleString("en-PH", {minimumFractionDigits:2}) %></div>
+            <div class="small text-muted">2% per sale</div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-lg-6 d-flex">
+        <div class="card anx-card-net p-3 w-100 h-100">
+            <div class="small text-muted mb-1">Net (This Month)</div>
+            <div class="money currency">₱<%= Number(monthNow?.netEarning || 0).toLocaleString("en-PH", {minimumFractionDigits:2}) %></div>
+        </div>
+        </div>
+
+        </div>
+
+        <div class="row g-3">
+          <!-- Daily Sales Line -->
+          <div class="col-xl-8">
+            <div class="card p-3">
+              <h6 class="mb-1">Daily Sales — Bars: Revenue, Line: Orders (Last 30 days)</h6>
+              <small class="text-muted">Hover points for details</small>
+              <div class="daily-line-wrap mt-3">
+                <svg id="daily-line-chart" viewBox="0 0 900 320" preserveAspectRatio="none" role="img" aria-label="Daily sales line chart"></svg>
+              </div>
+              <div class="mt-2 small text-muted" id="daily-line-meta"></div>
+            </div>
+          </div>
+
+          <!-- Engagement -->
+          <div class="col-xl-4">
+            <div class="card p-3 mb-3">
+              <h6 class="mb-2">Engagement (Last 30 days)</h6>
+              <div class="d-flex justify-content-around position-relative">
+                <div class="text-center position-relative">
+                  <div class="ring position-relative mx-auto mb-2" style="--pct:<%= (function(){const s=(storeViewsDaily||[]).reduce((t,r)=>t+Number(r.views||0),0);const p=(productViewsDaily||[]).reduce((t,r)=>t+Number(r.views||0),0);const tot=Math.max(1,s+p);return Math.round((s/tot)*100);}()) %>%;">
+                    <div class="ring-value"><%= (storeViewsDaily||[]).reduce((t,r)=>t+Number(r.views||0),0) %></div>
+                  </div>
+                  <div class="ring-label"><i class="fa-regular fa-eye me-1"></i>Store Views</div>
+                </div>
+
+                <div class="text-center position-relative">
+                  <div class="ring position-relative mx-auto mb-2" style="--pct:<%= (function(){const s=(storeViewsDaily||[]).reduce((t,r)=>t+Number(r.views||0),0);const p=(productViewsDaily||[]).reduce((t,r)=>t+Number(r.views||0),0);const tot=Math.max(1,s+p);return Math.round((p/tot)*100);}()) %>%;">
+                    <div class="ring-value"><%= (productViewsDaily||[]).reduce((t,r)=>t+Number(r.views||0),0) %></div>
+                  </div>
+                  <div class="ring-label"><i class="fa-regular fa-eye me-1"></i>Product Views</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Weekly Sales Bars -->
+            <div class="card p-3">
+              <h6 class="mb-2">Weekly Sales (Last 12 weeks)</h6>
+              <small class="text-muted">Bars only (Revenue)</small>
+              <div class="weekly-bar-wrap mt-3">
+                <svg id="weekly-bar-chart" viewBox="0 0 560 260" preserveAspectRatio="none" role="img" aria-label="Weekly sales bar chart"></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Top Products -->
+        <div class="card mt-3 p-3">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="mb-0">Top Products (Last 30 days)</h6>
+            <small class="text-muted">Based on revenue</small>
+          </div>
+          <div class="table-responsive">
+            <table class="table align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th class="text-end">Units</th>
+                  <th class="text-end">Revenue</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% if ((topProducts||[]).length === 0) { %>
+                  <tr><td colspan="3" class="text-muted">No product sales in the last 30 days.</td></tr>
+                <% } %>
+                <% (topProducts||[]).forEach(row => { %>
+                  <tr>
+                    <td><%= row.product_name %></td>
+                    <td class="text-end"><%= Number(row.units||0) %></td>
+                    <td class="text-end currency">₱<%= Number(row.revenue||0).toLocaleString("en-PH",{minimumFractionDigits:2}) %></td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Summary -->
+        <div class="anx-summary row g-3 mt-3">
+          <div class="col-md-4 text-center">
+            <div class="summary-value"><%= Number(summary?.unitsSold||0) %></div>
+            <div class="summary-label">Total Products Sold</div>
+          </div>
+          <div class="col-md-4 text-center">
+            <div class="summary-value currency">₱<%= Number(summary?.avgSaleValue||0).toLocaleString("en-PH",{minimumFractionDigits:2}) %></div>
+            <div class="summary-label">Average Sale Value</div>
+          </div>
+          <div class="col-md-4 text-center">
+            <div class="summary-value"><%= Number(summary?.transactions||transactionsCount||0) %></div>
+            <div class="summary-label">Total Transactions</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+<!-- Data blobs for charts (safe, no execution) -->
+<script type="application/json" id="dailySalesData"><%- JSON.stringify(dailySales || []) %></script>
+<script type="application/json" id="weeklySalesData"><%- JSON.stringify(weeklySales || []) %></script>
+
+<!-- External chart logic -->
+<script src="/js/sellerAnalytics.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

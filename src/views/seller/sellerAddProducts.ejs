@@ -69,52 +69,46 @@
                         <button type="button" class="add-variant-btn" onclick="addVariant()">Add Another Variant</button>
                         </div>
 
-                        <!-- PRODUCT IMAGES -->
-                        <div class="form-group">
-                            <label class="form-label">Product Images <span class="required">*</span></label>
-                            <div id="imageFields">
-                                <div class="row image-row align-items-end">
-                                <div class="col-md-4">
-                                    <input type="file" class="form-input" name="product_images[]" accept="image/*" required>
-                                </div>
-                                <div class="col-md-3">
-                                    <select name="variant_for_image[]" class="form-select">
-                                    <option value="">General (no variant)</option>
-                                    <% /* render variants dynamically if you load them */ %>
-                                    <% if (typeof variants !== "undefined") { %>
-                                        <% variants.forEach((v, i) => { %>
-                                        <option value="<%= v.id %>"><%= v.color %> - <%= v.ram %>GB + <%= v.storage %>GB</option>
-                                        <% }); %>
-                                    <% } %>
-                                    </select>
-                                </div>
-                                <div class="col-md-2">
-                                    <select name="is_primary[]" class="form-select" required>
-                                    <option value="">Is Primary?</option>
-                                    <option value="true">Yes</option>
-                                    <option value="false">No</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-2">
-                                    <input type="number" class="form-input" name="position[]" placeholder="Position (1,2,3...)" required>
-                                </div>
-                                </div>
-                            </div>
-                            <div class="mt-3">
-                                <button type="button" class="add-variant-btn" onclick="addImageField()">Add Another Image</button>
-                            </div>
-                            <!-- Save Button -->
-                            <div class="form-group mt-4 text-end">
-                            <button type="submit" class="btn btn-dark px-4">
-                                <i class="fas fa-save me-2"></i> Save Product
-                            </button>
-                            </div>
-                        </div>
-                        
-                </form>
-            </div>
+<!-- PRODUCT IMAGES -->
+<div class="form-group">
+  <label class="form-label">Product Images <span class="required">*</span></label>
+
+  <!-- add class="image-grid" -->
+  <div id="imageFields" class="image-grid"></div>
+
+  <div class="mt-3">
+    <button type="button" class="add-variant-btn" onclick="addImageField()">Add Product Image</button>
+  </div>
+
+  <div id="imageValidationErrors" class="text-danger mt-2"></div>
+
+  <div class="form-group mt-4 text-end">
+    <button type="submit" class="btn btn-dark px-4">
+      <i class="fas fa-save me-2"></i> Save Product
+    </button>
+  </div>
+</div>
+
+
+
+    <!-- Success Modal -->
+    <div class="modal fade" id="productSuccessModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-success">
+        <div class="modal-header bg-success text-white">
+            <h5 class="modal-title">Product Saved</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+            Your product has been saved successfully!
+        </div>
+        <div class="modal-footer">
+            <a href="/seller/add" class="btn btn-success">Add Another Product</a>
+        </div>
         </div>
     </div>
+    </div>
+
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/js/sellerAddProducts.js"></script>

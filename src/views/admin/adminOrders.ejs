@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Orders Management - TECHORA</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/css/adminOrders.css">
+</head>
+<body>
+  <%- include("../partials/adminSidebarNav", { activePage: "orders", pageTitle: "Orders Management" }) %>
+
+  <div class="main-content p-4">
+    <!-- Title -->
+    <h5 class="fw-bold mb-3">Orders Management</h5>
+
+    <% /* ---------- STATUS HELPERS (one place to control label + class) ---------- */ %>
+    <%
+      function normalizeStatus(s) {
+        return (s ?? '').toString().trim().toLowerCase();
+      }
+      function statusMeta(status) {
+        const s = normalizeStatus(status);
+        // label, css-class (table pills)
+        const map = {
+          completed: ['Completed', 'status-completed'],
+          confirmed: ['Confirmed', 'status-shipped'],   // reuse shipped style, or make your own
+          delivered: ['Delivered', 'status-delivered'],
+          shipped:   ['Shipped',   'status-shipped'],
+          cancelled: ['Cancelled', 'status-cancelled'],
+          cancel:    ['Cancelled', 'status-cancelled'],
+          return:    ['Return',    'status-return'],
+          returned:  ['Return',    'status-return'],
+          pending:   ['Pending',   'status-pending']
+        };
+        return map[s] || ['Pending', 'status-pending'];
+      }
+    %>
+
+    <!-- Filters -->
+    <div class="orders-card mb-4 shadow-sm rounded-4 p-3 p-md-4">
+      <div class="filters-row">
+        <!-- Search -->
+        <div class="filter filter-search">
+          <input id="orderSearch" type="text" class="form-control"
+                 placeholder="Search by Order ID or Customer...">
+        </div>
+
+        <!-- Status -->
+        <div class="filter filter-compact">
+          <select id="orderStatus" class="form-select">
+            <option value="">All Statuses</option>
+            <option value="completed">Completed</option>
+            <option value="confirmed">Confirmed</option>  <!-- fixed -->
+            <option value="return">Return</option>        <!-- fixed -->
+            <option value="delivered">Delivered</option>
+            <option value="shipped">Shipped</option>
+            <option value="pending">Pending</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </div>
+
+        <!-- From / To -->
+        <div class="filter filter-compact">
+          <input id="dateFrom" type="date" class="form-control" placeholder="From">
+        </div>
+        <div class="filter filter-compact">
+          <input id="dateTo" type="date" class="form-control" placeholder="To">
+        </div>
+      </div>
+
+      <div class="small text-muted mt-2">
+        Tip: Use the chevron in each row to view item-level details.
+      </div>
+    </div>
+
+    <!-- Sellers / Orders -->
+    <% if (sellers && sellers.length) { %>
+      <div class="accordion" id="ordersAccordion">
+        <% sellers.forEach((seller, idx) => { 
+            const collapseId = `sellerOrders${seller.seller_id}`;
+        %>
+          <div class="orders-card shadow-sm rounded-4 p-3 p-md-4 mb-3" data-seller-card="<%= seller.seller_id %>">
+            <div class="seller-header">
+              <h6 class="seller-name d-flex align-items-center gap-2 mb-0">
+                <i class="fa-solid fa-store"></i>
+                <span><%= seller.store_name %></span>
+              </h6>
+              <button class="btn btn-sm btn-outline-dark collapse-toggle"
+                      type="button"
+                      data-bs-toggle="collapse"
+                      data-bs-target="#<%= collapseId %>"
+                      aria-expanded="<%= idx===0 ? 'true':'false' %>"
+                      aria-controls="<%= collapseId %>">
+                <i class="fa-solid fa-chevron-down me-1"></i> Toggle
+              </button>
+            </div>
+
+            <div id="<%= collapseId %>" class="collapse <%= idx===0 ? 'show' : '' %>" data-bs-parent="#ordersAccordion">
+              <div class="pt-3">
+                <div class="table-responsive">
+                  <table class="table align-middle table-hover table-borderless table-striped mb-0">
+                    <caption class="visually-hidden">Orders for <%= seller.store_name %></caption>
+                    <thead class="table-light sticky-top">
+                      <tr>
+                        <th style="width:42px;"></th>
+                        <th>Order ID</th>
+                        <th>Customer</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                        <th>Total (Seller)</th>
+                        <th class="text-center">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <% if (seller.orders && seller.orders.length) { %>
+                        <% seller.orders.forEach(o => { 
+                             const itemsId = `items_${seller.seller_id}_${o.order_id}`;
+                             const normalized = normalizeStatus(o.order_status);
+                             const meta = statusMeta(o.order_status); // [label, class]
+                            const statusKey = String(o.order_status || o.payment_status || '').toLowerCase();  // <-- add this
+
+                        %>
+                          <tr class="order-row"
+                              data-order-row="<%= seller.seller_id %>|<%= o.order_id %>"
+                              data-search="<%= `${o.order_id} ${o.customer_name} ${o.customer_email}`.toLowerCase() %>"
+                              data-status="<%= normalized %>"
+                              data-date="<%= new Date(o.order_date).toISOString().slice(0,10) %>">
+                            <td class="text-center">
+                              <button class="btn btn-sm btn-outline-secondary"
+                                      data-bs-toggle="collapse"
+                                      data-bs-target="#<%= itemsId %>"
+                                      title="Show items">
+                                <i class="fa-solid fa-angle-down"></i>
+                              </button>
+                            </td>
+                            <td class="fw-semibold">#<%= o.order_id %></td>
+                            <td>
+                              <div class="fw-medium"><%= o.customer_name %></div>
+                              <div class="text-muted small"><%= o.customer_email %></div>
+                            </td>
+                            <td><span class="small text-muted"><%= new Date(o.order_date).toLocaleString() %></span></td>
+                            <td>
+                              <span class="status-badge <%= meta[1] %>"><%= meta[0] %></span>
+                            </td>
+                            <td>
+                              ₱<%= o.seller_total.toLocaleString() %>
+                              <small class="text-muted">(<%= o.total_items %> item<%= o.total_items===1?'':'s' %>)</small>
+                            </td>
+                            <td class="text-center table-actions">
+                              <button type="button"
+                                      class="btn btn-outline-primary btn-sm js-view-invoice me-1"
+                                      title="View invoice"
+                                      data-order="<%= o.order_id %>"
+                                      data-seller="<%= seller.seller_id %>">
+                                <i class="bi bi-eye"></i>
+                              </button>
+                                <!-- NEW: edit status -->
+                                <button type="button"
+                                        class="btn btn-outline-secondary btn-sm js-edit-status me-1"
+                                        title="Edit status"
+                                        data-order="<%= o.order_id %>"
+                                        data-seller="<%= seller.seller_id %>"
+                                        data-status="<%= normalized %>">
+                                  <i class="bi bi-pencil-square"></i>
+                                </button>
+
+                              
+                              <button type="button"
+                                      class="btn btn-outline-danger btn-sm js-delete-seller-order"
+                                      title="Delete this seller's portion of the order"
+                                      data-order="<%= o.order_id %>"
+                                      data-seller="<%= seller.seller_id %>"
+                                      data-items-target="#<%= itemsId %>">
+                                <i class="fas fa-trash"></i>
+                              </button>
+                            </td>
+                          </tr>
+
+                          <!-- Items -->
+                          <tr class="collapse" id="<%= itemsId %>">
+                            <td></td>
+                            <td colspan="6" class="bg-light">
+                              <div class="p-3 rounded-3 border">
+                                <div class="table-responsive">
+                                  <table class="table table-sm mb-0">
+                                    <thead class="table-light">
+                                      <tr>
+                                        <th>Product</th>
+                                        <th>Qty</th>
+                                        <th class="text-end">Line Total</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      <% if (o.items.length) { %>
+                                        <% o.items.forEach(li => { %>
+                                          <tr>
+                                            <td>
+                                              <div class="fw-medium"><%= li.product_name %></div>
+                                              <% if (li.storage || li.ram || li.color) { %>
+                                                <div class="item-specs"><%= [li.storage, li.ram, li.color].filter(Boolean).join(' / ') %></div>
+                                              <% } %>
+                                            </td>
+                                            <td><%= li.quantity %></td>
+                                            <td class="text-end">₱<%= li.line_total.toLocaleString() %></td>
+                                          </tr>
+                                        <% }) %>
+                                      <% } else { %>
+                                        <tr><td colspan="3" class="text-muted">No items</td></tr>
+                                      <% } %>
+                                    </tbody>
+                                  </table>
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        <% }) %>
+                      <% } else { %>
+                        <tr><td colspan="7" class="text-center text-muted">No orders</td></tr>
+                      <% } %>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        <% }) %>
+      </div>
+    <% } else { %>
+      <div class="alert alert-light border">No sellers found.</div>
+    <% } %>
+  </div>
+
+  <!-- Invoice Modal -->
+  <div class="modal fade" id="invoiceModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content" id="invoiceContent">
+        <div class="modal-header bg-dark text-white">
+          <h5 class="modal-title">Invoice</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="border rounded p-3 mb-3">
+            <div class="d-flex justify-content-between align-items-center">
+              <h6 class="mb-0" id="invTitle">Invoice #</h6>
+              <div class="text-muted small" id="invCreatedAt"></div>
+            </div>
+          </div>
+
+          <div class="row g-3">
+            <div class="col-md-6">
+              <div class="text-uppercase small text-muted">Customer</div>
+              <div id="invCustomer">—</div>
+            </div>
+            <div class="col-md-6">
+              <div class="text-uppercase small text-muted">Status</div>
+              <span id="invStatus" class="badge bg-warning text-dark">Pending</span>
+            </div>
+            <div class="col-md-6">
+              <div class="text-uppercase small text-muted">Payment Method</div>
+              <div id="invPayMethod">—</div>
+            </div>
+            <div class="col-md-6">
+              <div class="text-uppercase small text-muted">Payment Status</div>
+              <div id="invPayStatus">—</div>
+            </div>
+            <div class="col-md-6">
+              <div class="text-uppercase small text-muted">Transaction ID</div>
+              <div id="invTxn">—</div>
+            </div>
+            <div class="col-md-6">
+              <div class="text-uppercase small text-muted">Payment Date</div>
+              <div id="invPayDate">—</div>
+            </div>
+            <div class="col-md-6">
+              <div class="text-uppercase small text-muted">Order Total</div>
+              <div id="invOrderTotal">—</div>
+            </div>
+            <div class="col-md-6">
+              <div class="text-uppercase small text-muted">Amount Paid</div>
+              <div id="invAmountPaid">—</div>
+            </div>
+            <div class="col-12">
+              <div class="text-uppercase small text-muted">Shipping Address</div>
+              <div id="invShip">—</div>
+            </div>
+          </div>
+
+          <hr class="my-3">
+
+          <div class="table-responsive">
+            <table class="table table-sm">
+              <thead class="table-light">
+                <tr>
+                  <th>Product</th>
+                  <th>Qty</th>
+                  <th class="text-end">Line Total</th>
+                </tr>
+              </thead>
+              <tbody id="invItems"></tbody>
+            </table>
+          </div>
+
+          <div class="small text-muted" id="invSoldBy">Sold by: —</div>
+        </div>
+        <div class="modal-footer justify-content-end">
+          <button type="button" class="btn btn-dark js-download-invoice">
+            <i class="bi bi-file-earmark-arrow-down me-1"></i> Download PDF
+          </button>
+          <button type="button" class="btn btn-outline-dark js-print-invoice">
+            <i class="bi bi-printer me-1"></i> Print
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirm Delete Modal -->
+  <div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header bg-danger text-white">
+          <h5 class="modal-title">Delete Seller's Portion</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          This will remove all items from <strong id="cdmSellerName">this seller</strong> in order
+          <strong>#<span id="cdmOrderId">—</span></strong>. If that empties the order, the order and its payments will also be deleted.
+          Proceed?
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-danger" id="cdmConfirmBtn">Delete</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Status Modal -->
+<div class="modal fade" id="statusModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-md modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-dark text-white">
+        <h5 class="modal-title">Update Order Status</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form id="statusForm">
+        <div class="modal-body">
+          <input type="hidden" name="order_id"   id="statusOrderId">
+          <input type="hidden" name="seller_id"  id="statusSellerId">
+          <div class="mb-3">
+            <label for="statusSelect" class="form-label">Select Status</label>
+            <select class="form-select" id="statusSelect" name="order_status">
+              <option value="pending">Pending</option>
+              <option value="confirmed">To Ship</option>
+              <option value="shipped">To Receive</option>
+              <option value="completed">Completed</option>
+              <option value="cancelled">Cancelled</option>
+              <option value="return">Return/Refund</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-dark" data-bs-dismiss="modal">Close</button>
+          <button type="submit" class="btn btn-dark">Update</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+
+  <%- include("../partials/toast", { toast }) %>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
+  <script src="/js/adminOrders.js"></script>
+</body>
+</html>

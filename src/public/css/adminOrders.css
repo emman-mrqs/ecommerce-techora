@@ -1,0 +1,108 @@
+/* =========================
+   ORDERS — Clean Responsive
+   ========================= */
+
+/* Layout safety */
+body { overflow-x: hidden; }
+
+/* ---------- Filters row (desktop: single row; mobile: stacked) ---------- */
+.orders-card .filters-row{
+  display:flex;
+  flex-wrap:wrap;           /* stack on small */
+  gap:.5rem;
+  align-items:center;
+}
+.orders-card .filters-row .filter{ width:100%; }           /* default stack */
+.orders-card .filters-row .filter-search .form-control{ border-radius:12px; }
+.orders-card .filters-row .filter-compact .form-select,
+.orders-card .filters-row .filter-compact .form-control{ border-radius:12px; }
+
+/* desktop behavior: one tidy row that matches the screenshot */
+@media (min-width: 992px){
+  .orders-card .filters-row{ flex-wrap:nowrap; }
+  .orders-card .filters-row .filter-search{ flex: 1 1 auto; min-width: 420px; }
+  .orders-card .filters-row .filter-compact{ flex: 0 0 180px; } /* Status / From / To */
+}
+
+/* ---------- Cards / headers ---------- */
+.orders-card{
+  background:#FAFAFA;
+  border:1px solid #E0E0E0;
+  border-radius:16px;
+  padding:16px;
+}
+.seller-header{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.seller-name{ font-weight:700; margin:0; }
+.collapse-toggle{ display:flex; align-items:center; gap:8px; }
+.collapse-toggle[aria-expanded="true"] i{ transform:rotate(180deg); transition:transform .2s ease; }
+.collapse-toggle[aria-expanded="false"] i{ transform:rotate(0deg);  transition:transform .2s ease; }
+
+/* ---------- Tables ---------- */
+.orders-card .table{ min-width:760px; }
+@media (max-width:576px){ .orders-card .table{ min-width:560px; } }
+
+.orders-card .table-striped > tbody > tr:nth-of-type(odd)  > *{ background:#FFFFFF; }
+.orders-card .table-striped > tbody > tr:nth-of-type(even) > *{ background:#FBFBFB; }
+.orders-card .table-hover tbody tr:hover > *{ background:#F5F5F5 !important; }
+
+/* Sticky header below overlays */
+.orders-card .table-responsive .sticky-top,
+.orders-card .table .sticky-top{
+  position: sticky; top: 0; z-index: 10;
+  background:#FAFAFA; border-bottom:1px solid #E0E0E0; box-shadow:0 1px 0 rgba(0,0,0,.04);
+}
+
+/* first column (expand) tight */
+.orders-card th:first-child, .orders-card td:first-child{ width:42px; white-space:nowrap; }
+
+/* Customer cell wraps sanely */
+.order-row td:nth-child(3){ word-break: normal; overflow-wrap:anywhere; white-space: normal; }
+
+/* Inner items table readability */
+#ordersAccordion .collapse .table.table-sm th,
+#ordersAccordion .collapse .table.table-sm td{ vertical-align: middle; }
+
+/* ---------- Status badges ---------- */
+.status-badge{
+  padding:4px 10px; border-radius:999px; font-size:.8rem; font-weight:600;
+  line-height:1; border:1px solid transparent; white-space:nowrap;
+}
+.status-badge.status-completed{ background:#dcfce7; color:#166534; border-color:#A7F3D0; }
+.status-badge.status-delivered{ background:#e9f8ef; color:#1c7c3e; border-color:#BBE7CF; }
+.status-badge.status-shipped  { background:#dbeafe; color:#1e40af; border-color:#BFDBFE; }
+.status-badge.status-cancelled{ background:#fee2e2; color:#991b1b; border-color:#FECACA; }
+.status-badge.status-pending  { background:#fef3c7; color:#92400e; border-color:#FDE68A; }
+.status-badge.status-return   { background:#f3e8ff; color:#6b21a8; border-color:#E9D5FF; }
+
+.item-specs{ color:#6b7280; font-size:.78rem; }
+
+/* Actions compact on phones */
+.table-actions{ white-space:nowrap; }
+.table-actions .btn{ border-radius:10px; }
+@media (max-width:576px){
+  .table-actions .btn{ padding:.35rem .5rem; margin:2px; border:1px solid #E5E7EB; background:#fff; }
+}
+
+/* ---------- Column pruning (keeps key columns visible) ---------- */
+@media (max-width:768px){
+  .orders-card .table thead th:nth-child(6),
+  .orders-card .table tbody td:nth-child(6){ display:none !important; } /* Total (Seller) */
+}
+@media (max-width:576px){
+  .orders-card .table thead th:nth-child(4),
+  .orders-card .table tbody td:nth-child(4){ display:none !important; } /* Date */
+}
+@media (max-width:420px){
+  .orders-card .table thead th:nth-child(3),
+  .orders-card .table tbody td:nth-child(3){ display:none !important; } /* Customer */
+  .orders-card .table thead th:nth-child(2),
+  .orders-card .table tbody td:nth-child(2){ width:84px; }
+}
+
+/* ---------- Print invoice ---------- */
+@media print{
+  body *{ visibility:hidden !important; }
+  #invoiceModal, #invoiceModal *{ visibility:visible !important; }
+  #invoiceContent{ position:absolute; left:0; top:0; width:100%; }
+  .modal-backdrop{ display:none !important; }
+}
