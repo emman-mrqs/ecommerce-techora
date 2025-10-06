@@ -1,3 +1,6 @@
+//NEW
+import http from "http";
+
 import 'dotenv/config';
 import express from "express";
 import bodyParser from "body-parser";
@@ -21,7 +24,7 @@ import websiteViewsTracker from "./src/middleware/websiteViewsTracker.js";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT 
 
 
 //Express Session
@@ -31,6 +34,8 @@ app.use(session({
   saveUninitialized: false,
   cookie: {
     secure: false, // Set to true if using HTTPS
+    // secure cookies in production (works because of trust proxy)
+    secure: process.env.NODE_ENV === 'production',
     maxAge: 1000 * 60 * 60 * 24, // 1 day
   },
 }));
@@ -124,6 +129,10 @@ app.use("/", adminRoutes);
 
 app.listen(port, () => {
   console.log(`Backend server is running on http://localhost:${port}`);
+});
+const server = http.createServer(app);
+server.listen(port, '0.0.0.0', () => {
+console.log(`Server listening on ${port}`);
 });
 
   
