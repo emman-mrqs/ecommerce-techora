@@ -137,7 +137,7 @@ app.use("/", adminRoutes);
 });*/
 const server = http.createServer(app);
 server.listen(port, '0.0.0.0', () => {
-console.log(`Server listening on ${port}`);
+  console.log('ENV PORT =', process.env.PORT);
+  console.log(`Server listening on 0.0.0.0:${port}`);
 });
-
   
