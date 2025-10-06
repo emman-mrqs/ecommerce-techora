@@ -30,7 +30,7 @@ const app = express();
 // Only if you're behind nginx/Heroku/etc.
 app.set('trust proxy', 1);
 
-const port = process.env.PORT 
+const port = Number(process.env.PORT) || 8080;
 
 
 //Express Session
