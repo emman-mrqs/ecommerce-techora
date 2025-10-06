@@ -23,10 +23,13 @@ import websiteViewsTracker from "./src/middleware/websiteViewsTracker.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
+
+
+const app = express();
+
 // Only if you're behind nginx/Heroku/etc.
 app.set('trust proxy', 1);
 
-const app = express();
 const port = process.env.PORT 
 
 
