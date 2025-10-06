@@ -79,7 +79,9 @@ app.use(attachSeller);
 
 app.use(suspensionGuard);
 
-//app.use(websiteViewsTracker());
+if (process.env.ENABLE_TRACKING === 'true') {
+  app.use(websiteViewsTracker());
+}
 
 // This will make the current path available in all EJS views
 app.use((req, res, next) => {
