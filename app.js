@@ -36,7 +36,7 @@ app.use(session({
 }));
 
 // Only if you're behind nginx/Heroku/etc.
-// app.set('trust proxy', 1);
+ app.set('trust proxy', 1);
 
 // Serve /src/public as your static root
 app.use(express.static(join(__dirname, "src", "public")));
