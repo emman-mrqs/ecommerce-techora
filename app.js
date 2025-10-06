@@ -23,6 +23,9 @@ import websiteViewsTracker from "./src/middleware/websiteViewsTracker.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
+// Only if you're behind nginx/Heroku/etc.
+app.set('trust proxy', 1);
+
 const app = express();
 const port = process.env.PORT 
 
@@ -40,8 +43,7 @@ app.use(session({
   },
 }));
 
-// Only if you're behind nginx/Heroku/etc.
- app.set('trust proxy', 1);
+
 
 // Serve /src/public as your static root
 app.use(express.static(join(__dirname, "src", "public")));
@@ -127,9 +129,9 @@ app.use("/", adminRoutes);
 
 
 
-app.listen(port, () => {
+/*app.listen(port, () => {
   console.log(`Backend server is running on http://localhost:${port}`);
-});
+});*/
 const server = http.createServer(app);
 server.listen(port, '0.0.0.0', () => {
 console.log(`Server listening on ${port}`);
