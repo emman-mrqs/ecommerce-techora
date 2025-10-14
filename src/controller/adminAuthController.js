@@ -11,7 +11,10 @@ export const renderAdminLogin = (req, res) => {
   // If already logged in, skip to /admin
   const tok = req.cookies?.admin_token;
   if (tok) {
-    try { jwt.verify(tok, process.env.ADMIN_JWT_SECRET); return res.redirect("/admin"); } catch {}
+    try {
+      jwt.verify(tok, process.env.ADMIN_JWT_SECRET);
+      return res.redirect("/admin");
+    } catch {}
   }
 
   res.render("auth/adminLogin", {
@@ -66,10 +69,12 @@ export const adminLogin = async (req, res) => {
     { expiresIn: process.env.ADMIN_JWT_EXPIRES || "2h", issuer: "techora" }
   );
 
+  // ⬇⬇ IMPORTANT: scope cookie to /admin so it never leaks to public pages
   res.cookie("admin_token", token, {
     httpOnly: true,
     sameSite: "lax",
-    secure: false, // set true on HTTPS
+    secure: process.env.NODE_ENV === "production", // set true on HTTPS
+    path: "/admin",                                // <<< key change
     maxAge: 1000 * 60 * 60 * 2
   });
 
@@ -77,6 +82,7 @@ export const adminLogin = async (req, res) => {
 };
 
 export const adminLogout = (req, res) => {
-  res.clearCookie("admin_token");
+  // Clear with the SAME path you set it
+  res.clearCookie("admin_token", { path: "/admin" });
   return res.redirect(`/admin/login/${process.env.ADMIN_LOGIN_TOKEN}`);
 };
