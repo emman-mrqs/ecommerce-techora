@@ -1,4 +1,5 @@
 import db from "../database/db.js";
+import { insertAudit } from "../utils/audit.js"; // ✅ Added audit import
 
 // Render Add Product Page
 export const renderAddProductPage = (req, res) => {
@@ -25,13 +26,11 @@ export const addProduct = async (req, res) => {
       stock_quantity = [],
       is_primary = [],
       position = [],
-      // NEW from enhanced UI (hidden input per image row)
       variant_link_spec = [],
-      // Legacy (old single dropdown per image row)
       variant_for_image = []
     } = req.body;
 
-    // normalize arrays
+    // Normalize arrays
     const toArr = v => (Array.isArray(v) ? v : [v]);
     const storageArr  = toArr(storage);
     const ramArr      = toArr(ram);
@@ -45,10 +44,11 @@ export const addProduct = async (req, res) => {
 
     const images = req.files || [];
     const userId = req.session.user.id;
+    const ip = req.headers["x-forwarded-for"] || req.ip;
 
-    // seller
+    // ✅ Get seller_id
     const sellerRes = await client.query(
-      "SELECT id FROM sellers WHERE user_id = $1 AND status = 'approved' LIMIT 1",
+      "SELECT id, store_name FROM sellers WHERE user_id = $1 AND status = 'approved' LIMIT 1",
       [userId]
     );
     if (sellerRes.rows.length === 0) {
@@ -57,7 +57,7 @@ export const addProduct = async (req, res) => {
     }
     const sellerId = sellerRes.rows[0].id;
 
-    // product
+    // ✅ Insert product
     const productRes = await client.query(
       `INSERT INTO products (name, description, seller_id, created_at, updated_at)
        VALUES ($1, $2, $3, NOW(), NOW())
@@ -66,7 +66,7 @@ export const addProduct = async (req, res) => {
     );
     const productId = productRes.rows[0].id;
 
-    // variants (keep order aligned with form)
+    // ✅ Insert variants
     const variantIds = [];
     for (let i = 0; i < storageArr.length; i++) {
       const vRes = await client.query(
@@ -86,8 +86,8 @@ export const addProduct = async (req, res) => {
       variantIds.push(vRes.rows[0].id);
     }
 
-    // helper: color -> [variantId...]
-    const colorMap = new Map(); // lowerColor -> [ids]
+    // Helper: map color -> [variantIds]
+    const colorMap = new Map();
     for (let i = 0; i < colorArr.length; i++) {
       const c = String(colorArr[i] || "").toLowerCase();
       if (!c) continue;
@@ -95,22 +95,22 @@ export const addProduct = async (req, res) => {
       if (variantIds[i]) colorMap.get(c).push(variantIds[i]);
     }
 
-    // images
+    // ✅ Insert product images
     for (let i = 0; i < images.length; i++) {
       const imgPath = "/uploads/" + images[i].filename;
       const isPrimary = String(primaryArr[i]) === "true";
       const pos = parseInt(posArr[i], 10) || 0;
 
-      const rawSpec = String(linkSpecArr[i] || "").trim(); // "color:Cream" OR "sku:1|3"
-      const legacy  = String(legacyArr[i] || "").trim();   // "2" (1-based index) or ""
+      const rawSpec = String(linkSpecArr[i] || "").trim();
+      const legacy  = String(legacyArr[i] || "").trim();
 
-      const inserts = []; // [{vid|null}...]
+      const inserts = [];
 
       if (rawSpec.startsWith("color:")) {
         const c = rawSpec.slice(6).trim().toLowerCase();
         const targets = colorMap.get(c) || [];
         if (targets.length) targets.forEach(vid => inserts.push({ vid }));
-        else inserts.push({ vid: null }); // fallback product-level
+        else inserts.push({ vid: null });
       } else if (rawSpec.startsWith("sku:")) {
         const idxs = rawSpec
           .slice(4)
@@ -123,13 +123,12 @@ export const addProduct = async (req, res) => {
             if (vid) inserts.push({ vid });
           });
         }
-        if (!inserts.length) inserts.push({ vid: null }); // fallback
+        if (!inserts.length) inserts.push({ vid: null });
       } else if (legacy) {
         const idx = parseInt(legacy, 10) - 1;
         const vid = variantIds[idx] || null;
         inserts.push({ vid });
       } else {
-        // no spec provided → product-level
         inserts.push({ vid: null });
       }
 
@@ -143,10 +142,49 @@ export const addProduct = async (req, res) => {
     }
 
     await client.query("COMMIT");
+
+    // ✅ AUDIT: product_create
+    try {
+      await insertAudit({
+        actor_type: "seller",
+        actor_id: sellerId,
+        actor_name: sellerRes.rows[0].store_name,
+        action: "product_create",
+        resource: "products",
+        details: {
+          product_id: productId,
+          name: product_name,
+          description,
+          variant_count: variantIds.length,
+          image_count: images.length
+        },
+        ip,
+        status: "success"
+      });
+    } catch (auditErr) {
+      console.error("Audit insert error (product_create):", auditErr);
+    }
+
     return res.status(201).json({ message: "Product created successfully." });
   } catch (err) {
     try { await client.query("ROLLBACK"); } catch {}
     console.error("❌ Failed to add product:", err);
+
+    // ✅ Audit product_create_error
+    try {
+      await insertAudit({
+        actor_type: "seller",
+        actor_id: req.session?.user?.id || null,
+        action: "product_create_error",
+        resource: "products",
+        details: { error: err.message || String(err) },
+        ip: req.headers["x-forwarded-for"] || req.ip,
+        status: "failed"
+      });
+    } catch (auditErr) {
+      console.error("Audit insert error (product_create_error):", auditErr);
+    }
+
     return res.status(500).json({ error: "Something went wrong." });
   } finally {
     client.release();

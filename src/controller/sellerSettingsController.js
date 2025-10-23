@@ -1,4 +1,6 @@
+// src/controller/sellerSettingsController.js
 import db from "../database/db.js";
+import { insertAudit } from "../utils/audit.js"; // ✅ import audit util
 
 // Render seller settings page
 export const renderSellerSettings = async (req, res) => {
@@ -21,14 +23,15 @@ export const renderSellerSettings = async (req, res) => {
   }
 };
 
-// Update seller settings (including optional store icon upload)
 // Update seller settings (with optional store icon upload)
 export const updateSellerSettings = async (req, res) => {
+  const userId = req.session.user.id;
+  const ip = req.headers["x-forwarded-for"] || req.ip;
+
   try {
-    const userId = req.session.user.id;
     let { store_name, category, description, business_address, store_email, contact_number } = req.body;
 
-    // Convert empty strings to null (so COALESCE works correctly)
+    // Convert empty strings to null
     store_name = store_name?.trim() || null;
     category = category?.trim() || null;
     description = description?.trim() || null;
@@ -45,6 +48,7 @@ export const updateSellerSettings = async (req, res) => {
       store_icon = `/uploads/${req.file.filename}`;
     }
 
+    // ✅ Update seller settings
     await db.query(
       `UPDATE sellers
        SET store_name = COALESCE($1, store_name),
@@ -59,17 +63,57 @@ export const updateSellerSettings = async (req, res) => {
       [store_name, category, description, business_address, store_email, contact_number, store_icon, userId]
     );
 
-    const updatedSeller = await db.query(
+    const updatedSellerRes = await db.query(
       "SELECT * FROM sellers WHERE user_id = $1 LIMIT 1",
       [userId]
     );
+    const updatedSeller = updatedSellerRes.rows[0];
 
-    res.json({ success: true, msg: "Store settings updated successfully", seller: updatedSeller.rows[0] });
+    // ✅ AUDIT LOG
+    try {
+      await insertAudit({
+        actor_type: "seller",
+        actor_id: userId,
+        actor_name: req.session.user?.name || "Unknown Seller",
+        action: "seller_settings_update",
+        resource: "sellers",
+        details: {
+          store_name: updatedSeller.store_name,
+          category: updatedSeller.category,
+          store_email: updatedSeller.store_email,
+          contact_number: updatedSeller.contact_number
+        },
+        ip,
+        status: "success"
+      });
+    } catch (auditErr) {
+      console.error("Audit insert error (seller_settings_update):", auditErr);
+    }
+
+    res.json({ success: true, msg: "Store settings updated successfully", seller: updatedSeller });
   } catch (err) {
-    console.error(err);
+    console.error("❌ updateSellerSettings error:", err);
+
+    // ❌ AUDIT LOG on error
+    try {
+      await insertAudit({
+        actor_type: "seller",
+        actor_id: userId,
+        actor_name: req.session.user?.name || "Unknown Seller",
+        action: "seller_settings_error",
+        resource: "sellers",
+        details: { error: err.message || String(err) },
+        ip,
+        status: "failed"
+      });
+    } catch (auditErr) {
+      console.error("Audit insert error (seller_settings_error):", auditErr);
+    }
+
     res.status(500).json({ success: false, msg: "Server error" });
   }
 };
+
 
 
 

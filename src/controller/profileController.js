@@ -1,6 +1,7 @@
 // src/controller/profileController.js
 import db from "../database/db.js";
 import bcrypt from "bcrypt";
+import { insertAudit } from "../utils/audit.js";
 
 const UI_STATUS = {
   pending: "Pending",
@@ -104,7 +105,7 @@ export async function renderProfile(req, res, next) {
 
       map.get(r.order_id).items.push({
         order_item_id: r.order_item_id,
-          product_id: r.product_id,            // ✅ add this line
+        product_id: r.product_id,
         product_name: r.product_name,
         variant_id: r.variant_id,
         color: r.color,
@@ -142,10 +143,9 @@ export async function renderProfile(req, res, next) {
 
 /* 
 --------------------
-Profile  info
-------------------
+Profile info
+--------------------
 */
-
 export async function updateName(req, res, next) {
   try {
     if (!req.session?.user?.id) {
@@ -159,6 +159,10 @@ export async function updateName(req, res, next) {
       return res.status(400).json({ success: false, message: "Name too short" });
     }
 
+    // get previous for audit
+    const prev = await db.query(`SELECT name FROM users WHERE id = $1`, [userId]);
+    const oldName = prev.rows[0]?.name || null;
+
     const sql = `
       UPDATE users
       SET name = $1, updated_at = NOW()
@@ -171,6 +175,22 @@ export async function updateName(req, res, next) {
     // Update session
     req.session.user = { ...req.session.user, name: rows[0].name };
 
+    // AUDIT (best-effort)
+    try {
+      await insertAudit({
+        actor_type: "user",
+        actor_id: userId,
+        actor_name: req.session.user.name || req.session.user.email,
+        action: "profile_name_updated",
+        resource: "users",
+        details: { user_id: userId, old_name: oldName, new_name: rows[0].name },
+        ip: req.headers["x-forwarded-for"] || req.ip,
+        status: "success",
+      });
+    } catch (e) {
+      console.error("audit(profile_name_updated) failed:", e);
+    }
+
     res.json({ success: true, user: rows[0] });
   } catch (err) {
     next(err);
@@ -182,7 +202,6 @@ export async function updateName(req, res, next) {
 Profile Change password
 -----------------------
 */
-
 export async function changePassword(req, res) {
   try {
     if (!req.session?.user?.id) {
@@ -200,12 +219,10 @@ export async function changePassword(req, res) {
 
     const user = result.rows[0];
 
-    // ✅ If Google user
     if (user.auth_provider !== "local") {
       return res.status(400).json({ success: false, message: "This account is linked to Google Sign-In." });
     }
 
-    // check password
     const valid = await bcrypt.compare(currentPassword, user.password);
     if (!valid) {
       return res.status(400).json({ success: false, message: "Current password is incorrect." });
@@ -215,9 +232,24 @@ export async function changePassword(req, res) {
       return res.status(400).json({ success: false, message: "New password must be at least 6 characters." });
     }
 
-    // hash new password
     const hash = await bcrypt.hash(newPassword, 10);
     await db.query("UPDATE users SET password = $1, updated_at = NOW() WHERE id = $2", [hash, userId]);
+
+    // AUDIT (no sensitive data)
+    try {
+      await insertAudit({
+        actor_type: "user",
+        actor_id: userId,
+        actor_name: req.session.user.name || req.session.user.email,
+        action: "password_changed",
+        resource: "users",
+        details: { user_id: userId },
+        ip: req.headers["x-forwarded-for"] || req.ip,
+        status: "success",
+      });
+    } catch (e) {
+      console.error("audit(password_changed) failed:", e);
+    }
 
     res.json({ success: true, message: "Password updated successfully" });
   } catch (err) {
@@ -225,7 +257,6 @@ export async function changePassword(req, res) {
     res.status(500).json({ success: false, message: "Server error" });
   }
 }
-
 
 /* 
 ------------------------
@@ -245,7 +276,6 @@ export async function cancelOrder(req, res) {
       return res.status(400).json({ success: false, message: "Order ID is required" });
     }
 
-    // Check order ownership + status
     const result = await db.query(
       "SELECT id, order_status FROM orders WHERE id = $1 AND user_id = $2 LIMIT 1",
       [orderId, userId]
@@ -256,9 +286,8 @@ export async function cancelOrder(req, res) {
     }
 
     const order = result.rows[0];
-    const status = order.order_status.toLowerCase();
+    const status = String(order.order_status || "").toLowerCase();
 
-    // Only allow cancel if Pending or Confirmed (To Ship)
     if (!(status === "pending" || status === "confirmed")) {
       return res.status(400).json({
         success: false,
@@ -271,13 +300,28 @@ export async function cancelOrder(req, res) {
       [orderId]
     );
 
+    // AUDIT
+    try {
+      await insertAudit({
+        actor_type: "user",
+        actor_id: userId,
+        actor_name: req.session.user.name || req.session.user.email,
+        action: "order_cancelled_by_user",
+        resource: "orders",
+        details: { order_id: orderId, prev_status: order.order_status, new_status: "cancelled" },
+        ip: req.headers["x-forwarded-for"] || req.ip,
+        status: "success",
+      });
+    } catch (e) {
+      console.error("audit(order_cancelled_by_user) failed:", e);
+    }
+
     res.json({ success: true, message: "Order cancelled successfully" });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: "Server error" });
   }
 }
-
 
 /* 
 ------------------------
@@ -297,7 +341,6 @@ export async function markOrderReceived(req, res) {
       return res.status(400).json({ success: false, message: "Order ID is required" });
     }
 
-    // Check order ownership + status
     const result = await db.query(
       "SELECT id, order_status FROM orders WHERE id = $1 AND user_id = $2 LIMIT 1",
       [orderId, userId]
@@ -308,9 +351,8 @@ export async function markOrderReceived(req, res) {
     }
 
     const order = result.rows[0];
-    const status = order.order_status.toLowerCase();
+    const status = String(order.order_status || "").toLowerCase();
 
-    // Only allow "Mark Received" if order is To Receive
     if (status !== "shipped") {
       return res.status(400).json({
         success: false,
@@ -322,6 +364,22 @@ export async function markOrderReceived(req, res) {
       "UPDATE orders SET order_status = 'completed', updated_at = NOW() WHERE id = $1",
       [orderId]
     );
+
+    // AUDIT
+    try {
+      await insertAudit({
+        actor_type: "user",
+        actor_id: userId,
+        actor_name: req.session.user.name || req.session.user.email,
+        action: "order_marked_received",
+        resource: "orders",
+        details: { order_id: orderId, prev_status: order.order_status, new_status: "completed" },
+        ip: req.headers["x-forwarded-for"] || req.ip,
+        status: "success",
+      });
+    } catch (e) {
+      console.error("audit(order_marked_received) failed:", e);
+    }
 
     res.json({ success: true, message: "Order marked as received." });
   } catch (err) {
@@ -335,7 +393,6 @@ export async function markOrderReceived(req, res) {
 Return and Refund
 ------------------------
 */
-
 export async function requestRefund(req, res) {
   try {
     if (!req.session?.user?.id) {
@@ -349,7 +406,6 @@ export async function requestRefund(req, res) {
       return res.status(400).json({ success: false, message: "Order ID required" });
     }
 
-    // Check ownership + status
     const result = await db.query(
       "SELECT id, order_status FROM orders WHERE id = $1 AND user_id = $2 LIMIT 1",
       [orderId, userId]
@@ -360,7 +416,7 @@ export async function requestRefund(req, res) {
     }
 
     const order = result.rows[0];
-    const status = order.order_status.toLowerCase();
+    const status = String(order.order_status || "").toLowerCase();
 
     if (status !== "shipped") {
       return res.status(400).json({
@@ -374,6 +430,22 @@ export async function requestRefund(req, res) {
       [orderId]
     );
 
+    // AUDIT
+    try {
+      await insertAudit({
+        actor_type: "user",
+        actor_id: userId,
+        actor_name: req.session.user.name || req.session.user.email,
+        action: "refund_requested",
+        resource: "orders",
+        details: { order_id: orderId, prev_status: order.order_status, new_status: "return" },
+        ip: req.headers["x-forwarded-for"] || req.ip,
+        status: "success",
+      });
+    } catch (e) {
+      console.error("audit(refund_requested) failed:", e);
+    }
+
     res.json({ success: true, message: "Refund requested successfully." });
   } catch (err) {
     console.error(err);
@@ -384,7 +456,6 @@ export async function requestRefund(req, res) {
 /* =========================
    Addresses
 ========================== */
-// Get addresses for logged-in user
 export const getAddresses = async (req, res) => {
   try {
     const userId = req.session.user.id;
@@ -413,7 +484,6 @@ export const addAddress = async (req, res) => {
       email
     } = req.body;
 
-    // 🔍 Check if same address already exists for this user
     const checkQuery = `
       SELECT id FROM addresses 
       WHERE user_id = $1 
@@ -435,7 +505,6 @@ export const addAddress = async (req, res) => {
       return res.json({ success: false, message: "This address already exists." });
     }
 
-    // ✅ Insert new address if not duplicate
     const query = `
       INSERT INTO addresses
         (user_id, first_name, last_name, street, city, province, zip, phone, email, created_at, updated_at)
@@ -445,6 +514,23 @@ export const addAddress = async (req, res) => {
     const values = [userId, first_name, last_name, street, city, province, zip, phone, email];
 
     const result = await db.query(query, values);
+
+    // AUDIT
+    try {
+      await insertAudit({
+        actor_type: "user",
+        actor_id: userId,
+        actor_name: req.session.user.name || req.session.user.email,
+        action: "address_added",
+        resource: "addresses",
+        details: { address_id: result.rows[0].id, city, province, zip },
+        ip: req.headers["x-forwarded-for"] || req.ip,
+        status: "success",
+      });
+    } catch (e) {
+      console.error("audit(address_added) failed:", e);
+    }
+
     res.json({ success: true, address: result.rows[0] });
   } catch (err) {
     console.error("Error adding address:", err);
@@ -452,21 +538,21 @@ export const addAddress = async (req, res) => {
   }
 };
 
-// Update address
 export const updateAddress = async (req, res) => {
   try {
     const userId = req.session.user.id;
     const { id, first_name, last_name, street, city, province, zip, phone, email } = req.body;
 
-    // Ensure address belongs to user
     const check = await db.query(
-      "SELECT id FROM addresses WHERE id = $1 AND user_id = $2",
+      "SELECT * FROM addresses WHERE id = $1 AND user_id = $2",
       [id, userId]
     );
     if (check.rows.length === 0) {
       return res.json({ success: false, message: "Address not found" });
     }
-    // Update address
+
+    const prev = check.rows[0];
+
     const query = `
       UPDATE addresses 
       SET first_name=$1, last_name=$2, street=$3, city=$4, province=$5, zip=$6, phone=$7, email=$8, updated_at=NOW()
@@ -475,6 +561,27 @@ export const updateAddress = async (req, res) => {
     const values = [first_name, last_name, street, city, province, zip, phone, email, id, userId];
 
     const result = await db.query(query, values);
+
+    // AUDIT
+    try {
+      await insertAudit({
+        actor_type: "user",
+        actor_id: userId,
+        actor_name: req.session.user.name || req.session.user.email,
+        action: "address_updated",
+        resource: "addresses",
+        details: {
+          address_id: id,
+          before: { city: prev.city, province: prev.province, zip: prev.zip },
+          after:  { city, province, zip }
+        },
+        ip: req.headers["x-forwarded-for"] || req.ip,
+        status: "success",
+      });
+    } catch (e) {
+      console.error("audit(address_updated) failed:", e);
+    }
+
     res.json({ success: true, address: result.rows[0] });
   } catch (err) {
     console.error("Error updating address:", err);
@@ -482,22 +589,38 @@ export const updateAddress = async (req, res) => {
   }
 };
 
-// Delete address
 export const deleteAddress = async (req, res) => {
   try {
     const userId = req.session.user.id;
     const { id } = req.body;
 
-    // Ensure this address belongs to the user
     const check = await db.query(
-      "SELECT id FROM addresses WHERE id = $1 AND user_id = $2",
+      "SELECT city, province, zip FROM addresses WHERE id = $1 AND user_id = $2",
       [id, userId]
     );
     if (check.rows.length === 0) {
       return res.json({ success: false, message: "Address not found" });
     }
+    const prev = check.rows[0];
 
     await db.query("DELETE FROM addresses WHERE id = $1 AND user_id = $2", [id, userId]);
+
+    // AUDIT
+    try {
+      await insertAudit({
+        actor_type: "user",
+        actor_id: userId,
+        actor_name: req.session.user.name || req.session.user.email,
+        action: "address_deleted",
+        resource: "addresses",
+        details: { address_id: id, city: prev.city, province: prev.province, zip: prev.zip },
+        ip: req.headers["x-forwarded-for"] || req.ip,
+        status: "success",
+      });
+    } catch (e) {
+      console.error("audit(address_deleted) failed:", e);
+    }
+
     res.json({ success: true, message: "Address deleted" });
   } catch (err) {
     console.error("Error deleting address:", err);
@@ -505,24 +628,38 @@ export const deleteAddress = async (req, res) => {
   }
 };
 
-// Set default address
 export const setDefaultAddress = async (req, res) => {
   try {
     const userId = req.session.user.id;
     const { id } = req.body;
 
-    // Ensure the address belongs to this user
     const check = await db.query(
-      "SELECT id FROM addresses WHERE id=$1 AND user_id=$2",
+      "SELECT id, city, province, zip FROM addresses WHERE id=$1 AND user_id=$2",
       [id, userId]
     );
     if (check.rows.length === 0) {
       return res.json({ success: false, message: "Address not found" });
     }
 
-    // Reset all to false, then set the chosen one as default
     await db.query("UPDATE addresses SET is_default=false WHERE user_id=$1", [userId]);
     await db.query("UPDATE addresses SET is_default=true, updated_at=NOW() WHERE id=$1 AND user_id=$2", [id, userId]);
+
+    // AUDIT
+    try {
+      const r = check.rows[0];
+      await insertAudit({
+        actor_type: "user",
+        actor_id: userId,
+        actor_name: req.session.user.name || req.session.user.email,
+        action: "address_set_default",
+        resource: "addresses",
+        details: { address_id: id, city: r.city, province: r.province, zip: r.zip },
+        ip: req.headers["x-forwarded-for"] || req.ip,
+        status: "success",
+      });
+    } catch (e) {
+      console.error("audit(address_set_default) failed:", e);
+    }
 
     res.json({ success: true, message: "Default address updated" });
   } catch (err) {
@@ -530,4 +667,3 @@ export const setDefaultAddress = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
-

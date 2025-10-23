@@ -1,5 +1,6 @@
 // src/controller/reviewController.js
 import db from "../database/db.js";
+import { insertAudit } from "../utils/audit.js";
 
 /**
  * GET /api/reviews?product_id=123
@@ -92,7 +93,7 @@ LEFT JOIN users u ON u.id = r.user_id
 
 /**
  * POST /api/reviews
- * Body: { product_id, rating, body }
+ * Body: { product_id, rating, body, order_item_id? }
  */
 export const createReview = async (req, res) => {
   const userId = req.user?.id || req.session?.user?.id;
@@ -140,14 +141,58 @@ export const createReview = async (req, res) => {
 
   const pickedOrderItemId = elig[0].order_item_id;
 
-  // 2) insert review bound to that order_item_id
-  await db.query(
-    `INSERT INTO product_reviews (product_id, user_id, rating, body, order_item_id)
-     VALUES ($1, $2, $3, $4, $5)`,
-    [Number(product_id), userId, Number(rating), String(body).trim(), pickedOrderItemId]
-  );
+  // 2) insert review bound to that order_item_id and return new id
+  try {
+    const insertRes = await db.query(
+      `INSERT INTO product_reviews (product_id, user_id, rating, body, order_item_id)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING id`,
+      [Number(product_id), userId, Number(rating), String(body).trim(), pickedOrderItemId]
+    );
+    const reviewId = insertRes.rows[0].id;
 
-  res.json({ ok:true });
+    // AUDIT: user created review
+    try {
+      await insertAudit({
+        actor_type: "user",
+        actor_id: userId,
+        actor_name: req.session?.user?.name || req.session?.user?.email || null,
+        action: "review_create",
+        resource: "product_reviews",
+        details: {
+          review_id: reviewId,
+          product_id: Number(product_id),
+          order_item_id: pickedOrderItemId,
+          rating: Number(rating),
+          excerpt: String(body).slice(0, 300) // small preview
+        },
+        ip: req.headers["x-forwarded-for"] || req.ip,
+        status: "success",
+      });
+    } catch (auditErr) {
+      console.error("Audit insert error (review_create):", auditErr);
+    }
+
+    return res.json({ ok:true, reviewId });
+  } catch (err) {
+    console.error("createReview error:", err);
+    // Audit failure
+    try {
+      await insertAudit({
+        actor_type: "user",
+        actor_id: userId,
+        actor_name: req.session?.user?.name || req.session?.user?.email || null,
+        action: "review_create_error",
+        resource: "product_reviews",
+        details: { product_id: Number(product_id), error: err.message || String(err) },
+        ip: req.headers["x-forwarded-for"] || req.ip,
+        status: "failed",
+      });
+    } catch (auditErr) {
+      console.error("Audit insert error (review_create_error):", auditErr);
+    }
+    return res.status(500).json({ ok:false, reason:'server' });
+  }
 };
 
 
@@ -164,7 +209,7 @@ export const replyReview = async (req, res) => {
 
   // ensure current user is the seller of that product
   const { rows } = await db.query(
-    `SELECT p.seller_id
+    `SELECT p.seller_id, p.id as product_id
        FROM product_reviews r
        JOIN products p ON p.id = r.product_id
       WHERE r.id = $1`,
@@ -173,18 +218,61 @@ export const replyReview = async (req, res) => {
   if (!rows.length) return res.status(404).json({ ok: false });
 
   const seller = await db.query(
-    `SELECT id FROM sellers WHERE user_id=$1 LIMIT 1`,
+    `SELECT id, store_name FROM sellers WHERE user_id=$1 LIMIT 1`,
     [userId]
   );
   if (!seller.rowCount || seller.rows[0].id !== rows[0].seller_id) {
     return res.status(403).json({ ok: false });
   }
 
-  await db.query(
-    `INSERT INTO review_replies (review_id, seller_id, reply)
-     VALUES ($1, $2, $3)`,
-    [reviewId, seller.rows[0].id, String(body).trim()]
-  );
+  try {
+    const insertRes = await db.query(
+      `INSERT INTO review_replies (review_id, seller_id, reply)
+       VALUES ($1, $2, $3)
+       RETURNING id`,
+      [reviewId, seller.rows[0].id, String(body).trim()]
+    );
+    const replyId = insertRes.rows[0].id;
 
-  res.json({ ok: true });
+    // AUDIT: seller replied to review
+    try {
+      await insertAudit({
+        actor_type: "seller",
+        actor_id: seller.rows[0].id,
+        actor_name: seller.rows[0].store_name || null,
+        action: "review_reply",
+        resource: "review_replies",
+        details: {
+          reply_id: replyId,
+          review_id: reviewId,
+          product_id: rows[0].product_id,
+          excerpt: String(body).slice(0, 300)
+        },
+        ip: req.headers["x-forwarded-for"] || req.ip,
+        status: "success",
+      });
+    } catch (auditErr) {
+      console.error("Audit insert error (review_reply):", auditErr);
+    }
+
+    return res.json({ ok: true, replyId });
+  } catch (err) {
+    console.error("replyReview error:", err);
+    // Audit failure to reply
+    try {
+      await insertAudit({
+        actor_type: "seller",
+        actor_id: seller.rows[0].id,
+        actor_name: seller.rows[0].store_name || null,
+        action: "review_reply_error",
+        resource: "review_replies",
+        details: { review_id: reviewId, error: err.message || String(err) },
+        ip: req.headers["x-forwarded-for"] || req.ip,
+        status: "failed",
+      });
+    } catch (auditErr) {
+      console.error("Audit insert error (review_reply_error):", auditErr);
+    }
+    return res.status(500).json({ ok: false });
+  }
 };

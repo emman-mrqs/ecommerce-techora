@@ -1,7 +1,7 @@
 // src/controller/sellerApplicationController.js
 import db from "../database/db.js";
+import { insertAudit } from "../utils/audit.js"; // ✅ import audit util
 
-// Render seller application form
 // Render seller application form
 export const renderSellerApplication = async (req, res) => {
   if (!req.session.user) {
@@ -60,6 +60,7 @@ export const submitSellerApplication = async (req, res) => {
 
   const { storeName, category, description, address } = req.body;
   const userId = req.session.user.id;
+  const ip = req.headers["x-forwarded-for"] || req.ip;
 
   try {
     const existing = await db.query(
@@ -68,6 +69,8 @@ export const submitSellerApplication = async (req, res) => {
     );
 
     if (existing.rows.length > 0) {
+      const old = existing.rows[0];
+
       // ✅ Update existing record (reset to pending)
       await db.query(
         `UPDATE sellers 
@@ -75,6 +78,28 @@ export const submitSellerApplication = async (req, res) => {
          WHERE user_id=$5`,
         [storeName, category, description, address, userId]
       );
+
+      // ✅ AUDIT LOG: seller_application_update
+      try {
+        await insertAudit({
+          actor_type: "user",
+          actor_id: userId,
+          actor_name: req.session.user.name || "Unknown User",
+          action: "seller_application_update",
+          resource: "sellers",
+          details: {
+            old_status: old.status,
+            new_status: "pending",
+            store_name: storeName,
+            category,
+            address
+          },
+          ip,
+          status: "success"
+        });
+      } catch (auditErr) {
+        console.error("Audit insert error (seller_application_update):", auditErr);
+      }
 
       return res.render("seller/sellerApplication", {
         pageTitle: "Seller Application",
@@ -90,6 +115,22 @@ export const submitSellerApplication = async (req, res) => {
       [userId, storeName, category, description, address]
     );
 
+    // ✅ AUDIT LOG: seller_application_create
+    try {
+      await insertAudit({
+        actor_type: "user",
+        actor_id: userId,
+        actor_name: req.session.user.name || "Unknown User",
+        action: "seller_application_create",
+        resource: "sellers",
+        details: { store_name: storeName, category, description, address },
+        ip,
+        status: "success"
+      });
+    } catch (auditErr) {
+      console.error("Audit insert error (seller_application_create):", auditErr);
+    }
+
     res.render("seller/sellerApplication", {
       pageTitle: "Seller Application",
       submitted: true,
@@ -98,9 +139,27 @@ export const submitSellerApplication = async (req, res) => {
 
   } catch (err) {
     console.error(err);
+
+    // ❌ AUDIT LOG: seller_application_error
+    try {
+      await insertAudit({
+        actor_type: "user",
+        actor_id: userId,
+        actor_name: req.session.user.name || "Unknown User",
+        action: "seller_application_error",
+        resource: "sellers",
+        details: { error: err.message || String(err) },
+        ip,
+        status: "failed"
+      });
+    } catch (auditErr) {
+      console.error("Audit insert error (seller_application_error):", auditErr);
+    }
+
     res.status(500).send("Error submitting application");
   }
 };
+
 
 // Middleware to ensure seller is approved
 export const ensureSeller = async (req, res, next) => {

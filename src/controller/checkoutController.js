@@ -1,6 +1,6 @@
 // src/controller/checkoutController.js
 import db from "../database/db.js";
-
+import { insertAudit } from "../utils/audit.js";
 
 /* ========== helpers ========== */
 
@@ -41,11 +41,10 @@ async function getUserCartItems(userId) {
 }
 
 // Compute normal totals
-// Replace this whole function:
 function computeTotals(items, discount = 0) {
   const subtotal = items.reduce((s, it) => s + Number(it.price) * Number(it.quantity), 0);
   const tax = subtotal * 0.03;
-  const shipping = subtotal > 5000 ? 0 : 50;       // ← FREE if > ₱5,000, else ₱50
+  const shipping = subtotal > 5000 ? 0 : 50;
   const total = Math.max(0, subtotal - Number(discount)) + tax + shipping;
   return { subtotal, tax, shipping, total };
 }
@@ -55,7 +54,6 @@ async function validateVoucherForCart(userId, code) {
   const trimmed = String(code || "").trim();
   if (!trimmed) return { ok: false, message: "Enter a voucher code." };
 
-  // find promo by code
   const { rows: promos } = await db.query(
     `SELECT id, seller_id, voucher_code, discount_type, discount_value,
             usage_limit, used_count, expiry_date, status
@@ -67,14 +65,12 @@ async function validateVoucherForCart(userId, code) {
   const promo = promos[0];
   if (!promo) return { ok: false, message: "Invalid voucher." };
 
-  // status/expiry/limit checks
   const now = new Date();
   const active = String(promo.status || "").toLowerCase() === "active";
   const expired = promo.expiry_date ? new Date(promo.expiry_date) < now : false;
   const capped = promo.usage_limit != null && promo.used_count >= promo.usage_limit;
   if (!active || expired || capped) return { ok: false, message: "Voucher is not usable." };
 
-  // get user cart + compute the subtotal that belongs to this voucher's seller
   const items = await getUserCartItems(userId);
   if (!items.length) return { ok: false, message: "Your cart is empty." };
 
@@ -86,7 +82,6 @@ async function validateVoucherForCart(userId, code) {
     return { ok: false, message: "This voucher does not apply to any items in your cart." };
   }
 
-  // compute discount on that seller-subtotal
   let discount = 0;
   if (String(promo.discount_type).toLowerCase() === "percent") {
     discount = sellerSubtotal * (Number(promo.discount_value) / 100);
@@ -109,6 +104,69 @@ async function validateVoucherForCart(userId, code) {
   };
 }
 
+/**
+ * Emit one audit per seller for a newly created order.
+ * This is what the seller notification middleware looks for:
+ *   action: 'order_placed'
+ * AND details.seller_id = <seller_id>
+ */
+async function emitSellerOrderPlacedAudits({ orderId, items, buyer, ip }) {
+  if (!Array.isArray(items) || !items.length) return;
+
+  // group items by seller
+  const bySeller = new Map(); // seller_id -> { items: [], qty, total }
+  for (const it of items) {
+    const sid = Number(it.seller_id);
+    if (!bySeller.has(sid)) bySeller.set(sid, { items: [], qty: 0, total: 0 });
+    const bucket = bySeller.get(sid);
+    bucket.items.push({
+      product_variant_id: Number(it.variant_id),
+      qty: Number(it.quantity),
+      price: Number(it.price),
+    });
+    bucket.qty += Number(it.quantity);
+    bucket.total += Number(it.price) * Number(it.quantity);
+  }
+
+  // seller names for actor_name (Admin Audit “Actor” column)
+  const sellerIds = Array.from(bySeller.keys());
+  let sellerNames = new Map();
+  if (sellerIds.length) {
+    const { rows: srows } = await db.query(
+      `SELECT id, store_name FROM sellers WHERE id = ANY($1::int[])`,
+      [sellerIds]
+    );
+    sellerNames = new Map(srows.map(r => [Number(r.id), r.store_name || null]));
+  }
+
+  await Promise.all(
+    sellerIds.map((sid) => {
+      const info = bySeller.get(sid);
+      return insertAudit({
+        actor_type: "seller",
+        actor_id: sid,
+        actor_name: sellerNames.get(sid) || null,   // ✅ important for nice Actor label
+        action: "order_placed",
+        resource: "orders",
+        details: {
+          seller_id: sid,                              // ✅ important for middleware filter
+          order_id: orderId,
+          items: info.items,
+          quantity: info.qty,
+          total_amount: Number(info.total.toFixed(2)),
+          buyer_id: buyer?.id || null,
+          buyer_name: buyer?.name || null,
+          buyer_email: buyer?.email || null,
+        },
+        ip: ip || null,
+        status: "success",
+      }).catch(e => {
+        console.error("emitSellerOrderPlacedAudits: insertAudit failed for seller", sid, e);
+      });
+    })
+  );
+}
+
 /* ========== page render ========== */
 
 export async function renderCheckout(req, res) {
@@ -123,7 +181,7 @@ export async function renderCheckout(req, res) {
       return res.send("<script>alert('Your cart is empty!'); window.location='/cart';</script>");
     }
 
-const { subtotal, tax, shipping, total } = computeTotals(items);
+    const { subtotal, tax, shipping, total } = computeTotals(items);
 
     const { rows: addresses } = await db.query(
       `SELECT * FROM addresses WHERE user_id = $1 ORDER BY is_default DESC, created_at DESC`,
@@ -148,13 +206,29 @@ const { subtotal, tax, shipping, total } = computeTotals(items);
 }
 
 /* ========== API: validate code (Checkout sidebar) ========== */
-// POST /api/voucher/validate  { code }
 export async function validateCheckoutVoucher(req, res) {
   try {
     const userId = req.session?.user?.id;
     if (!userId) return res.status(401).json({ ok: false, message: "Login required." });
 
     const out = await validateVoucherForCart(userId, req.body?.code);
+
+    // audit attempt
+    try {
+      await insertAudit({
+        actor_type: "user",
+        actor_id: req.session.user.id,
+        actor_name: req.session.user.name || req.session.user.email,
+        action: "voucher_apply_attempt",
+        resource: "vouchers",
+        details: { code: req.body?.code || null, result: out.ok ? "valid" : "invalid", message: out.message || null },
+        ip: req.headers["x-forwarded-for"] || req.ip,
+        status: out.ok ? "success" : "failed",
+      });
+    } catch (auditErr) {
+      console.error("Audit insert error (voucher_apply_attempt):", auditErr);
+    }
+
     return res.status(out.ok ? 200 : 400).json(out);
   } catch (e) {
     console.error("validateCheckoutVoucher:", e);
@@ -162,11 +236,8 @@ export async function validateCheckoutVoucher(req, res) {
   }
 }
 
-
 /* ========== NEW: stock reservation helper (transactional) ========== */
-// items: array from getUserCartItems(userId) OR order_items joined to variants
 async function reserveStockForCartItems(client, items) {
-  // 1) Lock all variants involved so concurrent orders can't oversell
   const variantIds = [...new Set(items.map(i => Number(i.variant_id)))];
   const { rows: locked } = await client.query(
     `SELECT id, stock_quantity FROM product_variant
@@ -176,25 +247,18 @@ async function reserveStockForCartItems(client, items) {
 
   const stockById = new Map(locked.map(r => [Number(r.id), Number(r.stock_quantity)]));
 
-  // 2) Compute required qty per variant
   const need = new Map();
   for (const it of items) {
     const vid = Number(it.variant_id);
     need.set(vid, (need.get(vid) || 0) + Number(it.quantity));
   }
 
-  // 3) Validate availability
   for (const [vid, qtyNeeded] of need.entries()) {
     const have = stockById.get(vid);
-    if (have == null) {
-      throw new Error(`Variant ${vid} not found.`);
-    }
-    if (have < qtyNeeded) {
-      throw new Error(`Insufficient stock for variant ${vid}. Need ${qtyNeeded}, have ${have}.`);
-    }
+    if (have == null) throw new Error(`Variant ${vid} not found.`);
+    if (have < qtyNeeded) throw new Error(`Insufficient stock for variant ${vid}. Need ${qtyNeeded}, have ${have}.`);
   }
 
-  // 4) Deduct stock
   for (const [vid, qtyNeeded] of need.entries()) {
     await client.query(
       `UPDATE product_variant SET stock_quantity = stock_quantity - $2 WHERE id = $1`,
@@ -204,7 +268,6 @@ async function reserveStockForCartItems(client, items) {
 }
 
 /* ========== place order (COD/PayPal pre-create) ========== */
-// Accepts optional voucherId/voucherCode; recomputes and stores discounted total.
 export const placeOrder = async (req, res) => {
   const userId = req.session.user?.id;
   if (!userId) return res.status(401).json({ error: "You need to login first!" });
@@ -215,43 +278,40 @@ export const placeOrder = async (req, res) => {
     voucherId, voucherCode
   } = req.body;
 
+  const ip = req.headers["x-forwarded-for"] || req.ip;
   const shippingAddress = `${firstName} ${lastName}, ${address}, ${city}, ${province}, ${zipCode}, 📞 ${phone}, ✉ ${email}`;
 
   const client = await db.connect();
   try {
     await client.query("BEGIN");
 
-    // Load cart items inside the txn for consistency
-    const items = await (async () => {
-      const { rows } = await client.query(
-        `
-        SELECT 
-          ci.id             AS cart_item_id,
-          ci.quantity,
-          pv.id             AS variant_id,
-          pv.price,
-          p.seller_id       AS seller_id
-        FROM cart_items ci
-        JOIN cart c             ON ci.cart_id = c.id
-        JOIN product_variant pv ON ci.variant_id = pv.id
-        JOIN products p         ON pv.product_id = p.id
-        WHERE c.user_id = $1
-        ORDER BY ci.id ASC
-        `,
-        [userId]
-      );
-      return rows;
-    })();
+    // Load cart items inside the txn
+    const { rows: items } = await client.query(
+      `
+      SELECT 
+        ci.id             AS cart_item_id,
+        ci.quantity,
+        pv.id             AS variant_id,
+        pv.price,
+        p.seller_id       AS seller_id
+      FROM cart_items ci
+      JOIN cart c             ON ci.cart_id = c.id
+      JOIN product_variant pv ON ci.variant_id = pv.id
+      JOIN products p         ON pv.product_id = p.id
+      WHERE c.user_id = $1
+      ORDER BY ci.id ASC
+      `,
+      [userId]
+    );
 
     if (!items.length) {
       await client.query("ROLLBACK");
       return res.status(400).json({ error: "Your cart is empty" });
     }
 
-    // Re-validate voucher & totals (same logic as before; trimmed for brevity)
+    // voucher re-validate (inside txn)
     let discount = 0;
     let appliedVoucher = null;
-
     async function validateVoucherInsideTxn(code) {
       const trimmed = String(code || "").trim();
       if (!trimmed) return { ok: false };
@@ -272,7 +332,6 @@ export const placeOrder = async (req, res) => {
       const capped = promo.usage_limit != null && promo.used_count >= promo.usage_limit;
       if (!active || expired || capped) return { ok: false };
 
-      // compute seller subtotal from items we already loaded
       const sellerSubtotal = items
         .filter(it => Number(it.seller_id) === Number(promo.seller_id))
         .reduce((s, it) => s + Number(it.price) * Number(it.quantity), 0);
@@ -315,11 +374,11 @@ export const placeOrder = async (req, res) => {
     }
 
     // Totals
-// With this:
-const subtotal = items.reduce((s, it) => s + Number(it.price) * Number(it.quantity), 0);
-const tax = subtotal * 0.03;
-const shipping = subtotal > 5000 ? 0 : 50;        // ← FREE if > ₱5,000, else ₱50
-const total = Math.max(0, subtotal - discount) + tax + shipping;
+    const subtotal = items.reduce((s, it) => s + Number(it.price) * Number(it.quantity), 0);
+    const tax = subtotal * 0.03;
+    const shipping = subtotal > 5000 ? 0 : 50;
+    const total = Math.max(0, subtotal - discount) + tax + shipping;
+
     // Create order
     const orderResult = await client.query(
       `INSERT INTO orders (user_id, order_status, payment_method, payment_status, total_amount, shipping_address)
@@ -339,16 +398,53 @@ const total = Math.max(0, subtotal - discount) + tax + shipping;
     }
 
     if (paymentMethod === "cod") {
-      // **NEW**: Reserve/deduct stock NOW (so COD also adjusts inventory)
       await reserveStockForCartItems(client, items);
-
-      // Clear cart
       await client.query(
         `DELETE FROM cart_items WHERE cart_id = (SELECT id FROM cart WHERE user_id = $1)`,
         [userId]
       );
 
       await client.query("COMMIT");
+
+      // audit (user perspective)
+      try {
+        const itemSummary = items.map(i => ({ product_variant_id: i.variant_id, qty: i.quantity, price: i.price }));
+        await insertAudit({
+          actor_type: "user",
+          actor_id: req.session.user.id,
+          actor_name: req.session.user.name || req.session.user.email,
+          action: "order_create",
+          resource: "orders",
+          details: {
+            order_id: orderId,
+            total,
+            payment_method: "cod",
+            items: itemSummary,
+            voucher: appliedVoucher || null
+          },
+          ip,
+          status: "success",
+        });
+      } catch (auditErr) {
+        console.error("Audit insert error (order_create COD):", auditErr);
+      }
+
+      // per-seller audits → notifications
+      try {
+        await emitSellerOrderPlacedAudits({
+          orderId,
+          items,
+          buyer: {
+            id: req.session.user.id,
+            name: req.session.user.name || null,
+            email: req.session.user.email || null,
+          },
+          ip,
+        });
+      } catch (e) {
+        console.error("emitSellerOrderPlacedAudits (COD) failed:", e);
+      }
+
       return res.json({
         success: true,
         message: "Order placed with Cash on Delivery!",
@@ -358,8 +454,47 @@ const total = Math.max(0, subtotal - discount) + tax + shipping;
       });
     }
 
-    // PayPal path: don't touch stock here (your PayPal success webhook/controller should do it)
+    // Non-COD flow
     await client.query("COMMIT");
+
+    try {
+      const itemSummary = items.map(i => ({ product_variant_id: i.variant_id, qty: i.quantity, price: i.price }));
+      await insertAudit({
+        actor_type: "user",
+        actor_id: req.session.user.id,
+        actor_name: req.session.user.name || req.session.user.email,
+        action: "order_create",
+        resource: "orders",
+        details: {
+          order_id: orderId,
+          total,
+          payment_method: paymentMethod,
+          items: itemSummary,
+          voucher: appliedVoucher || null,
+          note: "payment_pending"
+        },
+        ip,
+        status: "success",
+      });
+    } catch (auditErr) {
+      console.error("Audit insert error (order_create non-cod):", auditErr);
+    }
+
+    try {
+      await emitSellerOrderPlacedAudits({
+        orderId,
+        items,
+        buyer: {
+          id: req.session.user.id,
+          name: req.session.user.name || null,
+          email: req.session.user.email || null,
+        },
+        ip,
+      });
+    } catch (e) {
+      console.error("emitSellerOrderPlacedAudits (non-COD) failed:", e);
+    }
+
     return res.json({
       success: true,
       message: "Redirect to PayPal",
@@ -369,18 +504,15 @@ const total = Math.max(0, subtotal - discount) + tax + shipping;
     });
 
   } catch (err) {
-    // Safety: rollback if we opened a txn
-    try { await db.query("ROLLBACK"); } catch {}
+    try { await client.query("ROLLBACK"); } catch {}
     console.error("Error placing order:", err);
     return res.status(500).json({ error: "Server error" });
   } finally {
-    // Release client if allocated
     try { client.release(); } catch {}
   }
 };
 
 /* ========== redeem after successful payment ========== */
-// POST /api/voucher/redeem  { voucherId }
 export async function redeemVoucherAfterPayment(req, res) {
   try {
     const userId = req.session?.user?.id;
@@ -402,9 +534,38 @@ export async function redeemVoucherAfterPayment(req, res) {
     );
     if (!rowCount) return res.status(409).json({ ok: false, message: "Voucher can no longer be redeemed." });
 
+    try {
+      await insertAudit({
+        actor_type: "user",
+        actor_id: req.session.user.id,
+        actor_name: req.session.user.name || req.session.user.email,
+        action: "voucher_redeemed",
+        resource: "vouchers",
+        details: { voucher_id: vid },
+        ip: req.headers["x-forwarded-for"] || req.ip,
+        status: "success",
+      });
+    } catch (auditErr) {
+      console.error("Audit insert error (voucher_redeemed):", auditErr);
+    }
+
     return res.json({ ok: true });
   } catch (e) {
     console.error("redeemVoucherAfterPayment:", e);
+    try {
+      await insertAudit({
+        actor_type: "user",
+        actor_id: req.session?.user?.id || null,
+        actor_name: req.session?.user?.email || null,
+        action: "voucher_redeem_error",
+        resource: "vouchers",
+        details: { voucher_id: req.body?.voucherId, error: e.message || String(e) },
+        ip: req.headers["x-forwarded-for"] || req.ip,
+        status: "failed",
+      });
+    } catch (auditErr) {
+      console.error("Audit insert error (voucher_redeem_error):", auditErr);
+    }
     return res.status(500).json({ ok: false, message: "Server error." });
   }
 }

@@ -1,19 +1,28 @@
 // src/controller/sellerOrdersController.js
 import db from "../database/db.js";
+import { insertAudit } from "../utils/audit.js";
+
+/** helper: resolve seller id + store_name for the logged-in user */
+async function getSellerForUser(userId) {
+  const { rows } = await db.query(
+    `SELECT id, store_name
+       FROM sellers
+      WHERE user_id = $1
+        AND status = 'approved'
+      LIMIT 1`,
+    [userId]
+  );
+  if (!rows.length) return null;
+  return { sellerId: rows[0].id, storeName: rows[0].store_name || null };
+}
 
 export const renderSellerOrders = async (req, res) => {
   try {
     const userId = req.session.user.id;
+    const seller = await getSellerForUser(userId);
+    if (!seller) return res.redirect("/seller-application");
 
-    // find seller
-    const sellerRes = await db.query(
-      "SELECT id FROM sellers WHERE user_id = $1 AND status = 'approved' LIMIT 1",
-      [userId]
-    );
-    if (sellerRes.rows.length === 0) {
-      return res.redirect("/seller-application");
-    }
-    const sellerId = sellerRes.rows[0].id;
+    const { sellerId } = seller;
 
     // --- pagination params ---
     const perPage = 5;
@@ -35,8 +44,7 @@ export const renderSellerOrders = async (req, res) => {
     const totalOrders = Number(countRes.rows[0]?.total || 0);
     const totalPages = Math.max(1, Math.ceil(totalOrders / perPage));
 
-    // --- data page (one row per order for THIS seller) ---
-    // We aggregate quantities and seller-side total, and show the first item for image/name.
+    // --- data page ---
     const ordersRes = await db.query(
       `
       SELECT 
@@ -70,7 +78,6 @@ export const renderSellerOrders = async (req, res) => {
       JOIN products p ON p.id = v.product_id
       JOIN sellers s ON s.id = p.seller_id
 
-      -- first item (for this seller in this order)
       LEFT JOIN LATERAL (
         SELECT p2.name AS product_name,
                (SELECT img_url 
@@ -86,7 +93,6 @@ export const renderSellerOrders = async (req, res) => {
         LIMIT 1
       ) fi ON TRUE
 
-      -- latest payment for the order
       LEFT JOIN LATERAL (
         SELECT pmt.*
           FROM payments pmt
@@ -110,7 +116,6 @@ export const renderSellerOrders = async (req, res) => {
       activePage: "orders",
       pageTitle: "Seller Orders",
       orders: ordersRes.rows,
-      // pagination info for EJS
       page,
       perPage,
       totalOrders,
@@ -122,13 +127,32 @@ export const renderSellerOrders = async (req, res) => {
   }
 };
 
-// ==========Update order status (and finalize COD payments if needed)=============
+// ========== Update order status (and finalize COD payments if needed) ==========
+// Adds an audit row with action 'order_updated'
 export const updateOrderStatus = async (req, res) => {
   const cx = await db.connect();
   try {
+    const userId = req.session?.user?.id;
+    if (!userId) return res.status(401).json({ success: false, message: "Login required." });
+
+    const seller = await getSellerForUser(userId);
+    if (!seller) return res.status(403).json({ success: false, message: "Seller not found or not approved." });
+    const { sellerId, storeName } = seller;
+
     const { order_id, order_status } = req.body;
 
     await cx.query("BEGIN");
+
+    // capture previous state for audit
+    const before = await cx.query(
+      `SELECT id, order_status, payment_status, payment_method, total_amount
+         FROM orders
+        WHERE id = $1
+        LIMIT 1`,
+      [order_id]
+    );
+
+    const prev = before.rows[0] || null;
 
     // Update the order status
     await cx.query(
@@ -137,9 +161,11 @@ export const updateOrderStatus = async (req, res) => {
     );
 
     // If marking as completed/delivered, ensure COD payment is completed too
+    let codCompleted = false;
+    let codTxnId = null;
+
     const normalized = String(order_status).toLowerCase();
     if (normalized === "completed" || normalized === "delivered") {
-      // Get order total and current payment (latest)
       const { rows: ordRows } = await cx.query(
         "SELECT total_amount, payment_status FROM orders WHERE id = $1",
         [order_id]
@@ -157,27 +183,26 @@ export const updateOrderStatus = async (req, res) => {
         [order_id]
       );
 
-      // Helper: generate a COD transaction id
       const genTxnId = () => `COD-${order_id}-${Date.now()}`;
 
       if (payRows.length === 0) {
-        // No payment row yet -> create completed COD payment now
+        codTxnId = genTxnId();
         await cx.query(
           `
           INSERT INTO payments (order_id, payment_method, payment_status, transaction_id, amount_paid, payment_date)
           VALUES ($1, 'cod', 'completed', $2, $3, NOW())
           `,
-          [order_id, genTxnId(), orderTotal]
+          [order_id, codTxnId, orderTotal]
         );
-        // Mark order as paid
         await cx.query(
           "UPDATE orders SET payment_status = 'paid', updated_at = NOW() WHERE id = $1",
           [order_id]
         );
+        codCompleted = true;
       } else {
         const pay = payRows[0];
         if (pay.payment_method === "cod" && pay.payment_status !== "completed") {
-          // Complete pending/unpaid COD
+          codTxnId = pay.transaction_id || genTxnId();
           await cx.query(
             `
             UPDATE payments
@@ -187,17 +212,44 @@ export const updateOrderStatus = async (req, res) => {
                 payment_date = NOW()
             WHERE id = $1
             `,
-            [pay.id, pay.transaction_id || genTxnId(), orderTotal]
+            [pay.id, codTxnId, orderTotal]
           );
           await cx.query(
             "UPDATE orders SET payment_status = 'paid', updated_at = NOW() WHERE id = $1",
             [order_id]
           );
+          codCompleted = true;
         }
       }
     }
 
     await cx.query("COMMIT");
+
+    // AUDIT: order_updated (seller)
+    try {
+      await insertAudit({
+        actor_type: "seller",
+        actor_id: sellerId,
+        actor_name: storeName,
+        action: "order_updated",
+        resource: "orders",
+        details: {
+          seller_id: sellerId,
+          order_id,
+          old_status: prev?.order_status || null,
+          new_status: order_status,
+          prev_payment_status: prev?.payment_status || null,
+          payment_method: prev?.payment_method || null,
+          cod_completed: codCompleted || false,
+          cod_transaction_id: codTxnId || null
+        },
+        ip: req.headers["x-forwarded-for"] || req.ip,
+        status: "success",
+      });
+    } catch (e) {
+      console.error("audit(order_updated) failed:", e);
+    }
+
     res.json({
       success: true,
       message: "Order status updated successfully!",
@@ -218,14 +270,9 @@ export const filterSellerOrders = async (req, res) => {
     const userId = req.session.user.id;
     const { status, date, search } = req.body;
 
-    const sellerRes = await db.query(
-      "SELECT id FROM sellers WHERE user_id = $1 AND status = 'approved' LIMIT 1",
-      [userId]
-    );
-    if (sellerRes.rows.length === 0) {
-      return res.json({ success: false, orders: [] });
-    }
-    const sellerId = sellerRes.rows[0].id;
+    const seller = await getSellerForUser(userId);
+    if (!seller) return res.json({ success: false, orders: [] });
+    const { sellerId } = seller;
 
     let query = `
       SELECT 
@@ -268,8 +315,8 @@ export const filterSellerOrders = async (req, res) => {
   }
 };
 
-// ============== delete Orders ==============
-// ============== delete Orders (controller-only fix: delete replies/reviews first) ==============
+// ============== delete Orders (for this seller's items) ==============
+// Adds audits: 'seller_order_items_removed' and (if no items left) 'order_deleted'
 export const deleteSellerOrderItems = async (req, res) => {
   const client = await db.connect();
   let inTxn = false;
@@ -280,6 +327,12 @@ export const deleteSellerOrderItems = async (req, res) => {
       return res.status(401).json({ success: false, message: "Login required." });
     }
 
+    const seller = await getSellerForUser(userId);
+    if (!seller) {
+      return res.status(403).json({ success: false, message: "Seller not found or not approved." });
+    }
+    const { sellerId, storeName } = seller;
+
     // Accept body (POST) or URL param /seller/orders/:orderId
     const orderIdRaw = req.body?.order_id ?? req.params?.orderId;
     const orderId = Number(orderIdRaw);
@@ -287,25 +340,15 @@ export const deleteSellerOrderItems = async (req, res) => {
       return res.status(400).json({ success: false, message: "Invalid order_id." });
     }
 
-    // Resolve seller
-    const sellerRes = await client.query(
-      "SELECT id FROM sellers WHERE user_id = $1 AND status = 'approved' LIMIT 1",
-      [userId]
-    );
-    if (sellerRes.rows.length === 0) {
-      return res.status(403).json({ success: false, message: "Seller not found or not approved." });
-    }
-    const sellerId = sellerRes.rows[0].id;
-
     await client.query("BEGIN");
     inTxn = true;
 
-    // 1) Figure out which order_items (for THIS seller in THIS order) we’re removing.
+    // 1) Which order_items (for THIS seller) are we removing?
     const toDelRes = await client.query(
       `
-      SELECT oi.id            AS order_item_id,
+      SELECT oi.id AS order_item_id,
              oi.product_variant_id AS variant_id,
-             oi.quantity      AS quantity
+             oi.quantity AS quantity
       FROM order_items oi
       JOIN product_variant v ON v.id = oi.product_variant_id
       JOIN products p        ON p.id = v.product_id
@@ -325,8 +368,7 @@ export const deleteSellerOrderItems = async (req, res) => {
 
     const orderItemIds = toDelRes.rows.map(r => r.order_item_id);
 
-    // 2) Delete DEPENDENTS first (controller-only fix)
-    //    2a) review_replies for reviews that point to these order_items
+    // 2) Delete dependents
     await client.query(
       `
       DELETE FROM review_replies rr
@@ -337,7 +379,6 @@ export const deleteSellerOrderItems = async (req, res) => {
       [orderItemIds]
     );
 
-    //    2b) product_reviews for these order_items
     await client.query(
       `
       DELETE FROM product_reviews
@@ -346,18 +387,24 @@ export const deleteSellerOrderItems = async (req, res) => {
       [orderItemIds]
     );
 
-    // 3) Delete the seller’s order_items themselves (now FKs are clear)
+    // 3) Delete items (capture what we removed for audit)
     const delItemsRes = await client.query(
       `
       DELETE FROM order_items oi
       USING (SELECT UNNEST($1::bigint[]) AS id) t
       WHERE oi.id = t.id
-      RETURNING oi.product_variant_id AS variant_id, oi.quantity
+      RETURNING oi.id AS order_item_id, oi.product_variant_id AS variant_id, oi.quantity
       `,
       [orderItemIds]
     );
 
-    // 4) Restock removed variants (aggregate by variant_id)
+    const removedItems = delItemsRes.rows.map(r => ({
+      order_item_id: Number(r.order_item_id),
+      variant_id: Number(r.variant_id),
+      qty: Number(r.quantity),
+    }));
+
+    // 4) Restock removed variants
     const needByVariant = new Map();
     for (const r of delItemsRes.rows) {
       const vid = Number(r.variant_id);
@@ -389,11 +436,33 @@ export const deleteSellerOrderItems = async (req, res) => {
     const remainingCount = Number(leftRows.rows[0]?.cnt || 0);
 
     if (remainingCount === 0) {
-      // no items left → remove payments + order row
+      // remove payments + order row
       await client.query(`DELETE FROM payments WHERE order_id = $1`, [orderId]);
       await client.query(`DELETE FROM orders   WHERE id       = $1`, [orderId]);
 
       await client.query("COMMIT"); inTxn = false;
+
+      // AUDIT: order_deleted
+      try {
+        await insertAudit({
+          actor_type: "seller",
+          actor_id: sellerId,
+          actor_name: storeName,
+          action: "order_deleted",
+          resource: "orders",
+          details: {
+            seller_id: sellerId,
+            order_id: orderId,
+            removed_items: removedItems,
+            reason: "all_items_from_order_removed_by_seller"
+          },
+          ip: req.headers["x-forwarded-for"] || req.ip,
+          status: "success",
+        });
+      } catch (e) {
+        console.error("audit(order_deleted) failed:", e);
+      }
+
       return res.json({
         success: true,
         removedItems: delItemsRes.rowCount,
@@ -418,6 +487,29 @@ export const deleteSellerOrderItems = async (req, res) => {
     );
 
     await client.query("COMMIT"); inTxn = false;
+
+    // AUDIT: seller_order_items_removed
+    try {
+      await insertAudit({
+        actor_type: "seller",
+        actor_id: sellerId,
+        actor_name: storeName,
+        action: "seller_order_items_removed",
+        resource: "orders",
+        details: {
+          seller_id: sellerId,
+          order_id: orderId,
+          removed_items: removedItems,
+          restocked_variants: Array.from(needByVariant, ([variant_id, qty]) => ({ variant_id, qty })),
+          new_total: newTotal
+        },
+        ip: req.headers["x-forwarded-for"] || req.ip,
+        status: "success",
+      });
+    } catch (e) {
+      console.error("audit(seller_order_items_removed) failed:", e);
+    }
+
     return res.json({
       success: true,
       removedItems: delItemsRes.rowCount,

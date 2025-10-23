@@ -4,15 +4,28 @@ import jwt from "jsonwebtoken";
 export function requireAdmin(req, res, next) {
   try {
     const token = req.cookies?.admin_token;
-    if (!token) return res.redirect("/"); // ← go home instead of admin login
+    if (!token) {
+      console.log("[requireAdmin] no admin_token cookie");
+      return res.redirect("/");
+    }
 
     const payload = jwt.verify(token, process.env.ADMIN_JWT_SECRET);
-    if (payload?.role !== "admin") return res.redirect("/"); // ← go home
+    if (payload?.role !== "admin") {
+      console.log("[requireAdmin] token role not admin:", payload?.role);
+      return res.redirect("/");
+    }
 
-    // available to views (sidebar avatar, etc.)
-    res.locals.admin = { email: payload.email, role: payload.role };
+    // make admin info available in views and for other middleware
+    res.locals.admin = {
+      id: payload.id ?? "admin",
+      email: payload.email ?? null,
+      role: payload.role,
+      displayName: payload.name ?? payload.email ?? "Admin"
+    };
+
     next();
-  } catch {
-    return res.redirect("/"); // ← go home on invalid/expired token
+  } catch (err) {
+    console.log("[requireAdmin] token verify failed:", err?.message || err);
+    return res.redirect("/");
   }
 }

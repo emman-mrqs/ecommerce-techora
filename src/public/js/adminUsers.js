@@ -2,44 +2,86 @@
 // Bootstrap Modals for Users
 // ===============================
 
-  function initUserModals() {
-  const suspendModal = document.getElementById("confirmSuspendModal");
-  const activateModal = document.getElementById("confirmActivateModal");
-  const deleteModal = document.getElementById("confirmDeleteModal");
-
+function initUserModals() {
+  // Suspend modal (EJS id: suspendModal, form id: suspendForm)
+  const suspendModal = document.getElementById("suspendModal");
   if (suspendModal) {
     suspendModal.addEventListener("show.bs.modal", event => {
-      const button = event.relatedTarget;
-      const userId = button.getAttribute("data-user-id");
-      const userName = button.getAttribute("data-user-name");
+      const btn = event.relatedTarget;
+      const userId = btn.getAttribute("data-user-id");
+      const userName = btn.getAttribute("data-user-name");
+      const t = btn.getAttribute("data-title") || "";
+      const r = btn.getAttribute("data-reason") || "";
+      const u = btn.getAttribute("data-until") || "";
 
-      suspendModal.querySelector("#suspendUserName").textContent = userName;
-      suspendModal.querySelector("#suspendForm").action = `/admin/users/${userId}/suspend`;
+      const form = suspendModal.querySelector("#suspendForm");
+      if (form && userId) form.action = `/admin/users/${userId}/suspend`;
+
+      const titleInput = suspendModal.querySelector("#suspendTitle");
+      const reasonInput = suspendModal.querySelector("#suspendReason");
+      const endDateInput = suspendModal.querySelector("#suspendEndDate");
+      const modePerm = suspendModal.querySelector("#modePermanent");
+      const modeUntil = suspendModal.querySelector("#modeUntil");
+
+      if (titleInput) titleInput.value = t;
+      if (reasonInput) reasonInput.value = r;
+      if (u) {
+        if (modeUntil) modeUntil.checked = true;
+        if (endDateInput) {
+          endDateInput.disabled = false;
+          endDateInput.value = u;
+        }
+      } else {
+        if (modePerm) modePerm.checked = true;
+        if (endDateInput) {
+          endDateInput.disabled = true;
+          endDateInput.value = "";
+        }
+      }
+
+      const titleEl = suspendModal.querySelector("#suspendModalTitle");
+      if (titleEl) {
+        titleEl.textContent = t || r || u ? `Edit Suspension — ${userName}` : `Suspend User — ${userName}`;
+      }
     });
   }
 
-  if (activateModal) {
-    activateModal.addEventListener("show.bs.modal", event => {
-      const button = event.relatedTarget;
-      const userId = button.getAttribute("data-user-id");
-      const userName = button.getAttribute("data-user-name");
-
-      activateModal.querySelector("#activateUserName").textContent = userName;
-      activateModal.querySelector("#activateForm").action = `/admin/users/${userId}/activate`;
+  // Lift modal (EJS id: liftModal, form id: liftForm)
+  const liftModal = document.getElementById("liftModal");
+  if (liftModal) {
+    liftModal.addEventListener("show.bs.modal", event => {
+      const btn = event.relatedTarget;
+      const userId = btn.getAttribute("data-user-id");
+      const userName = btn.getAttribute("data-user-name");
+      const form = liftModal.querySelector("#liftForm");
+      if (form && userId) form.action = `/admin/users/${userId}/lift`;
+      const nameEl = document.getElementById("liftUserName");
+      if (nameEl) nameEl.textContent = userName;
     });
   }
 
-  if (deleteModal) {
-    deleteModal.addEventListener("show.bs.modal", event => {
-      const button = event.relatedTarget;
-      const userId = button.getAttribute("data-user-id");
-      const userName = button.getAttribute("data-user-name");
+  // Confirm Delete modal (EJS id: confirmDeleteModal, form id: confirmDeleteForm)
+  const confirmDeleteModal = document.getElementById("confirmDeleteModal");
+  if (confirmDeleteModal) {
+    confirmDeleteModal.addEventListener("show.bs.modal", event => {
+      const btn = event.relatedTarget;
+      const userId = btn.getAttribute("data-user-id");
+      const userName = btn.getAttribute("data-user-name");
 
-      deleteModal.querySelector("#deleteUserName").textContent = userName;
-      deleteModal.querySelector("#deleteForm").action = `/admin/users/${userId}/delete`;
+      // set modal text
+      const nameEl = confirmDeleteModal.querySelector("#confirmDeleteUserName");
+      if (nameEl) nameEl.textContent = userName || "this user";
+
+      // set action on the form
+      const form = confirmDeleteModal.querySelector("#confirmDeleteForm");
+      if (form && userId) {
+        // match your server route. If your route is POST /admin/users/:id/delete use below:
+        form.action = `/admin/users/${userId}/delete`;
+      }
     });
   }
 }
+
 
 // ===============================
 // Bootstrap Toast Notifications
