@@ -2,7 +2,7 @@ import express from "express";
 const router = express.Router();
 import { renderLandingPage } from "../controller/indexController.js";
 
-import { submitContact } from "../controller/contactController.js";
+import { renderContactPage, submitContact } from "../controller/contactController.js";
 import { listProducts, searchSuggestions } from "../controller/productsController.js";
 import { renderBuyPage,  } from "../controller/buyController.js";
 import { renderCart } from '../controller/cartController.js'; // ✅
@@ -24,6 +24,7 @@ import {
 } from "../controller/wishlistController.js";
 // import { cancelOrder } from "../controller/ordersController.js";
 
+import { getAboutPage } from "../controller/aboutController.js"; // ⬅️ add this
 
 
 router.get("/", renderLandingPage);
@@ -75,15 +76,11 @@ router.post("/profile/addresses/set-default", ensureAuth, setDefaultAddress);
 
 
 // About page
-router.get("/about", (req, res)=>{
-    res.render("user/about");
-});
+router.get("/about", getAboutPage);
 
 // Contact page
-router.get("/contact", (req, res)=>{
-    res.render("user/contact");
-});
-router.post("/contact", submitContact);
+router.get("/contact", renderContactPage);
+router.post("/contact", express.json(), submitContact);
 
 
 // cancel action

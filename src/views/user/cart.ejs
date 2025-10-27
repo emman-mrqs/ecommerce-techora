@@ -12,7 +12,7 @@
   <nav>
     <%- include("../partials/header.ejs") %>
   </nav>
-
+ <div class="cart-scope">
   <main class="cart-container">
     <div class="container">
 
@@ -101,14 +101,32 @@
             <a class="btn continue-shopping w-100" href="/" role="button">CONTINUE SHOPPING</a>
 
             <div class="shipping-info">
-              <div class="shipping-title"><i class="fas fa-shipping-fast"></i> Free Shipping</div>
-              <div class="shipping-desc">On orders over ₱5000. Fast and secure delivery to your doorstep.</div>
+              <div class="shipping-title"><i class="fas fa-shipping-fast"></i>
+                <% if (siteSettings.ship_free) { %>
+                  Free Shipping
+                <% } else if (siteSettings.ship_flat) { %>
+                  Flat Rate Shipping
+                <% } else { %>
+                  Shipping
+                <% } %>
+              </div>
+              <div class="shipping-desc">
+                <% if (siteSettings.ship_free) { %>
+                  All orders ship free. Fast and secure delivery to your doorstep.
+                <% } else if (siteSettings.ship_flat) { %>
+                  Flat rate: ₱<%= Number(siteSettings.flat_rate_amount || 0).toFixed(2) %>.
+                <% } else { %>
+                  Shipping calculated at checkout.
+                <% } %>
+              </div>
             </div>
-          </section>
-        </aside>
+
+            </section>
+          </aside>
+        </div>
       </div>
-    </div>
-  </main>
+    </main>
+  </div>
 
   <footer>
     <%- include("../partials/footer.ejs") %>

@@ -41,13 +41,24 @@ async function getUserCartItems(userId) {
 }
 
 // Compute normal totals
-function computeTotals(items, discount = 0) {
+function computeTotals(items, discount = 0, settings = {}) {
   const subtotal = items.reduce((s, it) => s + Number(it.price) * Number(it.quantity), 0);
   const tax = subtotal * 0.03;
-  const shipping = subtotal > 5000 ? 0 : 50;
+
+  // 🔽 Shipping from admin settings
+  let shipping = 0;
+  if (settings.ship_free) {
+    shipping = 0;
+  } else if (settings.ship_flat) {
+    shipping = subtotal > 0 ? Number(settings.flat_rate_amount || 0) : 0;
+  } else {
+    shipping = 0; // default/fallback
+  }
+
   const total = Math.max(0, subtotal - Number(discount)) + tax + shipping;
   return { subtotal, tax, shipping, total };
 }
+
 
 // Validate a voucher code for this user's cart; discount applies only to that seller's items
 async function validateVoucherForCart(userId, code) {
@@ -181,7 +192,8 @@ export async function renderCheckout(req, res) {
       return res.send("<script>alert('Your cart is empty!'); window.location='/cart';</script>");
     }
 
-    const { subtotal, tax, shipping, total } = computeTotals(items);
+    const settings = res.locals.siteSettings || {};
+    const { subtotal, tax, shipping, total } = computeTotals(items, 0, settings);
 
     const { rows: addresses } = await db.query(
       `SELECT * FROM addresses WHERE user_id = $1 ORDER BY is_default DESC, created_at DESC`,
@@ -192,18 +204,16 @@ export async function renderCheckout(req, res) {
     res.render("user/checkout", {
       user: req.session.user,
       items,
-      subtotal,
-      tax,
-      shipping,
-      total,
-      addresses,
-      defaultAddress
+      subtotal, tax, shipping, total,
+      addresses, defaultAddress,
+      settings    // 🔽 pass to EJS so we can hide/show payment options
     });
   } catch (err) {
     console.error("Checkout error:", err);
     res.status(500).send("Something went wrong while loading checkout");
   }
 }
+
 
 /* ========== API: validate code (Checkout sidebar) ========== */
 export async function validateCheckoutVoucher(req, res) {
@@ -268,6 +278,7 @@ async function reserveStockForCartItems(client, items) {
 }
 
 /* ========== place order (COD/PayPal pre-create) ========== */
+// Drop-in replacement for: export const placeOrder = async (req, res) => { ... }
 export const placeOrder = async (req, res) => {
   const userId = req.session.user?.id;
   if (!userId) return res.status(401).json({ error: "You need to login first!" });
@@ -278,22 +289,32 @@ export const placeOrder = async (req, res) => {
     voucherId, voucherCode
   } = req.body;
 
+  // Enforce admin settings for payment + shipping
+  const settings = res.locals.siteSettings || {};
+  if (paymentMethod === "cod" && !settings.pay_cod) {
+    return res.status(400).json({ error: "COD is currently disabled." });
+  }
+  if (paymentMethod === "paypal" && !settings.pay_paypal) {
+    return res.status(400).json({ error: "PayPal is currently disabled." });
+  }
+
   const ip = req.headers["x-forwarded-for"] || req.ip;
-  const shippingAddress = `${firstName} ${lastName}, ${address}, ${city}, ${province}, ${zipCode}, 📞 ${phone}, ✉ ${email}`;
+  const shippingAddress =
+    `${firstName} ${lastName}, ${address}, ${city}, ${province}, ${zipCode}, 📞 ${phone}, ✉ ${email}`;
 
   const client = await db.connect();
   try {
     await client.query("BEGIN");
 
-    // Load cart items inside the txn
+    // Load cart items INSIDE the transaction
     const { rows: items } = await client.query(
       `
       SELECT 
-        ci.id             AS cart_item_id,
+        ci.id       AS cart_item_id,
         ci.quantity,
-        pv.id             AS variant_id,
+        pv.id       AS variant_id,
         pv.price,
-        p.seller_id       AS seller_id
+        p.seller_id AS seller_id
       FROM cart_items ci
       JOIN cart c             ON ci.cart_id = c.id
       JOIN product_variant pv ON ci.variant_id = pv.id
@@ -309,12 +330,14 @@ export const placeOrder = async (req, res) => {
       return res.status(400).json({ error: "Your cart is empty" });
     }
 
-    // voucher re-validate (inside txn)
+    // --- Voucher (re-)validate inside the same txn
     let discount = 0;
     let appliedVoucher = null;
+
     async function validateVoucherInsideTxn(code) {
       const trimmed = String(code || "").trim();
       if (!trimmed) return { ok: false };
+
       const { rows: promos } = await client.query(
         `SELECT id, seller_id, voucher_code, discount_type, discount_value,
                 usage_limit, used_count, expiry_date, status
@@ -361,7 +384,10 @@ export const placeOrder = async (req, res) => {
     if (voucherId || voucherCode) {
       let code = voucherCode;
       if (!code && voucherId) {
-        const { rows } = await client.query(`SELECT voucher_code FROM promotions WHERE id = $1`, [voucherId]);
+        const { rows } = await client.query(
+          `SELECT voucher_code FROM promotions WHERE id = $1`,
+          [voucherId]
+        );
         code = rows[0]?.voucher_code;
       }
       if (code) {
@@ -373,13 +399,10 @@ export const placeOrder = async (req, res) => {
       }
     }
 
-    // Totals
-    const subtotal = items.reduce((s, it) => s + Number(it.price) * Number(it.quantity), 0);
-    const tax = subtotal * 0.03;
-    const shipping = subtotal > 5000 ? 0 : 50;
-    const total = Math.max(0, subtotal - discount) + tax + shipping;
+    // --- Totals (use admin shipping rules via computeTotals)
+    const { tax, shipping, total } = computeTotals(items, discount, settings);
 
-    // Create order
+    // --- Create order
     const orderResult = await client.query(
       `INSERT INTO orders (user_id, order_status, payment_method, payment_status, total_amount, shipping_address)
        VALUES ($1, 'pending', $2, 'unpaid', $3, $4)
@@ -388,7 +411,7 @@ export const placeOrder = async (req, res) => {
     );
     const orderId = orderResult.rows[0].id;
 
-    // Insert order items
+    // --- Insert order items
     for (const it of items) {
       await client.query(
         `INSERT INTO order_items (order_id, product_variant_id, quantity, unit_price)
@@ -397,18 +420,24 @@ export const placeOrder = async (req, res) => {
       );
     }
 
+    // --- COD: reserve stock + clear cart in the same txn
     if (paymentMethod === "cod") {
       await reserveStockForCartItems(client, items);
       await client.query(
-        `DELETE FROM cart_items WHERE cart_id = (SELECT id FROM cart WHERE user_id = $1)`,
+        `DELETE FROM cart_items
+          WHERE cart_id = (SELECT id FROM cart WHERE user_id = $1)`,
         [userId]
       );
 
       await client.query("COMMIT");
 
-      // audit (user perspective)
+      // Audit(s)
       try {
-        const itemSummary = items.map(i => ({ product_variant_id: i.variant_id, qty: i.quantity, price: i.price }));
+        const itemSummary = items.map(i => ({
+          product_variant_id: i.variant_id,
+          qty: i.quantity,
+          price: i.price
+        }));
         await insertAudit({
           actor_type: "user",
           actor_id: req.session.user.id,
@@ -429,7 +458,7 @@ export const placeOrder = async (req, res) => {
         console.error("Audit insert error (order_create COD):", auditErr);
       }
 
-      // per-seller audits → notifications
+      // Per-seller audits → notifications
       try {
         await emitSellerOrderPlacedAudits({
           orderId,
@@ -454,11 +483,15 @@ export const placeOrder = async (req, res) => {
       });
     }
 
-    // Non-COD flow
+    // --- Non-COD (e.g., PayPal pre-create): finalize order but don't reserve stock yet
     await client.query("COMMIT");
 
     try {
-      const itemSummary = items.map(i => ({ product_variant_id: i.variant_id, qty: i.quantity, price: i.price }));
+      const itemSummary = items.map(i => ({
+        product_variant_id: i.variant_id,
+        qty: i.quantity,
+        price: i.price
+      }));
       await insertAudit({
         actor_type: "user",
         actor_id: req.session.user.id,
@@ -511,6 +544,7 @@ export const placeOrder = async (req, res) => {
     try { client.release(); } catch {}
   }
 };
+
 
 /* ========== redeem after successful payment ========== */
 export async function redeemVoucherAfterPayment(req, res) {

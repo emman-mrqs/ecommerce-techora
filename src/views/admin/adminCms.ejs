@@ -1,182 +1,254 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Content Management - TECHORA</title>
-  <link rel="stylesheet" href="/css/adminSideBarNav.css">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <style>
-    .cms-card {
-      border: 1px solid #e5e7eb;
-      border-radius: 8px;
-      background: #fff;
-      padding: 20px;
-      margin-bottom: 30px;
-    }
-    .status-badge {
-      padding: 3px 10px;
-      border-radius: 12px;
-      font-size: 12px;
-      font-weight: 600;
-    }
-    .status-published { background: #d1fae5; color: #065f46; }
-    .status-draft { background: #fef3c7; color: #92400e; }
-    .btn-create {
-      background: #2563eb;
-      color: #fff;
-      border: none;
-      padding: 6px 14px;
-      border-radius: 6px;
-    }
-    .btn-upload {
-      background: #10b981;
-      color: #fff;
-      border: none;
-      padding: 6px 14px;
-      border-radius: 6px;
-    }
-    .banner-card {
-      border-radius: 8px;
-      overflow: hidden;
-      background: #fff;
-      border: 1px solid #e5e7eb;
-    }
-    .banner-img {
-      height: 160px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 24px;
-      color: #fff;
-      font-weight: bold;
-    }
-    .banner-footer {
-      padding: 12px;
-    }
-    .banner-footer small {
-      color: #6b7280;
-    }
-    .banner-actions button {
-      border: none;
-      background: none;
-      margin-right: 8px;
-      color: #374151;
-    }
-  </style>
-</head>
-<body>
-  <!-- Sidebar + Header -->
-  <%- include("../partials/adminSidebarNav", { activePage: "cms", pageTitle: "Content Management" }) %>
+  <!DOCTYPE html>
+  <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Content Management - TECHORA</title>
 
-  <!-- Main Content -->
-  <div class="main-content p-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-      <h5 class="fw-bold">Content Management</h5>
-      <button class="btn-create">+ Create Page</button>
-    </div>
+    <!-- Page-specific CSS (scoped inside .cms-wrap) -->
+    <link rel="stylesheet" href="/css/adminCms.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" />
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" />
+  </head>
+  <body>
+    <!-- Sidebar + Header -->
+    <%- include("../partials/adminSidebarNav", { activePage: "cms", pageTitle: "Content Management" }) %>
 
-    <!-- Pages Management -->
-    <div class="cms-card">
-      <h6 class="fw-bold mb-3">Pages Management</h6>
-      <div class="d-flex gap-2 mb-3">
-        <input type="text" class="form-control" placeholder="Search pages...">
-        <select class="form-select" style="max-width: 180px;">
-          <option>All Status</option>
-          <option>Published</option>
-          <option>Draft</option>
-        </select>
-      </div>
-      <table class="table align-middle">
-        <thead class="table-light">
-          <tr>
-            <th>Page Name</th>
-            <th>Last Updated</th>
-            <th>Status</th>
-            <th class="text-center">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>About Us</td>
-            <td>1/15/2024</td>
-            <td><span class="status-badge status-published">Published</span></td>
-            <td class="text-center">
-              <i class="fas fa-eye"></i>
-              <i class="fas fa-pen ms-2"></i>
-              <i class="fas fa-copy ms-2"></i>
-              <i class="fas fa-link ms-2"></i>
-              <i class="fas fa-trash ms-2 text-danger"></i>
-            </td>
-          </tr>
-          <tr>
-            <td>Contact</td>
-            <td>1/10/2024</td>
-            <td><span class="status-badge status-draft">Draft</span></td>
-            <td class="text-center">
-              <i class="fas fa-eye"></i>
-              <i class="fas fa-pen ms-2"></i>
-              <i class="fas fa-copy ms-2"></i>
-              <i class="fas fa-link ms-2"></i>
-              <i class="fas fa-trash ms-2 text-danger"></i>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    <% // about data (if provided by controller); keep safe default %>
+    <% const A = (typeof about !== 'undefined' && about) || {}; %>
 
-    <!-- Homepage Banners -->
-    <div class="cms-card">
+    <!-- Main Content -->
+    <div class="main-content p-4 cms-wrap">
       <div class="d-flex justify-content-between align-items-center mb-3">
-        <h6 class="fw-bold">Homepage Banners</h6>
-        <button class="btn-upload">Upload New Banner</button>
-      </div>
-      <div class="row g-3">
-        <div class="col-md-6">
-          <div class="banner-card">
-            <div class="banner-img" style="background:#3b82f6;">Summer Sale</div>
-            <div class="banner-footer">
-              <div class="d-flex justify-content-between align-items-center">
-                <div>
-                  <strong>Summer Sale 2024</strong><br>
-                  <small>Updated: 1/15/2024</small>
-                </div>
-                <span class="status-badge status-published">Active</span>
-              </div>
-              <div class="banner-actions mt-2">
-                <button><i class="fas fa-eye"></i></button>
-                <button><i class="fas fa-pen"></i></button>
-                <button><i class="fas fa-trash text-danger"></i></button>
-                <button><i class="fas fa-ban text-warning"></i></button>
-              </div>
-            </div>
-          </div>
+        <div>
+          <h5 class="section-title mb-0">Content Management</h5>
+          <div class="subtle">Manage pages and promotional banners</div>
         </div>
-        <div class="col-md-6">
-          <div class="banner-card">
-            <div class="banner-img" style="background:#f59e0b;">Holiday Special</div>
-            <div class="banner-footer">
-              <div class="d-flex justify-content-between align-items-center">
-                <div>
-                  <strong>Holiday Special</strong><br>
-                  <small>Updated: 1/12/2024</small>
-                </div>
-                <span class="status-badge status-draft">Inactive</span>
-              </div>
-              <div class="banner-actions mt-2">
-                <button><i class="fas fa-eye"></i></button>
-                <button><i class="fas fa-pen"></i></button>
-                <button><i class="fas fa-trash text-danger"></i></button>
-                <button><i class="fas fa-check text-success"></i></button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <!-- Removed: Create Page button -->
       </div>
-    </div>
-  </div>
 
-  <script src="/js/adminSideBarNav.js"></script>
-</body>
-</html>
+      <!-- Pages Management -->
+      <div class="cms-card">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h6 class="section-title mb-0">Pages</h6>
+        </div>
+
+        <!-- Removed: search input + status dropdown -->
+
+        <div class="table-responsive">
+          <table class="table align-middle">
+            <thead>
+              <tr>
+                <th>Page Name</th>
+                <th>Last Updated</th>
+                <th>Status</th>
+                <th class="text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="fw-semibold">About Us</td>
+                  <td>
+                    <span id="about-last-updated">
+                      <%= A.updated_at ? new Date(A.updated_at).toLocaleString() : "—" %>
+                    </span>
+                  </td>
+                <td>
+                  <span class="status-badge status-published">
+                    <i class="bi bi-check2-circle"></i> Published
+                  </span>
+                </td>
+                <td class="text-center action-icons">
+                  <!-- View -->
+                  <a href="/about" target="_blank" class="icon-btn" title="View page" aria-label="View About Us">
+                    <i class="bi bi-eye"></i>
+                  </a>
+                  <!-- Edit toggles the collapse below -->
+                  <button class="icon-btn ms-1" id="about-edit-toggle" type="button" title="Edit About Us" aria-controls="aboutEditor" aria-expanded="false">
+                    <i class="bi bi-pencil"></i>
+                  </button>
+                </td>
+              </tr>
+              <tr>
+                <td class="fw-semibold">Contact</td>
+                <td>
+                  <span id="contact-last-updated">—</span>
+                </td>
+                <td>
+                  <span class="status-badge status-published">
+                    <i class="bi bi-check2-circle"></i> Published
+                  </span>
+                </td>
+                <td class="text-center action-icons">
+                  <a href="/contact" target="_blank" class="icon-btn" title="View page" aria-label="View Contact">
+                    <i class="bi bi-eye"></i>
+                  </a>
+                  <button class="icon-btn ms-1" id="contact-edit-toggle" type="button" title="Edit Contact" aria-controls="contactEditor" aria-expanded="false">
+                    <i class="bi bi-pencil"></i>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- CONTACT PAGE EDITOR (collapsible) -->
+      <div class="cms-card collapse" id="contactEditor">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h6 class="section-title m-0">Edit: Contact Page</h6>
+          <small class="subtle">Click the pencil again to hide</small>
+        </div>
+
+        <form id="contactEditForm">
+          <div class="edit-table-scroll">
+            <table class="table">
+              <tbody>
+                <tr class="table-light"><th colspan="2">Hero</th></tr>
+                <tr><td class="kv">Hero Title</td><td><input name="hero_title" class="form-control"></td></tr>
+                <tr><td class="kv">Hero Subtitle</td><td><textarea name="hero_subtitle" class="form-control" rows="2"></textarea></td></tr>
+
+                <tr class="table-light"><th colspan="2">Cards</th></tr>
+                <tr><td class="kv">Email</td><td><input name="email" class="form-control"></td></tr>
+                <tr><td class="kv">Website Label</td><td><input name="website_label" class="form-control"></td></tr>
+                <tr><td class="kv">Website URL</td><td><input name="website_url" class="form-control"></td></tr>
+                <tr><td class="kv">Support Hours</td><td><input name="support_hours" class="form-control"></td></tr>
+
+                <tr class="table-light"><th colspan="2">Sidebar</th></tr>
+                <tr><td class="kv">Seller CTA Title</td><td><input name="seller_cta_title" class="form-control"></td></tr>
+                <tr><td class="kv">Seller CTA Text</td><td><textarea name="seller_cta_text" class="form-control" rows="2"></textarea></td></tr>
+                <tr><td class="kv">Map Iframe SRC</td><td><input name="map_iframe_src" class="form-control"></td></tr>
+                <tr><td class="kv">Checklist (comma separated)</td><td><input name="checklist" class="form-control" placeholder="Secure & private, Fast payouts, Seller analytics"></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="d-flex justify-content-end gap-2">
+            <button class="btn btn-outline-secondary" type="button" id="resetContactForm">Reset</button>
+            <button class="btn btn-dark" type="submit">Save Changes</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- ABOUT PAGE EDITOR (collapsible) -->
+      <div class="cms-card collapse" id="aboutEditor">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h6 class="section-title m-0">Edit: About Page <span class="subtle">(content only — stats are automatic)</span></h6>
+          <small class="subtle">Click the pencil again to hide</small>
+        </div>
+
+        <form id="aboutEditForm">
+          <div class="edit-table-scroll">
+            <table class="table">
+              <tbody>
+                <!-- HERO -->
+                <tr class="table-light"><th colspan="2">Hero</th></tr>
+                <tr>
+                  <td class="kv">Hero Title</td>
+                  <td><input name="hero_title" class="form-control" value="<%= A.hero_title || 'Built for Gadget Lovers.' %>"></td>
+                </tr>
+                <tr>
+                  <td class="kv">Hero Description</td>
+                  <td><textarea name="hero_description" class="form-control" rows="2"><%= A.hero_description || 'Techora is a modern gadgets marketplace focused on quality, value, and a seamless shopping experience. From smartphones and audio gear to accessories, we curate only the best—so you don’t have to scroll forever.' %></textarea></td>
+                </tr>
+                <tr>
+                  <td class="kv">Primary CTA Text</td>
+                  <td><input name="cta_primary_text" class="form-control" value="<%= A.cta_primary_text || 'Become a Seller' %>"></td>
+                </tr>
+                <tr>
+                  <td class="kv">Primary CTA Link</td>
+                  <td><input name="cta_primary_href" class="form-control" value="<%= A.cta_primary_href || '#become-seller' %>"></td>
+                </tr>
+
+                <!-- STORY -->
+                <tr class="table-light"><th colspan="2">Story</th></tr>
+                <tr>
+                  <td class="kv">Story Title</td>
+                  <td><input name="story_title" class="form-control" value="<%= A.story_title || 'Our Story' %>"></td>
+                </tr>
+                <tr>
+                  <td class="kv">Paragraph 1</td>
+                  <td><textarea name="story_p1" class="form-control" rows="2"><%= A.story_p1 || 'Techora started with a simple idea: finding good gadgets shouldn’t be hard. We hand-pick products, verify quality, and work closely with sellers so you can shop with confidence.' %></textarea></td>
+                </tr>
+                <tr>
+                  <td class="kv">Paragraph 2</td>
+                  <td><textarea name="story_p2" class="form-control" rows="2"><%= A.story_p2 || 'We believe in clear specs, fair pricing, and responsive support. That’s why thousands of customers trust Techora for their daily tech—whether for work, play, or creative pursuits.' %></textarea></td>
+                </tr>
+
+                <!-- VALUES -->
+                <tr class="table-light"><th colspan="2">Values List</th></tr>
+                <tr><td class="kv">Value #1 Title</td><td><input name="values_1_title" class="form-control" value="<%= A.values_1_title || 'Quality First' %>"></td></tr>
+                <tr><td class="kv">Value #1 Text</td><td><textarea name="values_1_text" class="form-control" rows="2"><%= A.values_1_text || 'Curated gadgets with verified performance and warranty-ready partners.' %></textarea></td></tr>
+                <tr><td class="kv">Value #2 Title</td><td><input name="values_2_title" class="form-control" value="<%= A.values_2_title || 'Fast & Reliable' %>"></td></tr>
+                <tr><td class="kv">Value #2 Text</td><td><textarea name="values_2_text" class="form-control" rows="2"><%= A.values_2_text || 'Quick fulfillment, careful packaging, and transparent tracking.' %></textarea></td></tr>
+                <tr><td class="kv">Value #3 Title</td><td><input name="values_3_title" class="form-control" value="<%= A.values_3_title || 'Human Support' %>"></td></tr>
+                <tr><td class="kv">Value #3 Text</td><td><textarea name="values_3_text" class="form-control" rows="2"><%= A.values_3_text || 'Real people ready to help—before and after checkout.' %></textarea></td></tr>
+                <tr><td class="kv">Value #4 Title</td><td><input name="values_4_title" class="form-control" value="<%= A.values_4_title || 'Responsible Choices' %>"></td></tr>
+                <tr><td class="kv">Value #4 Text</td><td><textarea name="values_4_text" class="form-control" rows="2"><%= A.values_4_text || 'Promoting durable gear, repairs, and mindful upgrades.' %></textarea></td></tr>
+
+                <!-- WHY -->
+                <tr class="table-light"><th colspan="2">Why shop with us</th></tr>
+                <tr><td class="kv">Section Title</td><td><input name="why_title" class="form-control" value="<%= A.why_title || 'Why Shop at Techora?' %>"></td></tr>
+                <tr><td class="kv">Why #1 Title</td><td><input name="why_1_title" class="form-control" value="<%= A.why_1_title || 'Top-tier Curation' %>"></td></tr>
+                <tr><td class="kv">Why #1 Text</td><td><textarea name="why_1_text" class="form-control" rows="2"><%= A.why_1_text || 'Only standout gadgets make the cut—fewer choices, better choices.' %></textarea></td></tr>
+                <tr><td class="kv">Why #2 Title</td><td><input name="why_2_title" class="form-control" value="<%= A.why_2_title || 'Honest Pricing' %>"></td></tr>
+                <tr><td class="kv">Why #2 Text</td><td><textarea name="why_2_text" class="form-control" rows="2"><%= A.why_2_text || 'Transparent deals with zero dark patterns or surprise fees.' %></textarea></td></tr>
+                <tr><td class="kv">Why #3 Title</td><td><input name="why_3_title" class="form-control" value="<%= A.why_3_title || 'Secure & Private' %>"></td></tr>
+                <tr><td class="kv">Why #3 Text</td><td><textarea name="why_3_text" class="form-control" rows="2"><%= A.why_3_text || 'Encrypted checkout and privacy-respecting analytics by design.' %></textarea></td></tr>
+
+                <!-- SELLER CTA -->
+                <tr class="table-light"><th colspan="2">Sell with our store</th></tr>
+                <tr><td class="kv">Title</td><td><input name="seller_title" class="form-control" value="<%= A.seller_title || 'Sell with Techora' %>"></td></tr>
+                <tr><td class="kv">Paragraph</td><td><textarea name="seller_p" class="form-control" rows="2"><%= A.seller_p || 'Have great gadgets or accessories? Join our marketplace and reach thousands of shoppers. We provide tools, analytics, and a dedicated team to help you grow.' %></textarea></td></tr>
+                <tr><td class="kv">Step 1</td><td><input name="step1" class="form-control" value="<%= A.step1 || 'Create your seller profile' %>"></td></tr>
+                <tr><td class="kv">Step 2</td><td><input name="step2" class="form-control" value="<%= A.step2 || 'List products & set inventory' %>"></td></tr>
+                <tr><td class="kv">Step 3</td><td><input name="step3" class="form-control" value="<%= A.step3 || 'Start selling—get paid fast' %>"></td></tr>
+                <tr><td class="kv">Secondary CTA Text</td><td><input name="cta_secondary_text" class="form-control" value="<%= A.cta_secondary_text || 'Learn More' %>"></td></tr>
+                <tr><td class="kv">Secondary CTA Link</td><td><input name="cta_secondary_href" class="form-control" value="<%= A.cta_secondary_href || '/seller-application' %>"></td></tr>
+
+                <!-- FAQ -->
+                <tr class="table-light"><th colspan="2">FAQ</th></tr>
+                <tr><td class="kv">Section Title</td><td><input name="faq_title" class="form-control" value="<%= A.faq_title || 'FAQ' %>"></td></tr>
+                <tr><td class="kv">FAQ #1 Question</td><td><input name="faq_1_q" class="form-control" value="<%= A.faq_1_q || 'How do I become a Techora seller?' %>"></td></tr>
+                <tr><td class="kv">FAQ #1 Answer</td><td><textarea name="faq_1_a" class="form-control" rows="2"><%= A.faq_1_a || 'Click <strong>Apply as Seller</strong> above or go to <code>/seller-application</code>, fill the form, and our team will review your application.' %></textarea></td></tr>
+                <tr><td class="kv">FAQ #2 Question</td><td><input name="faq_2_q" class="form-control" value="<%= A.faq_2_q || 'What products can I sell?' %>"></td></tr>
+                <tr><td class="kv">FAQ #2 Answer</td><td><textarea name="faq_2_a" class="form-control" rows="2"><%= A.faq_2_a || 'We focus on gadgets & accessories—phones, audio, peripherals, wearables, and related gear. All listings must pass quality checks.' %></textarea></td></tr>
+                <tr><td class="kv">FAQ #3 Question</td><td><input name="faq_3_q" class="form-control" value="<%= A.faq_3_q || 'How quickly are orders fulfilled?' %>"></td></tr>
+                <tr><td class="kv">FAQ #3 Answer</td><td><textarea name="faq_3_a" class="form-control" rows="2"><%= A.faq_3_a || 'Most orders ship within 24–48 hours. Tracking is provided in your account as soon as the courier scans the parcel.' %></textarea></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="d-flex justify-content-end gap-2">
+            <button class="btn btn-outline-secondary" type="button" id="resetAboutForm">Reset</button>
+            <button class="btn btn-dark" type="submit">Save Changes</button>
+          </div>
+        </form>
+        <small class="subtle d-block mt-2">Note: Stats numbers on the About page come from live queries and are not editable here.</small>
+      </div>
+
+      <!-- Homepage Banners -->
+      <!-- Homepage Banners -->
+      <div class="cms-card">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h6 class="section-title mb-0">Homepage Banners</h6>
+          <form id="bannerUploadForm" class="d-flex gap-2" enctype="multipart/form-data">
+            <input class="form-control form-control-sm" type="file" name="banner" accept="image/*" required>
+            <input class="form-control form-control-sm" type="text" name="label" placeholder="Optional label">
+            <button class="btn btn-dark btn-sm" type="submit">Upload</button>
+          </form>
+        </div>
+
+        <div id="bannerList" class="row g-3">
+          <!-- filled by JS -->
+        </div>
+      </div>
+
+
+    </div>
+
+    <!-- Page JS (separated) -->
+    <script src="/js/adminCms.js"></script>
+  </body>
+  </html>

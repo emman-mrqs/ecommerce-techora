@@ -139,3 +139,6 @@
     /* ===== Reveal-on-scroll ===== */
     [data-animate]{ opacity:0; transform: translateY(18px); transition: all .7s cubic-bezier(.2,.8,.2,1); }
     [data-animate].in{ opacity:1; transform: none; }
+
+
+    

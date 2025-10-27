@@ -24,25 +24,27 @@ function writeCookieCart(res, cart) {
   });
 }
 
-function calcTotals(items) {
+function calcTotals(items, settings = {}) {
   const subtotal = items.reduce((s, it) => s + it.unitPrice * it.quantity, 0);
 
-  // 3% tax per product (kept)
+  // keep your 3% tax
   const tax = items.reduce((s, it) => s + (it.unitPrice * it.quantity * 0.03), 0);
   const taxRounded = Math.round(tax * 100) / 100;
 
-  // 🚚 Shipping: FREE if subtotal > 5000, else 50
-  const shipping = subtotal > 5000 ? 0 : (subtotal > 0 ? 50 : 0);
+  // 🔽 NEW: shipping from admin settings
+  let shipping = 0;
+  if (settings.ship_free) {
+    shipping = 0;
+  } else if (settings.ship_flat) {
+    shipping = subtotal > 0 ? Number(settings.flat_rate_amount || 0) : 0;
+  } else {
+    shipping = 0; // default if neither toggle is on
+  }
 
   const total = subtotal + taxRounded + shipping;
-
-  return {
-    subtotal,
-    tax: taxRounded,
-    shipping,
-    total
-  };
+  return { subtotal, tax: taxRounded, shipping, total };
 }
+
 
 
 async function ensureUserCart(userId) {
@@ -147,7 +149,8 @@ export async function renderCart(req, res) {
       }
     }
 
-    const totals = calcTotals(items);
+    const settings = res.locals.siteSettings || {};
+    const totals = calcTotals(items, settings);
     const count = items.reduce((s, it) => s + it.quantity, 0);
 
     res.render("user/cart", { cart: { items, count, ...totals } });
@@ -164,6 +167,7 @@ export async function renderCart(req, res) {
           shipping: 0,
           total: 0,
         },
+        siteSettings: settings 
       });
   }
 }

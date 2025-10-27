@@ -3,39 +3,35 @@
   <link rel="stylesheet" href="/css/header.css">
 </head>
 
+<%
+// pull site settings (provided by middleware), with safe fallbacks
+const S = (typeof siteSettings !== 'undefined' && siteSettings) || {};
+const SITE_NAME = S.site_name || 'TECHORA';
+const LOGO_URL  = S.logo_url ? (S.logo_url + (S.updated_at ? ('?v=' + new Date(S.updated_at).getTime()) : '')) : null;
+%>
+
 <!-- Top Bar -->
 <div class="top-bar">
   <div class="container">
     <div class="d-flex justify-content-between align-items-center">
       <div class="d-flex">
         <% if (!user) { %>
-          <!-- Not logged in -->
           <a href="/seller-application" class="nav-link">Start Selling</a>
-
         <% } else if (seller && seller.status === "approved") { %>
-          <!-- Seller approved -->
           <a href="/seller" class="nav-link">My Store</a>
-
         <% } else if (seller && seller.status === "pending") { %>
-          <!-- Seller applied but waiting -->
           <a href="/seller-application" class="nav-link text-warning">
             <i class="bi bi-hourglass-split me-1"></i> Application Pending
           </a>
-
         <% } else if (seller && seller.status === "rejected") { %>
-          <!-- Seller rejected -->
           <a href="/seller-application" class="nav-link text-danger">
             <i class="bi bi-x-circle me-1"></i> Re-Apply
           </a>
-
         <% } else if (seller && seller.status === "suspended") { %>
-          <!-- Seller suspended -->
           <span class="nav-link text-danger d-inline-flex align-items-center" title="Your store is suspended. Please check your email or contact support.">
             <i class="bi bi-slash-circle me-1"></i> Store Suspended
           </span>
-
         <% } else { %>
-          <!-- Logged in but not applied -->
           <a href="/seller-application" class="nav-link">Start Selling</a>
         <% } %>
 
@@ -66,11 +62,17 @@
 <div class="main-header">
   <div class="container">
     <div class="row align-items-center">
-      <!-- Logo -->
+      <!-- Logo / Site Name -->
       <div class="col-lg-3 col-md-4 col-sm-12 mb-2 mb-md-0">
-        <a href="/" class="logo">
+        <a href="/" class="logo d-inline-flex align-items-center gap-2 text-decoration-none">
+        <% if (LOGO_URL) { %>
+          <img src="<%= LOGO_URL %>" alt="<%= SITE_NAME %> logo"
+              style="height:36px;width:auto;object-fit:cover;">
+          <span class="brand-text ms-2"><%= SITE_NAME %></span>
+        <% } else { %>
           <i class="fas fa-cube"></i>
-          TECHORA
+          <%= SITE_NAME %>
+        <% } %>
         </a>
       </div>
 
@@ -98,7 +100,7 @@
         <div class="header-actions justify-content-end">
           <div class="auth-links d-none d-md-block"></div>
 
-          <% 
+          <%
             const _wl = Number(typeof wishlistCount !== 'undefined' ? wishlistCount : 0);
             const _cart = Number(typeof cartCount !== 'undefined' ? cartCount : 0);
           %>
@@ -119,13 +121,7 @@
             <% } %>
           </a>
 
-          <!-- ===========================
-               START NOTIFICATION BELL BLOCK
-               (Session-based, no DB required)
-               Inserts a bell icon with badge and a dropdown of recent order updates.
-               Expects res.locals.orderNotifCount and res.locals.orderNotifications
-               to be populated by the session-only notification middleware.
-               ============================ -->
+          <!-- Notifications (unchanged logic) -->
           <div class="notification-wrapper dropdown d-inline-block position-relative ms-2">
             <button id="notifButton" class="btn btn-link nav-link dropdown-toggle p-0" data-bs-toggle="dropdown" aria-expanded="false" type="button">
               <i class="bi bi-bell-fill fs-5"></i>
@@ -137,7 +133,6 @@
             <ul class="dropdown-menu dropdown-menu-end p-2" style="min-width: 300px;">
               <li class="px-2 d-flex justify-content-between align-items-center">
                 <strong>Notifications</strong>
-                <!-- Mark all as read will call /notifications/mark-seen (session variant) -->
                 <button id="markAllRead" class="btn btn-sm btn-link">Mark all as read</button>
               </li>
               <li><hr class="dropdown-divider"></li>
@@ -164,10 +159,6 @@
               <% } %>
             </ul>
           </div>
-          <!-- ===========================
-               END NOTIFICATION BELL BLOCK
-               ============================ -->
-
         </div>
       </div>
     </div>
@@ -176,33 +167,27 @@
 
 <script>
   document.addEventListener("DOMContentLoaded", () => {
-    // --- existing search suggestions script (kept as-is) ---
+    // Search suggestions (unchanged)
     const searchInput = document.getElementById("productSearch");
     const suggestions = document.getElementById("searchSuggestions");
 
     if (searchInput) {
       searchInput.addEventListener("input", async () => {
         const query = searchInput.value.trim();
-
         if (query.length === 0) {
           suggestions.innerHTML = "";
           suggestions.style.display = "none";
           return;
         }
-
         try {
           const res = await fetch(`/search-suggestions?query=${encodeURIComponent(query)}`);
           const products = await res.json();
-
           suggestions.innerHTML = "";
-
           if (products.length > 0) {
             products.forEach(p => {
               const li = document.createElement("li");
               li.textContent = p.name;
-              li.onclick = () => {
-                window.location.href = `/products?search=${encodeURIComponent(p.name)}`;
-              };
+              li.onclick = () => { window.location.href = `/products?search=${encodeURIComponent(p.name)}`; };
               suggestions.appendChild(li);
             });
             suggestions.style.display = "block";
@@ -220,14 +205,11 @@
         }
       });
 
-      // ENTER key submits search
       searchInput.addEventListener("keypress", (e) => {
         if (e.key === "Enter") {
           e.preventDefault();
           const keyword = searchInput.value.trim();
-          if (keyword) {
-            window.location.href = `/products?search=${encodeURIComponent(keyword)}`;
-          }
+          if (keyword) window.location.href = `/products?search=${encodeURIComponent(keyword)}`;
         }
       });
 
@@ -239,15 +221,10 @@
       });
     }
 
-    // --- Notification mark-as-read handler (session-only) ---
-    // This will POST to /notifications/mark-seen (session-only version)
-    // Make sure you've added the small route:
-    // router.post('/notifications/mark-seen', (req,res)=>{ req.session.orderNotifSeenAt = new Date().toISOString(); req.session.save(...); })
+    // Mark notifications seen (unchanged)
     const markBtn = document.getElementById('markAllRead');
     const notifBadge = document.getElementById('notifBadge');
-
     if (markBtn) {
-      // in your existing script where markBtn exists:
       markBtn.addEventListener('click', async (e) => {
         e.preventDefault();
         try {
@@ -259,23 +236,15 @@
           const data = await res.json();
           if (data && data.ok) {
             if (notifBadge) notifBadge.style.display = 'none';
-            // keep session/local copy in sync if you want:
-            // sessionStorage.setItem('orderNotifSeenAt', data.last_notif_seen_at);
             const notifButton = document.getElementById('notifButton');
-            if (notifButton) {
-              try { notifButton.click(); } catch (err) { /* ignore */ }
-            }
-          } else {
-            console.warn('mark-seen responded with', data);
+            if (notifButton) { try { notifButton.click(); } catch(e){} }
           }
         } catch (err) {
           console.error('Failed to mark notifications seen', err);
         }
       });
-
     }
   });
 </script>
 
-<!-- Bootstrap JS Bundle -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>

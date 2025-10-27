@@ -7,7 +7,13 @@ export const renderBuyPage = async (req, res) => {
   const productId = Number(req.params.id);
 
   try {
-    const productResult   = await db.query("SELECT * FROM products WHERE id = $1", [productId]);
+    const productResult = await db.query(`
+      SELECT p.*, s.store_name
+      FROM products p
+      LEFT JOIN sellers s ON p.seller_id = s.id
+      WHERE p.id = $1
+    `, [productId]);
+    
     const variantsResult  = await db.query("SELECT * FROM product_variant WHERE product_id = $1", [productId]);
 // in renderBuyPage (imagesResult query)
 const imagesResult = await db.query(

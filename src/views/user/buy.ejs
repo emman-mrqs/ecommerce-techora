@@ -183,9 +183,13 @@
                   <td class="text-muted">₱<%= minPrice %> – ₱<%= maxPrice %></td>
                 </tr>
                 <tr>
-                  <th>Seller</th>
-                  <td class="text-muted">#<%= product.seller_id %></td>
-                </tr>
+                <th>Seller</th>
+                <td class="text-muted">
+                  <a href="/store/<%= product.seller_id %>" class="text-decoration-none text-dark">
+                    <%= product.store_name ? product.store_name : `Seller #${product.seller_id}` %>
+                  </a>
+                </td>
+              </tr>
                 <tr>
                   <th>SKU Variants</th>
                   <td class="text-muted"><%= variants.length %> variants</td>

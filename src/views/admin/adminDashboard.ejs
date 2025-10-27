@@ -8,142 +8,174 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="/css/adminDashboard.css">
 </head>
-<body>
+<body class="admin-body">
   <!-- Sidebar + Header -->
   <%- include("../partials/adminSidebarNav", { activePage: "dashboard", pageTitle: "Dashboard" }) %>
 
   <!-- Main Content -->
-  <div class="main-content p-4">
-    <!-- Stats Row -->
+  <div class="main-content container-fluid py-4">
+
+    <!-- ===== Stats Row ===== -->
     <div class="row g-4 mb-4">
       <div class="col-md-3 col-6">
-        <div class="stat-card">
+        <div class="stat-card shadow-raise">
           <div class="d-flex justify-content-between align-items-center mb-2">
-            <span>Total Sales</span>
-            <i class="fas fa-shopping-bag"></i>
+            <span class="stat-label">Total Sales</span>
+            <i class="fas fa-shopping-bag stat-icon" aria-hidden="true"></i>
           </div>
-          <h3>₱2.4M</h3>
-          <small class="text-success">+12.5% vs last month</small>
+          <h3 class="stat-value">₱<%= totalSales.toLocaleString() %></h3>
+          <small class="stat-subtle">Real-time Total Sales</small>
         </div>
       </div>
+
       <div class="col-md-3 col-6">
-        <div class="stat-card">
+        <div class="stat-card shadow-raise">
           <div class="d-flex justify-content-between align-items-center mb-2">
-            <span>Total Orders</span>
-            <i class="fas fa-receipt"></i>
+            <span class="stat-label">Total Orders</span>
+            <i class="fas fa-receipt stat-icon" aria-hidden="true"></i>
           </div>
-          <h3>1,847</h3>
-          <small class="text-success">+8.2% vs last month</small>
+          <h3 class="stat-value"><%= totalOrders.toLocaleString() %></h3>
+          <small class="stat-subtle">All orders recorded</small>
         </div>
       </div>
+
       <div class="col-md-3 col-6">
-        <div class="stat-card">
+        <div class="stat-card shadow-raise">
           <div class="d-flex justify-content-between align-items-center mb-2">
-            <span>Revenue</span>
-            <i class="fas fa-coins"></i>
+            <span class="stat-label">Revenue</span>
+            <i class="fas fa-coins stat-icon" aria-hidden="true"></i>
           </div>
-          <h3>₱892K</h3>
-          <small class="text-success">+15.3% vs last month</small>
+          <h3 class="stat-value">₱<%= totalRevenue.toLocaleString() %></h3>
+          <small class="stat-subtle">Completed Payments</small>
         </div>
       </div>
+
       <div class="col-md-3 col-6">
-        <div class="stat-card">
+        <div class="stat-card shadow-raise">
           <div class="d-flex justify-content-between align-items-center mb-2">
-            <span>Active Users</span>
-            <i class="fas fa-user"></i>
+            <span class="stat-label">Active Users</span>
+            <i class="fas fa-user stat-icon" aria-hidden="true"></i>
           </div>
-          <h3>12,459</h3>
-          <small class="text-success">+5.7% active this month</small>
+          <h3 class="stat-value"><%= activeUsers.toLocaleString() %></h3>
+          <small class="stat-subtle">Active Accounts</small>
         </div>
       </div>
     </div>
 
-    <!-- Charts + Recent Orders -->
+    <!-- ===== Charts + Recent Orders ===== -->
     <div class="row g-4">
       <!-- Sales Overview -->
       <div class="col-md-6">
-        <div class="card shadow-sm border-0 p-3">
+        <div class="card card-plain shadow-sm border-0 p-3 h-100">
           <div class="d-flex justify-content-between align-items-center mb-3">
-            <h6>Sales Overview</h6>
-            <div>
-              <button class="btn btn-sm btn-outline-secondary">7 days</button>
-              <button class="btn btn-sm btn-dark">30 days</button>
-              <button class="btn btn-sm btn-outline-secondary">90 days</button>
+            <h6 class="card-title mb-0">Sales Overview</h6>
+
+            <!-- Keep same structure; just styled -->
+            <div class="sales-range-group btn-group btn-group-sm" role="group" aria-label="Sales range"
+                 data-current-range="<%= salesRange || 30 %>">
+              <button class="btn btn-outline-secondary sales-range-btn" data-range="7">7 days</button>
+              <button class="btn btn-outline-secondary sales-range-btn" data-range="30">30 days</button>
+              <button class="btn btn-outline-secondary sales-range-btn" data-range="90">90 days</button>
             </div>
           </div>
-          <div class="sales-overview d-flex align-items-center justify-content-center text-muted">
-            [ Chart Placeholder ]
+
+          <div class="sales-overview chart-box d-flex align-items-center justify-content-center">
+            <!-- If your JS already injects a canvas, it will still target this container -->
+            <canvas id="salesChart" aria-label="Sales chart" role="img"></canvas>
           </div>
         </div>
       </div>
 
       <!-- Recent Orders -->
       <div class="col-md-6">
-        <div class="card shadow-sm border-0 p-3 recent-orders">
+        <div class="card card-plain shadow-sm border-0 p-3 recent-orders h-100">
           <div class="d-flex justify-content-between align-items-center mb-3">
-            <h6>Recent Orders</h6>
-            <button class="btn btn-sm btn-outline-secondary">View All</button>
+            <h6 class="card-title mb-0">Recent Orders</h6>
+            <a href="/admin/orders" class="btn btn-sm btn-outline-secondary">View All</a>
           </div>
-          <ul class="list-group list-group-flush">
-            <li class="list-group-item">
-              <div>
-                <div>#12847 — John Smith</div>
-                <small>2024-01-15 • iPhone 15 Pro Max</small>
-              </div>
-              <div class="text-end">
-                <strong>₱89,999</strong><br>
-                <span class="order-status status-completed">Completed</span>
-              </div>
-            </li>
-            <li class="list-group-item">
-              <div>
-                <div>#12846 — Maria Garcia</div>
-                <small>2024-01-15 • MacBook Air M2</small>
-              </div>
-              <div class="text-end">
-                <strong>₱79,999</strong><br>
-                <span class="order-status status-processing">Processing</span>
-              </div>
-            </li>
-            <li class="list-group-item">
-              <div>
-                <div>#12845 — David Chen</div>
-                <small>2024-01-14 • AirPods Pro 2nd Gen</small>
-              </div>
-              <div class="text-end">
-                <strong>₱14,999</strong><br>
-                <span class="order-status status-shipped">Shipped</span>
-              </div>
-            </li>
-            <li class="list-group-item">
-              <div>
-                <div>#12844 — Sarah Johnson</div>
-                <small>2024-01-14 • iPad Pro 12.9-inch</small>
-              </div>
-              <div class="text-end">
-                <strong>₱69,999</strong><br>
-                <span class="order-status status-completed">Completed</span>
-              </div>
-            </li>
-            <li class="list-group-item">
-              <div>
-                <div>#12843 — Michael Brown</div>
-                <small>2024-01-13 • Apple Watch Series 9</small>
-              </div>
-              <div class="text-end">
-                <strong>₱24,999</strong><br>
-                <span class="order-status status-processing">Processing</span>
-              </div>
-            </li>
+
+          <ul class="list-group list-group-flush soft-dividers">
+            <% if (recentOrders && recentOrders.length > 0) { %>
+              <% recentOrders.forEach(order => { %>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                  <div class="me-3">
+                    <div class="fw-medium text-truncate">#<%= order.order_id %> — <%= order.customer_name %></div>
+                    <small class="text-muted"><%= new Date(order.created_at).toLocaleDateString() %> • <%= order.product_name %></small>
+                  </div>
+                  <div class="text-end">
+                    <div class="price">₱<%= Number(order.total_amount).toLocaleString() %></div>
+                    <span class="order-status badge-soft status-<%= (order.order_status || '').toLowerCase() %>">
+                      <%= order.order_status %>
+                    </span>
+                  </div>
+                </li>
+              <% }) %>
+            <% } else { %>
+              <li class="list-group-item text-muted text-center">No recent orders</li>
+            <% } %>
           </ul>
         </div>
       </div>
     </div>
+
+    <!-- ===== Top Products + Visitors ===== -->
+    <div class="row g-4 mt-1">
+      <!-- Top Selling Products -->
+      <div class="col-md-6">
+        <div class="card card-plain shadow-sm border-0 p-3 h-100">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="card-title mb-0">Top Selling Products (90 days)</h6>
+            <a href="/admin/products" class="btn btn-sm btn-outline-secondary">Manage</a>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table align-middle mb-0 table-clean">
+              <thead class="table-head-plain">
+                <tr>
+                  <th style="width:70%">Product</th>
+                  <th class="text-end">Units Sold</th>
+                </tr>
+              </thead>
+              <tbody>
+              <% if (topProducts && topProducts.length) { %>
+                <% topProducts.forEach(tp => { %>
+                  <tr>
+                    <td class="text-truncate"><%= tp.name %></td>
+                    <td class="text-end fw-semibold"><%= tp.units_sold.toLocaleString() %></td>
+                  </tr>
+                <% }) %>
+              <% } else { %>
+                  <tr><td colspan="2" class="text-center text-muted">No sales yet.</td></tr>
+              <% } %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Monthly Visitors -->
+      <div class="col-md-6">
+        <div class="card card-plain shadow-sm border-0 p-3 h-100">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="card-title mb-0">Visitors (Last 30 Days)</h6>
+            <a href="/admin/analytics" class="btn btn-sm btn-outline-secondary">Analytics</a>
+          </div>
+          <div class="sales-overview chart-box d-flex align-items-center justify-content-center">
+            <canvas id="visitorsChart" aria-label="Visitors chart" role="img"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 
-    <!-- Support Chat -->
-    <%- include("../partials/supportChat") %>
 
-  <script src="/js/adminSideBarNav.js"></script>
+  <!-- Data payloads for charts (JSON only, no inline JS logic) -->
+  <script type="application/json" id="sales-data"><%- JSON.stringify(salesOverview || []) %></script>
+  <script type="application/json" id="visitors-data"><%- JSON.stringify(visitors30 || []) %></script>
+
+  <!-- JS -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="/js/adminDashboard.js"></script>
 </body>
 </html>

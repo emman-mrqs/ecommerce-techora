@@ -165,61 +165,48 @@
                     </div>
 
                     <!-- Step 2: Payment Information -->
+                    <!-- Step 2: Payment Information -->
                     <div class="step-content" id="step-2">
-                        <div class="checkout-card">
-                            <h3 class="card-title">PAYMENT INFORMATION</h3>
-                            
-                            <div class="payment-option selected" onclick="selectPayment(event, 'paypal')">
-                                <input type="radio" name="payment" value="paypal" class="payment-radio" checked>
-                                <div class="payment-details">
-                                    <div class="payment-title">PayPal</div>
-                                    <div class="payment-desc">Pay securely with your PayPal account</div>
-                                </div>
-                                <i class="fab fa-paypal" style="font-size: 1.5rem; color: #0070ba;"></i>
-                            </div>
+                    <div class="checkout-card">
+                        <h3 class="card-title">PAYMENT INFORMATION</h3>
 
-                            <div class="payment-option" onclick="selectPayment(event, 'cod')">
-                                <input type="radio" name="payment" value="cod" class="payment-radio">
-                                <div class="payment-details">
-                                    <div class="payment-title">Cash on Delivery (COD)</div>
-                                    <div class="payment-desc">Pay when you receive your order</div>
-                                </div>
-                                <i class="fas fa-money-bill-wave" style="font-size: 1.5rem; color: var(--success-color);"></i>
-                            </div>
+                        <% const allowCOD = settings?.pay_cod !== false; %>
+                        <% const allowPayPal = settings?.pay_paypal !== false; %>
 
+                        <% if (allowPayPal) { %>
+                        <div class="payment-option <%= allowPayPal ? 'selected' : '' %>" onclick="selectPayment(event, 'paypal')">
+                        <input type="radio" name="payment" value="paypal" class="payment-radio" <%= allowPayPal ? 'checked' : '' %> >
+                        <div class="payment-details">
+                            <div class="payment-title">PayPal</div>
+                            <div class="payment-desc">Pay securely with your PayPal account</div>
+                        </div>
+                        <i class="fab fa-paypal" style="font-size: 1.5rem; color: #0070ba;"></i>
+                        </div>
+                        <% } %>
 
-                            <!-- Credit Card Form (hidden by default) -->
-                            <div id="card-form" style="display: none; margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--border-color);">
-                                <div class="form-group">
-                                    <label class="form-label">Card Number</label>
-                                    <input type="text" class="form-control" placeholder="1234 5678 9012 3456" id="cardNumber">
-                                </div>
-                                <div class="row">
-                                    <div class="col-md-8">
-                                        <div class="form-group">
-                                            <label class="form-label">Expiry Date</label>
-                                            <input type="text" class="form-control" placeholder="MM/YY" id="expiryDate">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="form-group">
-                                            <label class="form-label">CVV</label>
-                                            <input type="text" class="form-control" placeholder="123" id="cvv">
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Cardholder Name</label>
-                                    <input type="text" class="form-control" placeholder="Enter cardholder name" id="cardholderName">
-                                </div>
-                            </div>
+                        <% if (allowCOD) { %>
+                        <div class="payment-option <%= !allowPayPal ? 'selected' : '' %>" onclick="selectPayment(event, 'cod')">
+                        <input type="radio" name="payment" value="cod" class="payment-radio" <%= !allowPayPal ? 'checked' : '' %> >
+                        <div class="payment-details">
+                            <div class="payment-title">Cash on Delivery (COD)</div>
+                            <div class="payment-desc">Pay when you receive your order</div>
+                        </div>
+                        <i class="fas fa-money-bill-wave" style="font-size: 1.5rem; color: var(--success-color);"></i>
+                        </div>
+                        <% } %>
 
-                            <div class="step-buttons">
-                                <button class="btn btn-outline" onclick="prevStep()">Back to Shipping</button>
-                                <button class="btn btn-primary" onclick="nextStep()">Review Order</button>
-                            </div>
+                        <!-- Card form stays hidden (you’re not using it yet) -->
+                        <div id="card-form" style="display:none; margin-top:2rem; padding-top:2rem; border-top:1px solid var(--border-color);">
+                        <!-- ...unchanged... -->
+                        </div>
+
+                        <div class="step-buttons">
+                        <button class="btn btn-outline" onclick="prevStep()">Back to Shipping</button>
+                        <button class="btn btn-primary" onclick="nextStep()">Review Order</button>
                         </div>
                     </div>
+                    </div>
+
 
                     <!-- Step 3: Order Review -->
                     <div class="step-content" id="step-3">
@@ -240,8 +227,13 @@
                                 <div class="col-md-6">
                                     <h5 style="color: var(--primary-color); margin-bottom: 1rem;">Payment Method</h5>
                                     <div id="review-payment" style="color: var(--accent-color); font-size: 0.9rem;">
+                                    <% if (settings && !settings.pay_paypal && settings.pay_cod) { %>
+                                        <div>Cash on Delivery (COD)</div>
+                                        <div>Pay when you receive your order</div>
+                                    <% } else { %>
                                         <div>PayPal</div>
                                         <div>Pay securely with your PayPal account</div>
+                                    <% } %>
                                     </div>
                                 </div>
                             </div>
@@ -362,17 +354,16 @@
                     <span class="summary-label">Discount</span>
                     <span class="summary-value" id="sum-discount">- ₱0.00</span>
                     </div>
-
- <div class="summary-row">
-  <span class="summary-label">Shipping</span>
-  <span class="summary-value" id="sum-shipping">
-    <% if (Number(shipping) === 0) { %>
-      FREE
-    <% } else { %>
-      ₱<%= Number(shipping).toFixed(2) %>
-    <% } %>
-  </span>
-</div>
+                    <div class="summary-row">
+                    <span class="summary-label">Shipping</span>
+                    <span class="summary-value" id="sum-shipping">
+                        <% if (Number(shipping) === 0) { %>
+                        FREE
+                        <% } else { %>
+                        ₱<%= Number(shipping).toFixed(2) %>
+                        <% } %>
+                    </span>
+                    </div>
 
                     <div class="summary-row">
                     <span class="summary-label">Tax</span>
@@ -395,7 +386,12 @@
     </footer>
 
 </body>
-    <script src="https://www.paypal.com/sdk/js?client-id=<%= process.env.PAYPAL_CLIENT_ID %>&currency=PHP"></script>
+
+
+   <% if (settings && settings.pay_paypal) { %>
+<script src="https://www.paypal.com/sdk/js?client-id=<%= process.env.PAYPAL_CLIENT_ID %>&currency=PHP"></script>
+<% } %>
+
     <!-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script> -->
     <script src="/js/checkout.js"></script>
 </html>

@@ -13,344 +13,344 @@
   <nav>
     <%- include("../partials/header.ejs") %>
   </nav>
+<div class="profile-scope">
+  <div class="wrap" id="app" aria-live="polite">
 
-<div class="wrap" id="app" aria-live="polite">
+    <!-- Sidebar -->
+    <aside class="sidebar">
 
-  <!-- Sidebar -->
-  <aside class="sidebar">
+      <% const _user = (typeof user !== 'undefined' && user) ? user : {}; %>
+      <% const _avatarSeed = (_user.name && _user.name.trim().length) ? _user.name : 'TU'; %>
 
-    <% const _user = (typeof user !== 'undefined' && user) ? user : {}; %>
-    <% const _avatarSeed = (_user.name && _user.name.trim().length) ? _user.name : 'TU'; %>
+      <div class="me" id="meBox">
+        <div class="avatar-wrapper">
+          <% if (_user.avatar_url) { %>
+            <img src="<%= _user.avatar_url %>" alt="Avatar" class="avatar-img">
+          <% } else { %>
+            <div class="avatar-fallback"><%= _avatarSeed.slice(0,2).toUpperCase() %></div>
+          <% } %>
 
-    <div class="me" id="meBox">
-      <div class="avatar-wrapper">
-        <% if (_user.avatar_url) { %>
-          <img src="<%= _user.avatar_url %>" alt="Avatar" class="avatar-img">
-        <% } else { %>
-          <div class="avatar-fallback"><%= _avatarSeed.slice(0,2).toUpperCase() %></div>
-        <% } %>
-
-        <!-- Pencil overlay -->
-        <div class="avatar-overlay" title="Change avatar">
-          <i class="fa fa-pencil-alt"></i>
-          <input type="file" id="avatarInput" name="avatar" accept="image/*" hidden>
-        </div>
-      </div>
-
-      <div class="meta">
-        <strong id="meName"><%= _user.name %></strong>
-        <small id="meEmail" title="<%= _user.email %>"><%= _user.email %></small>
-      </div>
-    </div>
-
-
-    <nav class="nav" role="navigation" aria-label="Account sections">
-      <button class="active" data-view="profile"><span class="icon"><i class="bi bi-person-fill"></i></span> Profile</button>
-      <button data-view="orders"><i class="bi bi-box-fill"></i></span> My Orders</button>
-      <button data-view="settings"><i class="bi bi-gear-fill"></i></span> Settings</button>
-    </nav>
-  </aside>
-
-  <!-- Main content -->
-  <main class="content">
-
-    <!-- PROFILE -->
-    <section data-route="profile" class="route">
-      <div class="page-title"><h2>Profile</h2></div>
-      <div class="panel">
-        <div class="head">
-          <strong>Personal Info</strong>
-        <div class="actions">
-          <button class="btn outline" id="btnEditName">Edit</button>
-          <button class="btn" id="btnSaveName" style="display:none">Save</button>
-          <button class="btn ghost" id="btnCancelName" style="display:none">Cancel</button>
-        </div>
-
-        </div>
-        <div class="body">
-          <div class="stack">
-            <label for="pfName">Full Name</label>
-            <input id="pfName" type="text" value="<%= user.name %>" disabled>
+          <!-- Pencil overlay -->
+          <div class="avatar-overlay" title="Change avatar">
+            <i class="fa fa-pencil-alt"></i>
+            <input type="file" id="avatarInput" name="avatar" accept="image/*" hidden>
           </div>
         </div>
-      </div>
 
-      <div class="panel" style="margin-top:14px">
-        <div class="head"><strong>Security</strong></div>
-        <div class="body">
-          <% if (user.auth_provider === 'google') { %>
-            <p>You are connected with <strong>Google Sign-In</strong>. 
-            Password changes must be done through your Google Account.</p>
-          <% } else { %>
-            <div class="grid-3">
-              <div class="stack">
-                <label for="pfPasswordNow">Current Password</label>
-                <input id="pfPasswordNow" type="password" placeholder="••••••••">
-              </div>
-              <div class="stack">
-                <label for="pfPasswordNew">New Password</label>
-                <input id="pfPasswordNew" type="password" placeholder="Minimum 6 chars">
-              </div>
-              <div class="stack">
-                <label>&nbsp;</label>
-                <button class="btn" id="btnChangePassword">Change Password</button>
-              </div>
-            </div>
-          <% } %>
+        <div class="meta">
+          <strong id="meName"><%= _user.name %></strong>
+          <small id="meEmail" title="<%= _user.email %>"><%= _user.email %></small>
         </div>
       </div>
-    </section>
 
-    <!-- ORDERS -->
-    <section data-route="orders" class="route" <% if ((typeof route !== 'undefined' ? route : 'profile') !== 'orders') { %>hidden<% } %>>
-      <div class="page-title"><h2>My Orders</h2></div>
 
-      <div class="tabs" id="orderTabs" role="tablist" aria-label="Order status">
-        <% const TABS = ['All','Pending','To Ship','To Receive','Completed','Cancelled','Return/Refund']; %>
-        <% TABS.forEach((t, i) => { %>
-          <button class="tab <%= i===0 ? 'active' : '' %>" role="tab"
-                  data-status="<%= t %>"
-                  data-count="<%= (ordersByStatus[t] || []).length %>">
-            <%= t %> (<%= (ordersByStatus[t] || []).length %>)
-          </button>
-        <% }) %>
-      </div>
+      <nav class="nav" role="navigation" aria-label="Account sections">
+        <button class="active" data-view="profile"><span class="icon"><i class="bi bi-person-fill"></i></span> Profile</button>
+        <button data-view="orders"><i class="bi bi-box-fill"></i></span> My Orders</button>
+        <button data-view="settings"><i class="bi bi-gear-fill"></i></span> Settings</button>
+      </nav>
+    </aside>
 
-      <div class="order-list" id="orderList" aria-live="polite">
-        <% (allOrders || []).forEach(o => { %>
-          <div class="order" data-status="<%= o.ui_status %>">
-            <div class="row">
-              <div>
-                <strong>Order</strong> • <span class="badge"><%= o.ui_status %></span><br>
-                <!-- rate completed -->
-              <% if (o.ui_status === 'Completed') { %>
-                <div class="mt-2">
-                  <small class="text-success">Rate your product(s):</small>
-                  <div class="d-flex flex-wrap gap-2 mt-1">
-                    <% 
-                      const __seen = new Set();
-                      o.items.forEach(it => {
-                        if (!it.product_id || __seen.has(it.product_id)) return;
-                        __seen.add(it.product_id);
-                    %>
-                      <a href="/buy/<%= it.product_id %>" class="btn btn-sm btn-outline-warning">
-                        <i class="fa-solid fa-star me-1"></i> Rate this product
-                      </a>
-                    <% }) %>
-                  </div>
-                </div>
-              <% } %>
-              </div>
-              <div class="actions">
-                <% if (o.ui_status === 'Pending') { %>
-                  <!-- Pay Now intentionally hidden per request -->
-                  <button class="btn outline btn-cancel-order" data-order-id="<%= o.id %>">Cancel</button>
-                <% } %>
-                <% if (o.ui_status === 'To Ship') { %>
-                  <button class="btn outline btn-cancel-order" data-order-id="<%= o.id %>">Cancel</button>
-                <% } %>
-                  <% if (o.ui_status === 'To Receive') { %>
-                    <button class="btn btn-receive-order" data-order-id="<%= o.id %>">Mark Received</button>
-                    <button class="btn outline btn-refund-order" data-order-id="<%= o.id %>">Refund</button>
-                  <% } %>
-              </div>
+    <!-- Main content -->
+    <main class="content">
+
+      <!-- PROFILE -->
+      <section data-route="profile" class="route">
+        <div class="page-title"><h2>Profile</h2></div>
+        <div class="panel">
+          <div class="head">
+            <strong>Personal Info</strong>
+          <div class="actions">
+            <button class="btn outline" id="btnEditName">Edit</button>
+            <button class="btn" id="btnSaveName" style="display:none">Save</button>
+            <button class="btn ghost" id="btnCancelName" style="display:none">Cancel</button>
+          </div>
+
+          </div>
+          <div class="body">
+            <div class="stack">
+              <label for="pfName">Full Name</label>
+              <input id="pfName" type="text" value="<%= user.name %>" disabled>
             </div>
+          </div>
+        </div>
 
-            <div class="items">
-              <% o.items.forEach(it => { %>
-                <div class="line">
-                  <div style="display:flex;gap:10px;align-items:center">
-                    <img src="<%= it.img_url || '/img/placeholder.png' %>" alt=""
-                         style="width:48px;height:48px;object-fit:cover;border-radius:8px;border:1px solid var(--border)">
-                    <div>
-                      <div><%= it.product_name %></div>
-                      <small style="color:var(--muted)">
-                        <%= [ it.color ? ('Color: ' + it.color) : null,
-                              it.storage ? ('Storage: ' + it.storage) : null,
-                              it.ram ? ('RAM: ' + it.ram) : null ].filter(Boolean).join(' • ') %>
-                      </small>
+        <div class="panel" style="margin-top:14px">
+          <div class="head"><strong>Security</strong></div>
+          <div class="body">
+            <% if (user.auth_provider === 'google') { %>
+              <p>You are connected with <strong>Google Sign-In</strong>. 
+              Password changes must be done through your Google Account.</p>
+            <% } else { %>
+              <div class="grid-3">
+                <div class="stack">
+                  <label for="pfPasswordNow">Current Password</label>
+                  <input id="pfPasswordNow" type="password" placeholder="••••••••">
+                </div>
+                <div class="stack">
+                  <label for="pfPasswordNew">New Password</label>
+                  <input id="pfPasswordNew" type="password" placeholder="Minimum 6 chars">
+                </div>
+                <div class="stack">
+                  <label>&nbsp;</label>
+                  <button class="btn" id="btnChangePassword">Change Password</button>
+                </div>
+              </div>
+            <% } %>
+          </div>
+        </div>
+      </section>
+
+      <!-- ORDERS -->
+      <section data-route="orders" class="route" <% if ((typeof route !== 'undefined' ? route : 'profile') !== 'orders') { %>hidden<% } %>>
+        <div class="page-title"><h2>My Orders</h2></div>
+
+        <div class="tabs" id="orderTabs" role="tablist" aria-label="Order status">
+          <% const TABS = ['All','Pending','To Ship','To Receive','Completed','Cancelled','Return/Refund']; %>
+          <% TABS.forEach((t, i) => { %>
+            <button class="tab <%= i===0 ? 'active' : '' %>" role="tab"
+                    data-status="<%= t %>"
+                    data-count="<%= (ordersByStatus[t] || []).length %>">
+              <%= t %> (<%= (ordersByStatus[t] || []).length %>)
+            </button>
+          <% }) %>
+        </div>
+
+        <div class="order-list" id="orderList" aria-live="polite">
+          <% (allOrders || []).forEach(o => { %>
+            <div class="order" data-status="<%= o.ui_status %>">
+              <div class="row">
+                <div>
+                  <strong>Order</strong> • <span class="badge"><%= o.ui_status %></span><br>
+                  <!-- rate completed -->
+                <% if (o.ui_status === 'Completed') { %>
+                  <div class="mt-2">
+                    <small class="text-success">Rate your product(s):</small>
+                    <div class="d-flex flex-wrap gap-2 mt-1">
+                      <% 
+                        const __seen = new Set();
+                        o.items.forEach(it => {
+                          if (!it.product_id || __seen.has(it.product_id)) return;
+                          __seen.add(it.product_id);
+                      %>
+                        <a href="/buy/<%= it.product_id %>" class="btn btn-sm btn-outline-warning">
+                          <i class="fa-solid fa-star me-1"></i> Rate this product
+                        </a>
+                      <% }) %>
                     </div>
                   </div>
-                  <div>
-                    <div>₱<%= Number(it.unit_price).toFixed(2) %> × <%= it.quantity %></div>
-                    <div><strong>₱<%= Number(it.total_price).toFixed(2) %></strong></div>
+                <% } %>
+                </div>
+                <div class="actions">
+                  <% if (o.ui_status === 'Pending') { %>
+                    <!-- Pay Now intentionally hidden per request -->
+                    <button class="btn outline btn-cancel-order" data-order-id="<%= o.id %>">Cancel</button>
+                  <% } %>
+                  <% if (o.ui_status === 'To Ship') { %>
+                    <button class="btn outline btn-cancel-order" data-order-id="<%= o.id %>">Cancel</button>
+                  <% } %>
+                    <% if (o.ui_status === 'To Receive') { %>
+                      <button class="btn btn-receive-order" data-order-id="<%= o.id %>">Mark Received</button>
+                      <button class="btn outline btn-refund-order" data-order-id="<%= o.id %>">Refund</button>
+                    <% } %>
+                </div>
+              </div>
+
+              <div class="items">
+                <% o.items.forEach(it => { %>
+                  <div class="line">
+                    <div style="display:flex;gap:10px;align-items:center">
+                      <img src="<%= it.img_url || '/img/placeholder.png' %>" alt=""
+                          style="width:48px;height:48px;object-fit:cover;border-radius:8px;border:1px solid var(--border)">
+                      <div>
+                        <div><%= it.product_name %></div>
+                        <small style="color:var(--muted)">
+                          <%= [ it.color ? ('Color: ' + it.color) : null,
+                                it.storage ? ('Storage: ' + it.storage) : null,
+                                it.ram ? ('RAM: ' + it.ram) : null ].filter(Boolean).join(' • ') %>
+                        </small>
+                      </div>
+                    </div>
+                    <div>
+                      <div>₱<%= Number(it.unit_price).toFixed(2) %> × <%= it.quantity %></div>
+                      <div><strong>₱<%= Number(it.total_price).toFixed(2) %></strong></div>
+                    </div>
+                  </div>
+                <% }) %>
+              </div>
+
+              <!-- Invoice / Payment summary -->
+              <div class="panel" style="margin-top:8px">
+                <div class="head"><strong>Invoice</strong></div>
+                <div class="body grid-3">
+                  <div class="stack">
+                    <small class="muted">Payment Method</small>
+                    <div><%= (o.payment && o.payment.method) ? o.payment.method : (o.payment_method || '—') %></div>
+                  </div>
+                  <div class="stack">
+                    <small class="muted">Payment Status</small>
+                    <div><%= (o.payment && o.payment.status) ? o.payment.status : (o.payment_status || 'Unpaid') %></div>
+                  </div>
+                  <div class="stack">
+                    <small class="muted">Transaction ID</small>
+                    <div><%= (o.payment && o.payment.transaction_id) ? o.payment.transaction_id : '—' %></div>
+                  </div>
+                  <div class="stack">
+                    <small class="muted">Amount Paid</small>
+                    <div>₱<%= Number((o.payment && o.payment.amount_paid) ? o.payment.amount_paid : 0).toFixed(2) %></div>
+                  </div>
+                  <div class="stack">
+                    <small class="muted">Order Total</small>
+                    <div>₱<%= Number(o.total_amount || (o.payment && o.payment.amount) || 0).toFixed(2) %></div>
+                  </div>
+                  <div class="stack">
+                    <small class="muted">Payment Date</small>
+                    <div>
+                      <% if (o.payment && o.payment.payment_date) { %>
+                        <%= new Date(o.payment.payment_date).toLocaleString() %>
+                      <% } else { %> — <% } %>
+                    </div>
                   </div>
                 </div>
-              <% }) %>
-            </div>
+              </div>
 
-            <!-- Invoice / Payment summary -->
-            <div class="panel" style="margin-top:8px">
-              <div class="head"><strong>Invoice</strong></div>
-              <div class="body grid-3">
-                <div class="stack">
-                  <small class="muted">Payment Method</small>
-                  <div><%= (o.payment && o.payment.method) ? o.payment.method : (o.payment_method || '—') %></div>
-                </div>
-                <div class="stack">
-                  <small class="muted">Payment Status</small>
-                  <div><%= (o.payment && o.payment.status) ? o.payment.status : (o.payment_status || 'Unpaid') %></div>
-                </div>
-                <div class="stack">
-                  <small class="muted">Transaction ID</small>
-                  <div><%= (o.payment && o.payment.transaction_id) ? o.payment.transaction_id : '—' %></div>
-                </div>
-                <div class="stack">
-                  <small class="muted">Amount Paid</small>
-                  <div>₱<%= Number((o.payment && o.payment.amount_paid) ? o.payment.amount_paid : 0).toFixed(2) %></div>
-                </div>
-                <div class="stack">
-                  <small class="muted">Order Total</small>
-                  <div>₱<%= Number(o.total_amount || (o.payment && o.payment.amount) || 0).toFixed(2) %></div>
-                </div>
-                <div class="stack">
-                  <small class="muted">Payment Date</small>
-                  <div>
-                    <% if (o.payment && o.payment.payment_date) { %>
-                      <%= new Date(o.payment.payment_date).toLocaleString() %>
-                    <% } else { %> — <% } %>
-                  </div>
+              <div class="row">
+                <div class="badge">Ship to: <%= o.shipping_address || '—' %></div>
+                <div>
+                  <% const computedTotal = o.total_amount ?? o.items.reduce((s,x)=>s + (x.total_price ?? (x.unit_price * x.quantity)), 0); %>
+                  <strong>Total: ₱<%= Number(computedTotal).toFixed(2) %></strong>
                 </div>
               </div>
             </div>
-
-            <div class="row">
-              <div class="badge">Ship to: <%= o.shipping_address || '—' %></div>
-              <div>
-                <% const computedTotal = o.total_amount ?? o.items.reduce((s,x)=>s + (x.total_price ?? (x.unit_price * x.quantity)), 0); %>
-                <strong>Total: ₱<%= Number(computedTotal).toFixed(2) %></strong>
-              </div>
-            </div>
-          </div>
-        <% }) %>
-      </div>
-
-      <div class="empty" id="ordersEmpty" <% if ((allOrders || []).length) { %>hidden<% } %>>
-        <div class="center" style="flex-direction:column;gap:8px">
-          <div style="font-size:40px">📄</div>
-          <div>No orders yet</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- SETTINGS -->
-    <section data-route="settings" class="route" hidden>
-      <div class="page-title"><h2>Settings</h2></div>
-
-      <div class="grid-2">
-        <!-- Addresses -->
-        <div class="panel">
-          <div class="head"><strong>Shipping Addresses</strong>
-            <div class="actions"><button class="btn" id="btnAddAddress">Add Address</button></div>
-          </div>
-          <div class="body stack" id="addressList">
-            <!-- addresses -->
-          </div>
+          <% }) %>
         </div>
 
-        <!-- Account -->
-        <div class="panel">
-          <div class="head"><strong>Account</strong></div>
-          <div class="body stack">
-            <div class="stack">
-              <label for="chgEmail">Change Account (Email)</label>
-              <div class="actions" style="gap:8px">
-                <input id="chgEmail" type="email" placeholder="new-email@domain.com" style="max-width:320px">
-                <button class="btn outline" id="btnChangeAccount">Update Email</button>
-              </div>
+        <div class="empty" id="ordersEmpty" <% if ((allOrders || []).length) { %>hidden<% } %>>
+          <div class="center" style="flex-direction:column;gap:8px">
+            <div style="font-size:40px">📄</div>
+            <div>No orders yet</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SETTINGS -->
+      <section data-route="settings" class="route" hidden>
+        <div class="page-title"><h2>Settings</h2></div>
+
+        <div class="grid-2">
+          <!-- Addresses -->
+          <div class="panel">
+            <div class="head"><strong>Shipping Addresses</strong>
+              <div class="actions"><button class="btn" id="btnAddAddress">Add Address</button></div>
             </div>
-            <hr style="border:0;border-top:1px solid var(--border)">
-            <div class="stack">
-              <label>Danger Zone</label>
-              <div class="actions">
-                <button class="btn danger" id="btnDeleteAccount">Delete Account</button>
+            <div class="body stack" id="addressList">
+              <!-- addresses -->
+            </div>
+          </div>
+
+          <!-- Account -->
+          <div class="panel">
+            <div class="head"><strong>Account</strong></div>
+            <div class="body stack">
+              <div class="stack">
+                <label for="chgEmail">Change Account (Email)</label>
+                <div class="actions" style="gap:8px">
+                  <input id="chgEmail" type="email" placeholder="new-email@domain.com" style="max-width:320px">
+                  <button class="btn outline" id="btnChangeAccount">Update Email</button>
+                </div>
               </div>
-              <small class="muted" style="color:var(--muted)">Deleting account clears all local data (profile, orders, addresses).</small>
+              <hr style="border:0;border-top:1px solid var(--border)">
+              <div class="stack">
+                <label>Danger Zone</label>
+                <div class="actions">
+                  <button class="btn danger" id="btnDeleteAccount">Delete Account</button>
+                </div>
+                <small class="muted" style="color:var(--muted)">Deleting account clears all local data (profile, orders, addresses).</small>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
 
-  </main>
-</div>
-
-<!-- Modal (reused) -->
-<!-- Bootstrap Modal -->
-<div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="confirmModalLabel">Confirm</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body" id="confirmModalBody">Are you sure?</div>
-      <div class="modal-footer">
-        <!-- ✅ Cancel button style updated -->
-        <button type="button" class="btn btn-primary" id="confirmModalYes">Yes</button>
-      </div>
-    </div>
+    </main>
   </div>
-</div>
-<!-- Order Modal -->
-<div class="modal fade" id="addressModal" tabindex="-1" aria-labelledby="addressModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-lg">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="addressModalLabel">Add New Address</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <form id="addressForm">
-        <div class="modal-body">
-          <div class="row g-3">
-            <div class="col-md-6">
-              <label class="form-label">First Name</label>
-              <input type="text" name="first_name" class="form-control" required>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Last Name</label>
-              <input type="text" name="last_name" class="form-control" required>
-            </div>
-            <div class="col-12">
-              <label class="form-label">Street</label>
-              <input type="text" name="street" class="form-control" required>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">City</label>
-              <input type="text" name="city" class="form-control" required>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Province</label>
-                <select name="province" class="form-select" required>
-                  <option value="">Select Province</option>
-                  <option value="Cebu">Cebu</option>
-                  <option value="Manila">Manila</option>
-                  <option value="Davao">Davao</option>
-                </select>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">ZIP</label>
-              <input type="text" name="zip" class="form-control" required>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Phone</label>
-              <input type="text" name="phone" class="form-control" required>
-            </div>
-            <div class="col-md-12">
-              <label class="form-label">Email</label>
-              <input type="email" name="email" class="form-control" required>
-            </div>
-          </div>
+
+  <!-- Modal (reused) -->
+  <!-- Bootstrap Modal -->
+  <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="confirmModalLabel">Confirm</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
+        <div class="modal-body" id="confirmModalBody">Are you sure?</div>
         <div class="modal-footer">
-          <button type="submit" class="btn btn-primary">Save Address</button>
+          <!-- ✅ Cancel button style updated -->
+          <button type="button" class="btn btn-primary" id="confirmModalYes">Yes</button>
         </div>
-      </form>
+      </div>
     </div>
   </div>
+  <!-- Order Modal -->
+  <div class="modal fade" id="addressModal" tabindex="-1" aria-labelledby="addressModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="addressModalLabel">Add New Address</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <form id="addressForm">
+          <div class="modal-body">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">First Name</label>
+                <input type="text" name="first_name" class="form-control" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Last Name</label>
+                <input type="text" name="last_name" class="form-control" required>
+              </div>
+              <div class="col-12">
+                <label class="form-label">Street</label>
+                <input type="text" name="street" class="form-control" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">City</label>
+                <input type="text" name="city" class="form-control" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Province</label>
+                  <select name="province" class="form-select" required>
+                    <option value="">Select Province</option>
+                    <option value="Cebu">Cebu</option>
+                    <option value="Manila">Manila</option>
+                    <option value="Davao">Davao</option>
+                  </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">ZIP</label>
+                <input type="text" name="zip" class="form-control" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Phone</label>
+                <input type="text" name="phone" class="form-control" required>
+              </div>
+              <div class="col-md-12">
+                <label class="form-label">Email</label>
+                <input type="email" name="email" class="form-control" required>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="submit" class="btn btn-primary">Save Address</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
 </div>
-
-
 
 
 <!-- Toast -->

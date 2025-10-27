@@ -19,54 +19,54 @@
     <!-- Full-bleed Banner -->
     <section class="banner-hero" id="home">
         <div class="container-fluid p-0">
-        <img src="/uploads/img/Techora%20Banner.png" alt="Techora banner" class="w-100 d-block banner-img" data-parallax/>
+          <img src="<%= bannerUrl %>" alt="Techora banner" class="w-100 d-block banner-img" data-parallax/>
         <!-- Optional chip; remove if you want pure image -->
         <div class="banner-chip d-none d-md-inline-flex">
             <i class="fa-solid fa-bolt me-2"></i> New drops weekly
         </div>
         </div>
     </section>
-<!-- Featured Products -->
-<section class="featured-section" id="featured">
-  <div class="container" data-animate>
-    <div class="section-title text-center">
-      <h2>Featured Products</h2>
-      <div class="underline"></div>
-      <p class="section-subtitle">Handpicked and best-selling gadgets right now.</p>
-    </div>
+    <!-- Featured Products -->
+    <section class="featured-section" id="featured">
+      <div class="container" data-animate>
+        <div class="section-title text-center">
+          <h2>Featured Products</h2>
+          <div class="underline"></div>
+          <p class="section-subtitle">Handpicked and best-selling gadgets right now.</p>
+        </div>
 
-    <div class="row g-4">
-      <% if (featuredProducts && featuredProducts.length) { %>
-        <% featuredProducts.forEach(p => { %>
-          <div class="col-lg-3 col-md-6">
-            <div class="product-card">
-              <span class="badge-corner">FEATURED</span>
-              <img
-                src="<%= p.img_url || '/images/no-image.png' %>"
-                alt="<%= p.name %>">
-              <div class="content">
-                <h4 class="product-title"><%= p.name %></h4>
-                <p class="product-price">₱<%= p.price %></p>
-                <% if (typeof p.order_count !== 'undefined') { %>
-                  <small class="text-muted d-block mb-1">
-                    <%= p.order_count %> sold (30d)
-                  </small>
-                <% } %>
-                <a href="/buy/<%= p.id %>" class="btn btn-primary btn-sm">Shop Now</a>
+        <div class="row g-4">
+          <% if (featuredProducts && featuredProducts.length) { %>
+            <% featuredProducts.forEach(p => { %>
+              <div class="col-lg-3 col-md-6">
+                <div class="product-card">
+                  <span class="badge-corner">FEATURED</span>
+                  <img
+                    src="<%= p.img_url || '/images/no-image.png' %>"
+                    alt="<%= p.name %>">
+                  <div class="content">
+                    <h4 class="product-title"><%= p.name %></h4>
+                    <p class="product-price">₱<%= p.price %></p>
+                    <% if (typeof p.order_count !== 'undefined') { %>
+                      <small class="text-muted d-block mb-1">
+                        <%= p.order_count %> sold (30d)
+                      </small>
+                    <% } %>
+                    <a href="/buy/<%= p.id %>" class="btn btn-primary btn-sm">Shop Now</a>
+                  </div>
+                </div>
+              </div>
+            <% }) %>
+          <% } else { %>
+            <div class="col-12">
+              <div class="text-center text-muted py-4">
+                No featured products yet—check back soon.
               </div>
             </div>
-          </div>
-        <% }) %>
-      <% } else { %>
-        <div class="col-12">
-          <div class="text-center text-muted py-4">
-            No featured products yet—check back soon.
-          </div>
+          <% } %>
         </div>
-      <% } %>
-    </div>
-  </div>
-</section>
+      </div>
+    </section>
 
 
     <!-- New Arrivals -->
@@ -124,19 +124,7 @@
         </div>
     </section>
 
-    <!-- Newsletter -->
-    <section class="newsletter-section">
-        <div class="container" data-animate>
-        <div class="newsletter-content text-center">
-            <h3 class="fw-bold">Stay Updated</h3>
-            <p>Subscribe for exclusive deals, new product launches, and tech insights.</p>
-            <form class="newsletter-form" id="newsletterForm">
-            <input type="email" placeholder="Enter your email address" class="form-control" required/>
-            <button type="submit" class="btn">Subscribe</button>
-            </form>
-        </div>
-        </div>
-    </section>
+
 
     <footer><%- include("../partials/footer.ejs") %></footer>
 
@@ -171,8 +159,6 @@
     </script>
 
     
-      <!-- Support Chat -->
-    <%- include("../partials/supportChat") %>
       <!-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script> -->
 
     </body>

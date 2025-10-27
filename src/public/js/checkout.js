@@ -5,7 +5,9 @@
  ********************/
 let currentStep = 1;
 const totalSteps = 4;
-let selectedPaymentType = "paypal";     // matches default radio
+let selectedPaymentType =
+  document.querySelector('input[name="payment"]:checked')?.value ||
+  (document.querySelector('input[name="payment"][value="cod"]') ? "cod" : "paypal");   // matches default radio
 let cachedPayPalOrderMeta = null;       // { orderId, total }
 let orderMeta = { orderId: null, total: null, paymentMethod: null };
 
@@ -136,6 +138,8 @@ function nextStep() {
     updateProgress();
     if (currentStep === 3) {
       updateReviewSection();
+        updateReviewPayment();  // <- add this
+  updatePaymentCta();     // <- ensure buttons match the selection
       setupPaymentUI();
     }
   }
@@ -178,9 +182,35 @@ function selectPayment(e, type) {
   selected.querySelector('input[type="radio"]').checked = true;
 
   selectedPaymentType = type;
+
   const cardForm = $("#card-form");
   if (cardForm) cardForm.style.display = type === "card" ? "block" : "none";
+
+  updatePaymentCta();
+  updateReviewPayment();
+  // If we're already on Step 3, ensure the right button is visible
+  if (currentStep === 3) setupPaymentUI();
 }
+
+
+// === Payment CTA toggle ===
+function updatePaymentCta() {
+  const selected = document.querySelector('input[name="payment"]:checked')?.value;
+  const codBtn = document.getElementById('codPlaceOrderBtn');
+  const ppWrap = document.getElementById('paypal-button-container');
+
+  if (codBtn) codBtn.style.display = selected === 'cod' ? '' : 'none';
+  if (ppWrap) ppWrap.style.display = selected === 'paypal' ? '' : 'none';
+}
+
+// Watch payment radio buttons
+document.querySelectorAll('.payment-option input[name="payment"]').forEach(r => {
+  r.addEventListener('change', updatePaymentCta);
+});
+
+// Initialize on load
+updatePaymentCta();
+
 
 /********************
  * Shipping review
@@ -273,7 +303,10 @@ function setupPaymentUI() {
   const codBtn = $("#codPlaceOrderBtn");
   if (!paypalContainer || !codBtn) return;
 
-  if (selectedPaymentType === "paypal") {
+  // Read current selection from radios (not from a stale variable)
+  const selected = document.querySelector('input[name="payment"]:checked')?.value || selectedPaymentType;
+
+  if (selected === "paypal") {
     codBtn.style.display = "none";
     paypalContainer.style.display = "block";
     if (!paypalContainer.dataset.rendered) {
@@ -285,6 +318,21 @@ function setupPaymentUI() {
     codBtn.style.display = "inline-block";
   }
 }
+
+/********************
+ * Update Review payment
+ ********************/
+function updateReviewPayment() {
+  const method = document.querySelector('input[name="payment"]:checked')?.value || selectedPaymentType;
+  const box = $("#review-payment");
+  if (!box) return;
+  if (method === "cod") {
+    box.innerHTML = `<div>Cash on Delivery (COD)</div><div>Pay when you receive your order</div>`;
+  } else {
+    box.innerHTML = `<div>PayPal</div><div>Pay securely with your PayPal account</div>`;
+  }
+}
+
 
 /* Create the DB order (once per configuration) */
 async function ensureOrderForPayPal() {

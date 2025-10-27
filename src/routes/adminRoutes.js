@@ -1,6 +1,9 @@
   import express from "express";
   const router = express.Router();
 
+  //Dashboard Controller
+  import { renderAdminDashboard, getSalesOverviewJson } from "../controller/adminDashboardController.js";
+
   import {  //User management
     renderUsers, suspendUser, activateUser, deleteUser, editUser, liftSuspension
   } from "../controller/adminUsersController.js"; 
@@ -30,15 +33,30 @@
   // Notification Controller
   import { getUnreadNotifications, markNotificationRead, markAllNotificationsRead } from "../controller/adminNotificationController.js";
 
+  // CMS controller
+  import { renderAdminCms, updateAboutContent, getAboutContentJson, getContactContentJson, updateContactContent,  
+    listBanners, setActiveBanner, deleteBanner, uploadBannerRecord } from "../controller/adminCmsController.js";
+  import { bannerUpload } from "../middleware/upload.js";
+
+  // admin Settings
+  import { logoUpload } from "../middleware/upload.js";
+  import {
+  renderAdminSettings,
+  getSettingsJson,
+  updateSettings,
+  deleteLogo
+} from "../controller/adminSettingsController.js";
+
+import { listAudits } from "../controller/adminAuditController.js";
+
 
   /*=================
   Routes
   ===================*/
 
   // Admin Dashboard
-  router.get("/admin", (req, res) => {
-    res.render("admin/adminDashboard");
-  });
+  router.get("/admin", renderAdminDashboard);
+  router.get("/admin/dashboard/sales", getSalesOverviewJson);
 
   // User Management
   router.get("/admin/users", renderUsers);
@@ -89,25 +107,47 @@
     res.render("admin/adminReports");
   });
 
-  // CMS management
-  router.get("/admin/cms", (req, res) => {
-    res.render("admin/adminCms");
-  });
+ /*============
+ Start CMS management
+ ===============*/
+  router.get("/admin/cms", renderAdminCms);
 
-  // Settings management
-  router.get("/admin/settings", (req, res) => {
-    res.render("admin/adminSettings");
-  });
+  //About CMS
+  router.get("/admin/cms/about/data", getAboutContentJson);   
+  router.post("/admin/cms/about/update", updateAboutContent);
+
+  //Contact CMS
+  router.get("/admin/cms/contact/data", getContactContentJson);
+  router.post("/admin/cms/contact/update", updateContactContent);
+
+  // CMS banners 
+  router.get("/admin/cms/banners", listBanners);
+  router.post("/admin/cms/banners/upload", bannerUpload.single("banner"), uploadBannerRecord);
+  router.post("/admin/cms/banners/:id/activate", setActiveBanner);
+  router.delete("/admin/cms/banners/:id", deleteBanner);
+
+/*==============
+ EndCMS management
+ ===============*/
+
+  // Settings 
+  router.get("/admin/settings", renderAdminSettings);
+  router.get("/admin/settings/data", getSettingsJson);
+  router.post("/admin/settings/update", logoUpload.single("logo_file"), updateSettings);
+  router.delete("/admin/settings/logo", deleteLogo);
 
   // Audit logs
-  router.get("/admin/audit", (req, res) => {
-    res.render("admin/adminAudit");
-  });
+  router.get("/admin/audit", listAudits);
+
 
   // Notification
   router.get("/admin/notifications/unread", getUnreadNotifications);
   router.post("/admin/notifications/read/:id", markNotificationRead);
   router.post("/admin/notifications/read-all", markAllNotificationsRead);
-    
+  
+ 
+
+ 
+
 
   export default router;
