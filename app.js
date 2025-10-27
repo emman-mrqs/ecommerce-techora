@@ -84,7 +84,9 @@
 
     app.use(suspensionGuard);
 
-    app.use(websiteViewsTracker());
+    if (process.env.ENABLE_TRACKING === 'true') {
+      app.use(websiteViewsTracker());
+    }
 
     app.use(notificationMiddleware);
 
