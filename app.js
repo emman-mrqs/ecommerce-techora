@@ -27,8 +27,11 @@
     const __dirname = dirname(fileURLToPath(import.meta.url));
 
     const app = express();
-    const port = 3000;
 
+    // Only if you're behind nginx/Heroku/etc.
+    app.set('trust proxy', 1);
+
+    const port = Number(process.env.PORT) || 8080;
 
     //Express Session
     app.use(session({
@@ -37,12 +40,13 @@
       saveUninitialized: false,
       cookie: {
         secure: false, // Set to true if using HTTPS
+        // secure cookies in production (works because of trust proxy)
+        secure: process.env.NODE_ENV === 'production',
         maxAge: 1000 * 60 * 60 * 24, // 1 day
       },
     }));
 
-    // Only if you're behind nginx/Heroku/etc.
-    // app.set('trust proxy', 1);
+
 
     // Serve /src/public as your static root
     app.use(express.static(join(__dirname, "src", "public")));
