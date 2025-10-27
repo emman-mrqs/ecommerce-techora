@@ -30,5 +30,8 @@
     "passport-google-oauth20": "^2.0.0",
     "pg": "^8.16.3",
     "socket.io": "^4.8.1"
+  },
+  "devDependencies": {
+    "globals": "^16.4.0"
   }
 }
