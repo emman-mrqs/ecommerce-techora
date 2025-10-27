@@ -178,6 +178,13 @@
     app.use("/", sellerNotificationPollRoutes);
 
 
-    app.listen(port, () => {
-      console.log(`Backend server is running on http://localhost:${port}`);
+    // app.listen(port, () => {
+    //   console.log(`Backend server is running on http://localhost:${port}`);
+    // });
+    const server = http.createServer(app);
+    server.listen(port, '0.0.0.0', () => {
+      console.log('ENV PORT =', process.env.PORT);
+      console.log(`Server listening on 0.0.0.0:${port}`);
     });
+  
+
