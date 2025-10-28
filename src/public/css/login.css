@@ -57,6 +57,7 @@ label {
     margin-bottom: 5px;
     color: #4D4D4D;
 }
+
 input[type="text"],
 input[type="email"],
 input[type="password"] {
@@ -66,6 +67,7 @@ input[type="password"] {
     border: 1px solid #E0E0E0;
     border-radius: 5px;
 }
+
 .password-wrapper {
     position: relative;
     display: flex;
@@ -139,6 +141,16 @@ input[type="password"] {
     display: flex;
     align-items: center;
     justify-content: center;
+    transition: all 0.2s ease;
+    text-decoration: none; /* no underline */
+}
+
+/* 🔥 Added hover effect for Google Sign-In button */
+.btn-google:hover {
+    background-color: #f5f5f5;
+    border-color: #d6d6d6;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+    text-decoration: none; /* ensure underline never appears */
 }
 
 .btn-google img {
@@ -220,7 +232,6 @@ input[type="password"] {
 .close:hover {
     color: #000;
 }
-
 
 @media (max-width: 768px) {
     .login-page {
