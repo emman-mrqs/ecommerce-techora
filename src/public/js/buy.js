@@ -318,11 +318,53 @@
     if (res.ok) window.location.href = '/cart'; else alert(res.message || 'Failed to add to cart');
   });
 
+  // ---- Buy Now: add to cart, then POST to /checkout/selected for only this variant ----
   buyNowBtn.addEventListener('click', async () => {
     if (!validateSelection()) return;
-    const res = await postJSON('/api/cart', buildPayload());
-    if (res.ok) window.location.href = '/checkout'; else alert(res.message || 'Failed to proceed');
+
+    // 1) Add to cart (same endpoint you already use)
+    const addResp = await postJSON('/api/cart', buildPayload());
+    if (!addResp || !addResp.ok) {
+      alert(addResp?.message || 'Failed to add to cart');
+      return;
+    }
+
+    // 2) Ensure client-side variable exists for checkout.js convenience
+    try {
+      window.checkoutSelectedVariantIds = [ Number(selectedVariant.id || selectedVariant.variant_id || selectedVariant._id) ];
+    } catch (e) { /* ignore */ }
+
+    // 3) Submit form POST to /checkout/selected (server expects selected[] or selectedVariantIds)
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/checkout/selected';
+    form.style.display = 'none';
+
+    // selected[] (server accepts selected[] OR selectedVariantIds)
+    const inp = document.createElement('input');
+    inp.type = 'hidden';
+    inp.name = 'selected[]';
+    inp.value = String(window.checkoutSelectedVariantIds[0]);
+    form.appendChild(inp);
+
+    // Optional: also include selectedVariantIds as JSON string (some handlers check this)
+    const jsonInp = document.createElement('input');
+    jsonInp.type = 'hidden';
+    jsonInp.name = 'selectedVariantIds';
+    jsonInp.value = JSON.stringify(window.checkoutSelectedVariantIds);
+    form.appendChild(jsonInp);
+
+    // Optional: include quantity (server currently gets quantities from cart_items; include only if your server reads it)
+    const q = document.createElement('input');
+    q.type = 'hidden';
+    q.name = `quantity`;
+    q.value = String(quantity || 1);
+    form.appendChild(q);
+
+    document.body.appendChild(form);
+    form.submit();
   });
+
 
   // ======== Wishlist ========
   function pulse(el) {
