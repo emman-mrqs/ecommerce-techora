@@ -6,7 +6,7 @@ import { renderContactPage, submitContact } from "../controller/contactControlle
 import { listProducts, searchSuggestions } from "../controller/productsController.js";
 import { renderBuyPage,  } from "../controller/buyController.js";
 import { renderCart } from '../controller/cartController.js'; // ✅
-import { renderCheckout, placeOrder, validateCheckoutVoucher, redeemVoucherAfterPayment } from "../controller/checkoutController.js";
+import { renderCheckout, renderCheckoutSelected, placeOrder, validateCheckoutVoucher, redeemVoucherAfterPayment } from "../controller/checkoutController.js";
 
 import { createPayPalOrder, capturePayPalOrder } from "../controller/paypalController.js";
 import { ensureAuth} from "../middleware/authMiddleware.js";
@@ -37,6 +37,8 @@ router.get('/checkout', renderCheckout);
 router.post('/api/voucher/validate', validateCheckoutVoucher);     // NEW
 router.post('/api/voucher/redeem', redeemVoucherAfterPayment);     // NEW
 router.post("/api/orders/place", placeOrder);
+router.post('/checkout/selected', renderCheckoutSelected); // NEW: checkout only selected items (from Cart form)
+
 // Wishlist
 
 router.get("/wishlist", viewWishlist);
