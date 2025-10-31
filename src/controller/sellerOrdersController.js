@@ -29,12 +29,11 @@ export const renderSellerOrders = async (req, res) => {
     const page = Math.max(1, parseInt(req.query.page || "1", 10));
     const offset = (page - 1) * perPage;
 
-    // --- total count (distinct orders that include this seller's items) ---
+    // --- total count (number of seller order_items) ---
     const countRes = await db.query(
       `
-      SELECT COUNT(DISTINCT o.id) AS total
-      FROM orders o
-      JOIN order_items oi ON oi.order_id = o.id
+      SELECT COUNT(*)::int AS total
+      FROM order_items oi
       JOIN product_variant v ON v.id = oi.product_variant_id
       JOIN products p ON p.id = v.product_id
       WHERE p.seller_id = $1
@@ -44,10 +43,11 @@ export const renderSellerOrders = async (req, res) => {
     const totalOrders = Number(countRes.rows[0]?.total || 0);
     const totalPages = Math.max(1, Math.ceil(totalOrders / perPage));
 
-    // --- data page ---
+    // --- data page: one row per order_item that belongs to this seller ---
     const ordersRes = await db.query(
       `
-      SELECT 
+      SELECT
+        oi.id AS order_item_id,
         o.id AS order_id,
         o.created_at AS order_date,
         o.order_status,
@@ -56,62 +56,44 @@ export const renderSellerOrders = async (req, res) => {
         u.name AS customer_name,
         s.store_name,
 
-        -- seller-side aggregates
-        SUM(oi.quantity) AS quantity,
-        SUM(oi.unit_price * oi.quantity)::numeric(12,2) AS total_price,
+        -- product info (for this order_item)
+        p.id AS product_id,
+        p.name AS product_name,
+        (SELECT img_url FROM product_images pi WHERE pi.product_id = p.id AND pi.is_primary = true ORDER BY position ASC NULLS LAST LIMIT 1) AS product_image,
 
-        -- representative product for card/list (first item from this seller in the order)
-        fi.product_name,
-        fi.product_image,
+        oi.quantity,
+        (oi.unit_price * oi.quantity)::numeric(12,2) AS total_price,
 
-        -- latest payment (if any)
+        -- latest payment (if any) for whole order
         pay.payment_method,
         pay.payment_status,
         pay.transaction_id,
         pay.amount_paid,
         pay.payment_date
 
-      FROM orders o
+      FROM order_items oi
+      JOIN orders o ON o.id = oi.order_id
       JOIN users u ON u.id = o.user_id
-      JOIN order_items oi ON oi.order_id = o.id
       JOIN product_variant v ON v.id = oi.product_variant_id
       JOIN products p ON p.id = v.product_id
       JOIN sellers s ON s.id = p.seller_id
 
       LEFT JOIN LATERAL (
-        SELECT p2.name AS product_name,
-               (SELECT img_url 
-                  FROM product_images 
-                 WHERE product_id = p2.id AND is_primary = true 
-                 ORDER BY position ASC NULLS LAST, id ASC
-                 LIMIT 1) AS product_image
-        FROM order_items oi2
-        JOIN product_variant v2 ON v2.id = oi2.product_variant_id
-        JOIN products p2 ON p2.id = v2.product_id
-        WHERE oi2.order_id = o.id AND p2.seller_id = $1
-        ORDER BY oi2.id ASC
-        LIMIT 1
-      ) fi ON TRUE
-
-      LEFT JOIN LATERAL (
         SELECT pmt.*
-          FROM payments pmt
-         WHERE pmt.order_id = o.id
-         ORDER BY pmt.payment_date DESC NULLS LAST, pmt.id DESC
-         LIMIT 1
-      ) AS pay ON TRUE
+        FROM payments pmt
+        WHERE pmt.order_id = o.id
+        ORDER BY pmt.payment_date DESC NULLS LAST, pmt.id DESC
+        LIMIT 1
+      ) pay ON TRUE
 
       WHERE p.seller_id = $1
-      GROUP BY 
-        o.id, o.created_at, o.order_status, o.shipping_address, o.payment_status,
-        u.name, s.store_name, fi.product_name, fi.product_image,
-        pay.payment_method, pay.payment_status, pay.transaction_id, pay.amount_paid, pay.payment_date
-      ORDER BY o.created_at DESC
+      ORDER BY o.created_at DESC, oi.id ASC
       LIMIT $2 OFFSET $3
       `,
       [sellerId, perPage, offset]
     );
 
+    // Render: now each row corresponds to a single order_item
     res.render("seller/sellerOrders", {
       activePage: "orders",
       pageTitle: "Seller Orders",
@@ -121,6 +103,7 @@ export const renderSellerOrders = async (req, res) => {
       totalOrders,
       totalPages,
     });
+
   } catch (err) {
     console.error("❌ Error fetching seller orders:", err);
     res.status(500).send("Server error");
