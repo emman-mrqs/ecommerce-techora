@@ -23,6 +23,35 @@ const asPHP = (n) =>
     maximumFractionDigits: 2,
   });
 
+  // ---------- read selected variant IDs (robust) ----------
+function readSelectedVariantIds() {
+  try {
+    const el = document.getElementById("checkout-selected");
+    if (el && el.textContent && el.textContent.trim().length) {
+      const parsed = JSON.parse(el.textContent);
+      if (Array.isArray(parsed)) return parsed.map(v => Number(v)).filter(Number.isFinite);
+    }
+  } catch (e) { /* ignore */ }
+
+  try {
+    if (Array.isArray(window.checkoutSelectedVariantIds)) {
+      return window.checkoutSelectedVariantIds.map(v => Number(v)).filter(Number.isFinite);
+    }
+    if (typeof window.checkoutSelectedVariantIds === "string" && window.checkoutSelectedVariantIds.length) {
+      const parsed = JSON.parse(window.checkoutSelectedVariantIds);
+      if (Array.isArray(parsed)) return parsed.map(v => Number(v)).filter(Number.isFinite);
+    }
+  } catch (e) { /* ignore */ }
+
+  // fallback: read checked checkboxes on the page
+  try {
+    const boxes = Array.from(document.querySelectorAll(".select-item")).filter(chk => chk.checked);
+    if (boxes.length) return boxes.map(b => Number(b.value)).filter(Number.isFinite);
+  } catch (e) { /* ignore */ }
+
+  return [];
+}
+
 /* Read current summary numbers from DOM */
 function currentSummaryNumbers() {
   const num = (node) => Number((node?.textContent || "0").replace(/[^\d.]/g, ""));
@@ -251,8 +280,14 @@ function collectShippingData() {
  * COD flow (now also redeems voucher usage)
  ********************/
 async function handleCODOrder() {
-  const body = { paymentMethod: "cod", ...collectShippingData() };
-  if (appliedVoucher?.id) body.voucherId = appliedVoucher.id; // still send to server for total calc
+  const selectedVariantIds = readSelectedVariantIds();
+
+  const body = {
+    paymentMethod: "cod",
+    ...collectShippingData(),
+    selectedVariantIds
+  };
+  if (appliedVoucher?.id) body.voucherId = appliedVoucher.id;
 
   try {
     const res = await fetch("/api/orders/place", {
@@ -267,25 +302,17 @@ async function handleCODOrder() {
       return;
     }
 
-    // ✅ Decrement voucher usage on COD (client-side call)
+    // redeem voucher (best-effort)
     if (appliedVoucher?.id) {
       try {
-        const redeemRes = await fetch("/api/voucher/redeem", {
+        await fetch("/api/voucher/redeem", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ voucherId: appliedVoucher.id }),
         });
-        const redeemJson = await redeemRes.json().catch(() => ({}));
-        if (!redeemRes.ok || !redeemJson?.ok) {
-          console.warn("Voucher redeem failed (COD):", redeemJson);
-          // optional: alert("Voucher could not be redeemed; it may have expired or hit its limit.");
-        }
-      } catch (e) {
-        console.warn("Voucher redeem network error (COD):", e);
-      }
+      } catch (e) { console.warn("Voucher redeem failed (COD):", e); }
     }
 
-    // proceed to confirmation
     orderMeta = { orderId: data.orderId, total: data.total, paymentMethod: "cod" };
     updateConfirmation(orderMeta);
     nextStep();
@@ -294,6 +321,7 @@ async function handleCODOrder() {
     alert("Network error while placing COD order.");
   }
 }
+
 
 /********************
  * PayPal flow
@@ -338,7 +366,12 @@ function updateReviewPayment() {
 async function ensureOrderForPayPal() {
   if (cachedPayPalOrderMeta) return cachedPayPalOrderMeta;
 
-  const body = { paymentMethod: "paypal", ...collectShippingData() };
+  const selectedVariantIds = readSelectedVariantIds();
+  const body = {
+    paymentMethod: "paypal",
+    ...collectShippingData(),
+    selectedVariantIds
+  };
   if (appliedVoucher?.id) body.voucherId = appliedVoucher.id;
 
   const res = await fetch("/api/orders/place", {
@@ -353,6 +386,7 @@ async function ensureOrderForPayPal() {
   cachedPayPalOrderMeta = { orderId: data.orderId, total: data.total };
   return cachedPayPalOrderMeta;
 }
+
 
 function renderPayPalButton() {
   if (typeof paypal === "undefined" || !paypal.Buttons) {
