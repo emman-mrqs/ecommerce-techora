@@ -113,58 +113,171 @@ window.addEventListener('resize', function() {
      ========================*/
     document.querySelectorAll(".view-invoice-btn").forEach(btn => {
     btn.addEventListener("click", () => {
-        const order = JSON.parse(btn.getAttribute("data-order"));
+      // parse order data stored on the button
+      const order = JSON.parse(btn.getAttribute("data-order") || "{}");
 
-        // Clean shipping
-        let cleanShipping = order.shipping_address || "N/A";
-        if (cleanShipping.includes(",")) {
+      // small helpers (kept local so you don't depend on a global function)
+      function escapeHtml(str) {
+        if (str == null) return "";
+        return String(str)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+      const num = (v) => Number(v || 0);
+      const formatPHP = (v) => num(v).toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+      // Clean shipping address (keep everything after first comma for brevity)
+      let cleanShipping = order.shipping_address || "N/A";
+      if (typeof cleanShipping === "string" && cleanShipping.includes(",")) {
         const parts = cleanShipping.split(",");
-        if (parts.length > 1) {
-            cleanShipping = parts.slice(1).join(",").trim();
-        }
-        }
+        if (parts.length > 1) cleanShipping = parts.slice(1).join(",").trim();
+      }
 
-        invoiceContent.innerHTML = `
-        <div class="invoice-header">
-            <h5>Invoice #${order.order_id}</h5>
-            <p class="date">${new Date(order.order_date).toLocaleString()}</p>
-        </div>
+      // Build items array:
+      // prefer order.seller_items (server can populate) otherwise fall back to single-row fields
+      const items = Array.isArray(order.seller_items) && order.seller_items.length
+        ? order.seller_items.map(it => ({
+            product_name: it.product_name || "Item",
+            product_image: it.product_image || null,
+            variant_id: it.variant_id || it.product_variant_id || "—",
+            quantity: num(it.quantity || 1),
+            unit_price: num(it.unit_price || it.price || 0),
+            line_total: num(it.line_total ?? (num(it.unit_price || it.price || 0) * num(it.quantity || 1)))
+          }))
+        : [{
+            product_name: order.product_name || "Item",
+            product_image: order.product_image || null,
+            variant_id: order.variant_id || order.product_variant_id || "—",
+            quantity: num(order.quantity || 1),
+            unit_price: num(order.unit_price || order.unit_price || (order.total_price ? (num(order.total_price) / Math.max(1, num(order.quantity || 1))) : 0)),
+            line_total: num(order.line_total ?? order.total_price ?? (num(order.unit_price || 0) * num(order.quantity || 1)))
+          }];
 
-        <div class="invoice-section">
-            <div><h6>Customer</h6><p>${order.customer_name}</p></div>
-            <div><h6>Product</h6><p>${order.product_name} (x${order.quantity})</p></div>
-        </div>
+      // Build table rows
+      const rowsHtml = items.map(it => {
+        const imgHtml = it.product_image
+          ? `<img src="${escapeHtml(it.product_image)}" alt="${escapeHtml(it.product_name)}" style="width:64px;height:64px;object-fit:cover;border-radius:6px;">`
+          : `<div style="width:64px;height:64px;background:#f5f5f5;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#9aa0a6;"><i class="fas fa-box"></i></div>`;
 
-        <div class="invoice-section">
-            <div><h6>Total</h6><p>₱${order.total_price}</p></div>
-            <div><h6>Status</h6><span class="status-badge status-${order.order_status.toLowerCase()}">${order.order_status}</span></div>
-        </div>
-
-        <div class="invoice-section">
-            <div><h6>Payment Method</h6><p>${order.payment_method || "N/A"}</p></div>
-            <div><h6>Payment Status</h6><p>${order.payment_status || "N/A"}</p></div>
-        </div>
-
-        <div class="invoice-section">
-            <div><h6>Transaction ID</h6><p>${order.transaction_id || "N/A"}</p></div>
-            <div><h6>Payment Date</h6><p>${order.payment_date ? new Date(order.payment_date).toLocaleString() : "N/A"}</p></div>
-        </div>
-
-        <div class="invoice-section">
-            <div><h6>Amount Paid</h6><p>₱${order.amount_paid || order.total_price}</p></div>
-            <div><h6>Order Total</h6><p>₱${order.total_price}</p></div>
-        </div>
-
-        <div class="invoice-section shipping">
-            <h6>Shipping Address</h6>
-            <p>${cleanShipping}</p>
-        </div>
+        return `
+          <tr>
+            <td style="width:72px;vertical-align:middle">${imgHtml}</td>
+            <td style="vertical-align:middle">
+              <div class="fw-semibold">${escapeHtml(it.product_name)}</div>
+              <div class="small text-muted">Variant: ${escapeHtml(String(it.variant_id || "—"))}</div>
+            </td>
+            <td class="text-end align-middle">${escapeHtml(String(it.quantity))}</td>
+            <td class="text-end align-middle">₱${formatPHP(it.unit_price)}</td>
+            <td class="text-end align-middle">₱${formatPHP(it.line_total)}</td>
+          </tr>
         `;
+      }).join("");
 
-        soldBy.innerHTML = `Sold by: ${order.store_name || "Techora Store"}`;
-        invoiceModal.show();
+      // Summaries (use provided values if present, otherwise compute)
+      const subtotal = num(items.reduce((s, i) => s + num(i.line_total), 0));
+      const tax = (order.tax != null) ? num(order.tax) : Math.round(subtotal * 0.03 * 100) / 100; // fallback 3%
+      const shipping = (order.shipping != null) ? num(order.shipping) : (order.shipping_cost != null ? num(order.shipping_cost) : 0);
+      const discount = (order.discount != null) ? num(order.discount) : 0;
+      const total = (order.total_price != null) ? num(order.total_price) : Math.max(0, subtotal - discount) + tax + shipping;
+
+      // Inline styles for the modal content (keeps the modal self-contained)
+      const extraStyle = `
+        <style>
+          .invoice-card { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; color: #111827; }
+          .invoice-header h5 { margin: 0; font-size: 1.1rem; }
+          .meta-label { color: #6b7280; font-size: 0.85rem; }
+          .line-table th, .line-table td { border-top: 1px solid #e9ecef; padding: .75rem; vertical-align: middle; }
+          .small-muted { color: #6b7280; font-size: .85rem; }
+          .summary-row { font-size: .95rem; }
+          .status-badge { padding: 4px 8px; border-radius: 8px; font-size: .85rem; display:inline-block; }
+          .status-pending { background:#fff7ed; color:#92400e; }
+          .status-confirmed { background:#e0f2fe; color:#0369a1; }
+          .status-shipped { background:#fff1f2; color:#9f1239; }
+          .status-completed { background:#ecfdf5; color:#065f46; }
+          .status-cancelled { background:#fee2e2; color:#7f1d1d; }
+        </style>
+      `;
+
+      invoiceContent.innerHTML = `
+        ${extraStyle}
+        <div class="invoice-card p-3">
+          <div class="d-flex justify-content-between align-items-start mb-3">
+            <div>
+              <h5 class="mb-1">Invoice <small class="text-muted">#${escapeHtml(String(order.order_id || "—"))}</small></h5>
+              <div class="small-muted">${new Date(order.order_date || Date.now()).toLocaleString()}</div>
+            </div>
+            <div class="text-end">
+              <div class="fw-semibold">${escapeHtml(order.store_name || "Techora Store")}</div>
+              <div class="small-muted">${escapeHtml(order.store_email || "")}</div>
+            </div>
+          </div>
+
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <div class="mb-2 meta-label">BILL TO</div>
+              <div class="fw-semibold">${escapeHtml(order.customer_name || order.user_name || "—")}</div>
+              <div class="small-muted">${escapeHtml(order.user_email || order.customer_email || "")}</div>
+              <div class="small-muted">${escapeHtml(order.user_phone || order.customer_phone || "")}</div>
+            </div>
+            <div class="col-md-6 text-md-end">
+              <div class="mb-2 meta-label">SHIP TO</div>
+              <div>${escapeHtml(cleanShipping)}</div>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table table-borderless line-table">
+              <thead>
+                <tr class="text-muted">
+                  <th></th>
+                  <th>Product</th>
+                  <th class="text-end">Qty</th>
+                  <th class="text-end">Unit</th>
+                  <th class="text-end">Line Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rowsHtml}
+              </tbody>
+            </table>
+          </div>
+
+          <div class="row mt-2">
+            <div class="col-md-6">
+              <div class="small-muted mb-2">Payment</div>
+              <div><strong>${escapeHtml(order.payment_method || "N/A")}</strong></div>
+              <div class="small-muted">Status: <span class="status-badge status-${escapeHtml(String((order.order_status || "").toLowerCase()))}">${escapeHtml(order.payment_status || order.order_status || "N/A")}</span></div>
+              <div class="small-muted mt-2">Transaction ID: ${escapeHtml(order.transaction_id || "N/A")}</div>
+              <div class="small-muted">Payment Date: ${order.payment_date ? new Date(order.payment_date).toLocaleString() : "N/A"}</div>
+            </div>
+
+            <div class="col-md-6">
+              <div class="float-md-end" style="min-width:260px;">
+                <div class="d-flex justify-content-between summary-row"><div class="small-muted">Subtotal</div><div>₱${formatPHP(subtotal)}</div></div>
+                <div class="d-flex justify-content-between summary-row"><div class="small-muted">Discount</div><div>- ₱${formatPHP(discount)}</div></div>
+                <div class="d-flex justify-content-between summary-row"><div class="small-muted">Tax</div><div>₱${formatPHP(tax)}</div></div>
+                <div class="d-flex justify-content-between summary-row"><div class="small-muted">Shipping</div><div>₱${formatPHP(shipping)}</div></div>
+                <hr/>
+                <div class="d-flex justify-content-between fw-bold fs-5"><div>Total</div><div>₱${formatPHP(total)}</div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-3 small-muted">
+            <div>Order notes: ${escapeHtml(order.note || "—")}</div>
+            <div class="mt-2">Created: ${new Date(order.order_date || Date.now()).toLocaleString()}</div>
+          </div>
+        </div>
+      `;
+
+      soldBy.innerHTML = `Sold by: ${escapeHtml(order.store_name || "Techora Store")}`;
+      invoiceModal.show();
     });
-    });
+  });
+
   }
 
   // 🔹 Handle form submit (update order status via AJAX)
