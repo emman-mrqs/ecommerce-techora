@@ -129,13 +129,27 @@ export const capturePayPalOrder = async (req, res) => {
       [orderId]
     );
 
-    // 6) Clear user cart (if we know who they are)
-    if (req.session?.user?.id) {
-      await cx.query(
-        `DELETE FROM cart_items WHERE cart_id = (SELECT id FROM cart WHERE user_id = $1)`,
-        [req.session.user.id]
-      );
-    }
+// 6) Clear only the ordered variants from the user's cart
+let userId = req.session?.user?.id;
+if (!userId) {
+  const { rows: orows } = await cx.query(
+    `SELECT user_id FROM orders WHERE id = $1 LIMIT 1`,
+    [orderId]
+  );
+  userId = orows[0]?.user_id;
+}
+
+if (userId) {
+  const variantIds = items.map(i => Number(i.variant_id)).filter(Number.isFinite);
+  if (variantIds.length) {
+    await cx.query(
+      `DELETE FROM cart_items
+         WHERE cart_id = (SELECT id FROM cart WHERE user_id = $1)
+           AND variant_id = ANY($2::int[])`,
+      [userId, variantIds]
+    );
+  }
+}
 
     await cx.query("COMMIT");
     return res.json({ success: true, message: "Payment captured, stock deducted, order confirmed!" });
