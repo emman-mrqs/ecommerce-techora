@@ -215,6 +215,57 @@ export async function renderCheckout(req, res) {
 }
 
 
+// Render checkout for selected cart items (POST from /cart)
+export async function renderCheckoutSelected(req, res) {
+  if (!req.session.user) {
+    return res.send("<script>alert('You need to login first!'); window.location='/login-verify';</script>");
+  }
+  const userId = req.session.user.id;
+
+  let selected = req.body?.['selected[]'] || req.body?.selected || req.body?.selectedVariantIds || null;
+  if (!selected) {
+    return res.send("<script>alert('No items selected for checkout.'); window.location='/cart';</script>");
+  }
+  if (!Array.isArray(selected)) selected = [selected];
+  const selectedIds = selected.map(v => Number(v)).filter(Number.isFinite);
+
+  if (!selectedIds.length) {
+    return res.send("<script>alert('No valid items selected.'); window.location='/cart';</script>");
+  }
+
+  try {
+    const allItems = await getUserCartItems(userId); // helper already in file
+    const items = allItems.filter(it => selectedIds.includes(Number(it.variant_id)));
+
+    if (!items.length) {
+      return res.send("<script>alert('Selected items not found in your cart.'); window.location='/cart';</script>");
+    }
+
+    const settings = res.locals.siteSettings || {};
+    const { subtotal, tax, shipping, total } = computeTotals(items, 0, settings);
+
+    const { rows: addresses } = await db.query(
+      `SELECT * FROM addresses WHERE user_id = $1 ORDER BY is_default DESC, created_at DESC`,
+      [userId]
+    );
+    const defaultAddress = addresses.length ? addresses[0] : null;
+
+    res.render("user/checkout", {
+      user: req.session.user,
+      items,
+      subtotal, tax, shipping, total,
+      addresses, defaultAddress,
+      settings,
+      selectedVariantIds: selectedIds // pass to template for JS use
+    });
+  } catch (err) {
+    console.error("renderCheckoutSelected error:", err);
+    res.status(500).send("Something went wrong while loading checkout");
+  }
+}
+
+
+
 /* ========== API: validate code (Checkout sidebar) ========== */
 export async function validateCheckoutVoucher(req, res) {
   try {
@@ -307,8 +358,32 @@ export const placeOrder = async (req, res) => {
     await client.query("BEGIN");
 
     // Load cart items INSIDE the transaction
-    const { rows: items } = await client.query(
-      `
+    // Load cart items INSIDE the transaction
+    const selectedVariantIds = Array.isArray(req.body.selectedVariantIds)
+      ? req.body.selectedVariantIds.map(v => Number(v)).filter(Number.isFinite)
+      : (Array.isArray(req.body.selected) ? req.body.selected.map(v => Number(v)).filter(Number.isFinite) : null);
+
+    let itemsQuery;
+    let queryArgs;
+    if (selectedVariantIds && selectedVariantIds.length) {
+      itemsQuery = `
+      SELECT 
+        ci.id       AS cart_item_id,
+        ci.quantity,
+        pv.id       AS variant_id,
+        pv.price,
+        p.seller_id AS seller_id
+      FROM cart_items ci
+      JOIN cart c             ON ci.cart_id = c.id
+      JOIN product_variant pv ON ci.variant_id = pv.id
+      JOIN products p         ON pv.product_id = p.id
+      WHERE c.user_id = $1
+        AND ci.variant_id = ANY($2::int[])
+      ORDER BY ci.id ASC
+      `;
+      queryArgs = [userId, selectedVariantIds];
+    } else {
+      itemsQuery = `
       SELECT 
         ci.id       AS cart_item_id,
         ci.quantity,
@@ -321,9 +396,12 @@ export const placeOrder = async (req, res) => {
       JOIN products p         ON pv.product_id = p.id
       WHERE c.user_id = $1
       ORDER BY ci.id ASC
-      `,
-      [userId]
-    );
+      `;
+      queryArgs = [userId];
+    }
+
+    const { rows: items } = await client.query(itemsQuery, queryArgs);
+
 
     if (!items.length) {
       await client.query("ROLLBACK");
@@ -422,14 +500,21 @@ export const placeOrder = async (req, res) => {
 
     // --- COD: reserve stock + clear cart in the same txn
     if (paymentMethod === "cod") {
-      await reserveStockForCartItems(client, items);
-      await client.query(
-        `DELETE FROM cart_items
-          WHERE cart_id = (SELECT id FROM cart WHERE user_id = $1)`,
-        [userId]
-      );
+await reserveStockForCartItems(client, items);
 
-      await client.query("COMMIT");
+// delete only the items that were part of this order (selected variants)
+const variantIds = items.map(i => Number(i.variant_id)).filter(Number.isFinite);
+if (variantIds.length) {
+  await client.query(
+    `DELETE FROM cart_items
+       WHERE cart_id = (SELECT id FROM cart WHERE user_id = $1)
+         AND variant_id = ANY($2::int[])`,
+    [userId, variantIds]
+  );
+}
+
+await client.query("COMMIT");
+
 
       // Audit(s)
       try {
