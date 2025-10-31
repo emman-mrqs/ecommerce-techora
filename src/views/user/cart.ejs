@@ -45,42 +45,60 @@
             <% } else { %>
               <div id="cart-items">
                 <% cart.items.forEach(function(it, idx) { %>
-                <article class="cart-item" data-animate data-id="<%= it.variantId %>" data-price="<%= it.unitPrice %>" aria-label="Cart item">
+                <article class="cart-item align-items-center" data-animate data-id="<%= it.variantId %>" data-price="<%= it.unitPrice %>" aria-label="Cart item">
+                  <!-- Checkbox column -->
+                  <div class="select-box d-flex align-items-center justify-content-center">
+                    <div class="form-check m-0">
+                      <input 
+                        class="form-check-input select-item" 
+                        type="checkbox" 
+                        name="selected[]" 
+                        value="<%= it.variantId %>" 
+                        id="select-<%= it.variantId %>" 
+                        checked 
+                        aria-label="Select item for checkout">
+                    </div>
+                  </div>
+
+                  <!-- Image -->
                   <div class="item-image">
                     <% if (it.image) { %>
-                      <img src="<%= it.image %>" alt="<%= it.name %>" />
+                      <img src="<%= it.image %>" alt="<%= it.name %>" class="img-fluid rounded">
                     <% } else { %>
                       <i class="fas fa-mobile-alt" aria-hidden="true"></i>
                     <% } %>
                   </div>
 
+                  <!-- Details -->
                   <div class="item-details">
                     <div class="item-name"><%= it.name %></div>
                     <div class="item-variant">
                       <%= it.color %> • <%= it.ram %>GB RAM • <%= it.storage %>GB
                     </div>
                     <div class="item-price-unit">₱<%= it.unitPrice.toFixed(2) %> each</div>
-
-                    <!-- Per-item tax display -->
                     <div class="item-tax text-muted small">
                       Tax (3%): ₱<%= (it.unitPrice * it.quantity * 0.03).toFixed(2) %>
                     </div>
                   </div>
 
+                  <!-- Quantity -->
                   <div class="quantity-controls" role="group" aria-label="Quantity controls">
                     <button class="quantity-btn btn-decrease" type="button" title="Decrease quantity" aria-label="Decrease quantity">−</button>
                     <input type="text" class="quantity-input" value="<%= it.quantity %>" readonly aria-live="polite" aria-label="Current quantity">
                     <button class="quantity-btn btn-increase" type="button" title="Increase quantity" aria-label="Increase quantity">+</button>
                   </div>
 
-                  <div class="item-total" aria-label="Item total">
+                  <!-- Total -->
+                  <div class="item-total text-nowrap">
                     ₱<%= (it.unitPrice * it.quantity).toFixed(2) %>
                   </div>
 
+                  <!-- Remove -->
                   <button class="remove-btn btn-remove" type="button" title="Remove item" aria-label="Remove item">
                     <i class="fas fa-times"></i>
                   </button>
                 </article>
+
                 <% }) %>
               </div>
             <% } %>
@@ -97,8 +115,10 @@
             <div class="summary-divider"></div>
             <div class="summary-row total-row"><span class="summary-label">Total</span><span class="summary-value" id="total">₱<%= cart.total.toFixed(2) %></span></div>
 
-            <a class="btn checkout-btn w-100" href="/checkout" role="button">PROCEED TO CHECKOUT</a>
-            <a class="btn continue-shopping w-100" href="/" role="button">CONTINUE SHOPPING</a>
+            <form id="cart-selection-form" method="POST" action="/checkout/selected" class="d-grid gap-2">
+              <button type="submit" class="btn checkout-btn w-100">PROCEED TO CHECKOUT</button>
+              <a class="btn continue-shopping w-100" href="/" role="button">CONTINUE SHOPPING</a>
+            </form>
 
             <div class="shipping-info">
               <div class="shipping-title"><i class="fas fa-shipping-fast"></i>
