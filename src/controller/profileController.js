@@ -19,11 +19,12 @@ const UI_STATUS = {
 const toUI = s => UI_STATUS[String(s || "").toLowerCase()] || s || "All";
 
 export async function renderProfile(req, res, next) {
-  try {
-    if (!req.session?.user?.id) return res.redirect("/login");
-    const user = req.session.user;
-    const sessionID = req.sessionID;
+      try {
+        if (!req.session?.user?.id) return res.redirect("/login");
+        const user = req.session.user;
+        const sessionID = req.sessionID;
 
+        // --- only the SQL and the sellers left join changed from your previous version ---
     const sql = `
       SELECT
         o.id                      AS order_id,
@@ -46,7 +47,9 @@ export async function renderProfile(req, res, next) {
         pv.color,
         pv.price                  AS variant_price,
 
+        p.id                      AS product_id,
         p.name                    AS product_name,
+        p.seller_id               AS seller_id,         -- <- moved to products table
 
         COALESCE(vi.img_url, pi.img_url) AS img_url,
 
@@ -54,7 +57,10 @@ export async function renderProfile(req, res, next) {
         pay.payment_status        AS pay_status,
         pay.transaction_id,
         pay.amount_paid,
-        pay.payment_date
+        pay.payment_date,
+
+        s.store_name              AS seller_name,
+        s.user_id                 AS seller_user_id
       FROM orders o
       JOIN order_items oi ON oi.order_id = o.id
       JOIN product_variant pv ON pv.id = oi.product_variant_id
@@ -74,36 +80,54 @@ export async function renderProfile(req, res, next) {
         ORDER BY is_primary DESC, position ASC, id ASC
         LIMIT 1
       ) AS pi ON TRUE
+
+      -- join sellers using products.seller_id (pv.seller_id caused the error)
+      LEFT JOIN sellers s ON s.id = p.seller_id
+
       WHERE o.user_id = $1
       ORDER BY o.created_at DESC, o.id DESC, oi.id ASC;
     `;
 
-    const { rows } = await db.query(sql, [user.id]);
 
-    // Group rows → orders
+        const { rows } = await db.query(sql, [user.id]);
+
+        // Group rows → virtual orders per item (or modify key for different grouping)
+    // --- build virtual orders per item (or grouping key you prefer) ---
     const map = new Map();
     for (const r of rows) {
-      if (!map.has(r.order_id)) {
-        map.set(r.order_id, {
-          id: r.order_id,
+      const virtualId = `${r.order_id}-${r.order_item_id}`;
+
+      if (!map.has(virtualId)) {
+        const itemUnit = r.unit_price ?? r.variant_price ?? 0;
+        const itemQty = r.quantity ?? 1;
+        const itemTotal = r.total_price ?? (itemUnit * itemQty);
+
+        map.set(virtualId, {
+          id: virtualId,
+          parent_order_id: r.order_id,
           created_at: r.created_at,
           order_status: r.order_status,
           ui_status: toUI(r.order_status),
-          total_amount: r.total_amount,
+          total_amount: itemTotal,
           shipping_address: r.shipping_address,
           payment: {
             method: r.pay_method || r.order_payment_method,
             status: r.pay_status || r.order_payment_status,
             transaction_id: r.transaction_id,
             amount_paid: r.amount_paid || 0,
-            amount: r.amount_paid || r.total_amount || 0,
+            amount: r.amount_paid || itemTotal || 0,
             payment_date: r.payment_date
           },
           items: [],
         });
       }
 
-      map.get(r.order_id).items.push({
+      // Defensive seller name fallback:
+      const sellerId = r.seller_id ?? r.product_seller_id ?? null; // try common names
+      const sellerName = (r.seller_name && String(r.seller_name).trim()) ? r.seller_name
+                        : (sellerId ? `Seller #${sellerId}` : '—');
+
+      map.get(virtualId).items.push({
         order_item_id: r.order_item_id,
         product_id: r.product_id,
         product_name: r.product_name,
@@ -113,13 +137,25 @@ export async function renderProfile(req, res, next) {
         ram: r.ram,
         unit_price: r.unit_price ?? r.variant_price ?? 0,
         quantity: r.quantity ?? 1,
-        total_price:
-          r.total_price ?? ((r.unit_price ?? r.variant_price ?? 0) * (r.quantity ?? 1)),
-        img_url: r.img_url
+        total_price: r.total_price ?? ((r.unit_price ?? r.variant_price ?? 0) * (r.quantity ?? 1)),
+        img_url: r.img_url,
+        // attach defensive seller info
+        seller_id: sellerId,
+        seller_name: sellerName
       });
     }
 
+    // Convert to array
     const allOrders = [...map.values()];
+
+    // Compute seller summary for each (virtual) order (single name or comma separated)
+    allOrders.forEach(o => {
+      const names = new Set((o.items || []).map(it => it.seller_name || (`Seller #${it.seller_id || '—'}`)));
+      o.sellers = [...names];
+      o.seller_display = o.sellers.length === 1 ? o.sellers[0] : o.sellers.join(', ');
+    });
+
+
     const ordersByStatus = {
       All: allOrders,
       Pending: allOrders.filter(o => o.ui_status === "Pending"),
@@ -140,6 +176,7 @@ export async function renderProfile(req, res, next) {
     next(err);
   }
 }
+
 
 /* 
 --------------------
