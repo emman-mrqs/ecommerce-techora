@@ -156,27 +156,28 @@
                 </div>
               </div>
 
-              <div class="items">
-                <% o.items.forEach(it => { %>
-                  <div class="line">
-                    <div style="display:flex;gap:10px;align-items:center">
-                      <img src="<%= it.img_url || '/img/placeholder.png' %>" alt=""
-                          style="width:48px;height:48px;object-fit:cover;border-radius:8px;border:1px solid var(--border)">
+             <div class="items">
+                  <% o.items.forEach(it => { %>
+                    <div class="line">
+                      <div style="display:flex;gap:10px;align-items:center">
+                        <img src="<%= it.img_url || '/img/placeholder.png' %>" alt=""
+                            style="width:48px;height:48px;object-fit:cover;border-radius:8px;border:1px solid var(--border)">
+                        <div>
+                          <div><%= it.product_name %></div>
+                          <small style="color:var(--muted)">
+                            <%= [ it.color ? ('Color: ' + it.color) : null,
+                                  it.storage ? ('Storage: ' + it.storage) : null,
+                                  it.ram ? ('RAM: ' + it.ram) : null ].filter(Boolean).join(' • ') %>
+                          </small>
+                          <div><small style="color:var(--muted)">Sold by: <%= it.seller_name || ('Seller #' + (it.seller_id || '—')) %></small></div>
+                        </div>
+                      </div>
                       <div>
-                        <div><%= it.product_name %></div>
-                        <small style="color:var(--muted)">
-                          <%= [ it.color ? ('Color: ' + it.color) : null,
-                                it.storage ? ('Storage: ' + it.storage) : null,
-                                it.ram ? ('RAM: ' + it.ram) : null ].filter(Boolean).join(' • ') %>
-                        </small>
+                        <div>₱<%= Number(it.unit_price).toFixed(2) %> × <%= it.quantity %></div>
+                        <div><strong>₱<%= Number(it.total_price).toFixed(2) %></strong></div>
                       </div>
                     </div>
-                    <div>
-                      <div>₱<%= Number(it.unit_price).toFixed(2) %> × <%= it.quantity %></div>
-                      <div><strong>₱<%= Number(it.total_price).toFixed(2) %></strong></div>
-                    </div>
-                  </div>
-                <% }) %>
+                  <% }) %>
               </div>
 
               <!-- Invoice / Payment summary -->
@@ -191,10 +192,20 @@
                     <small class="muted">Payment Status</small>
                     <div><%= (o.payment && o.payment.status) ? o.payment.status : (o.payment_status || 'Unpaid') %></div>
                   </div>
-                  <div class="stack">
-                    <small class="muted">Transaction ID</small>
-                    <div><%= (o.payment && o.payment.transaction_id) ? o.payment.transaction_id : '—' %></div>
-                  </div>
+                    <div class="stack">
+                      <small class="muted">Transaction ID</small>
+                      <div><%= (o.payment && o.payment.transaction_id) ? o.payment.transaction_id : '—' %></div>
+                    </div>
+
+                    <div class="stack">
+                      <small class="muted">Seller(s)</small>
+                      <div><%= o.seller_display || '—' %></div>
+                    </div>
+
+                    <div class="stack">
+                      <small class="muted">Amount Paid</small>
+                      <div>₱<%= Number((o.payment && o.payment.amount_paid) ? o.payment.amount_paid : 0).toFixed(2) %></div>
+                    </div>
                   <div class="stack">
                     <small class="muted">Amount Paid</small>
                     <div>₱<%= Number((o.payment && o.payment.amount_paid) ? o.payment.amount_paid : 0).toFixed(2) %></div>
@@ -247,7 +258,9 @@
               <!-- addresses -->
             </div>
           </div>
+
           <!-- Account -->
+
         </div>
       </section>
 
