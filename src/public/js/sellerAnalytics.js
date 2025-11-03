@@ -304,3 +304,292 @@
     svg.appendChild(bars);
   })();
 })();
+
+
+
+/*==================
+Modern Analytics Print (Techora-style)
+==================*/
+(function () {
+  function readJSON(id) {
+    try {
+      const el = document.getElementById(id);
+      return el ? JSON.parse(el.textContent || "[]") : [];
+    } catch {
+      return [];
+    }
+  }
+
+  const fmtPHP = (n) =>
+    "₱" +
+    Number(n || 0).toLocaleString("en-PH", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+
+  /* ---------- Table Builders ---------- */
+  function section(title, innerHTML) {
+    return `
+      <section class="report-section">
+        <h2>${title}</h2>
+        ${innerHTML}
+      </section>
+    `;
+  }
+
+  function buildSummary(summary, monthNow, transactionsCount) {
+    return section(
+      "Summary (Last 30 days & This Month)",
+      `
+      <table class="report-table">
+        <tbody>
+          <tr><th>Total Products Sold</th><td>${summary.unitsSold || 0}</td></tr>
+          <tr><th>Average Sale Value</th><td>${fmtPHP(summary.avgSaleValue || 0)}</td></tr>
+          <tr><th>Total Transactions</th><td>${summary.transactions || transactionsCount || 0}</td></tr>
+        </tbody>
+      </table>
+      <h3 class="subhead">This Month (Headline)</h3>
+      <table class="report-table">
+        <tbody>
+          <tr><th>Gross Sales</th><td>${fmtPHP(monthNow.grossSales || 0)}</td></tr>
+          <tr><th>Monthly Rent Fee</th><td>${fmtPHP(monthNow.rentFee || 0)}</td></tr>
+          <tr><th>Transaction Fees</th><td>${fmtPHP(monthNow.txnFees || 0)}</td></tr>
+          <tr><th>Net Earning</th><td>${fmtPHP(monthNow.netEarning || 0)}</td></tr>
+        </tbody>
+      </table>
+    `
+    );
+  }
+
+  function buildTopProducts(products) {
+    if (!products.length) return section("Top Products", "<p>No product data.</p>");
+    return section(
+      "Top Products",
+      `
+      <table class="report-table">
+        <thead><tr><th>Product</th><th>Units</th><th>Revenue</th></tr></thead>
+        <tbody>
+          ${products
+            .map(
+              (p) => `
+              <tr>
+                <td>${p.product_name}</td>
+                <td>${p.units}</td>
+                <td>${fmtPHP(p.revenue)}</td>
+              </tr>
+            `
+            )
+            .join("")}
+        </tbody>
+      </table>
+    `
+    );
+  }
+
+  function buildViews(storeViews, productViews) {
+    const storeTotal = storeViews.reduce((a, b) => a + Number(b.views || 0), 0);
+    const productTotal = productViews.reduce((a, b) => a + Number(b.views || 0), 0);
+    return section(
+      "Engagement (30 Days)",
+      `
+      <table class="report-table">
+        <tbody>
+          <tr><th>Total Store Views</th><td>${storeTotal}</td></tr>
+          <tr><th>Total Product Views</th><td>${productTotal}</td></tr>
+        </tbody>
+      </table>
+    `
+    );
+  }
+
+  function buildWeekly(weekly) {
+    if (!weekly.length) return section("Weekly Sales", "<p>No weekly data.</p>");
+    return section(
+      "Weekly Sales (Last 12 Weeks)",
+      `
+      <table class="report-table">
+        <thead><tr><th>Week</th><th>Revenue</th><th>Orders</th><th>Units</th></tr></thead>
+        <tbody>
+          ${weekly
+            .map(
+              (w) => `
+              <tr>
+                <td>${new Date(w.week).toLocaleDateString("en-PH", {
+                  month: "short",
+                  day: "2-digit",
+                })}</td>
+                <td>${fmtPHP(w.revenue)}</td>
+                <td>${w.orders}</td>
+                <td>${w.units}</td>
+              </tr>
+            `
+            )
+            .join("")}
+        </tbody>
+      </table>
+    `
+    );
+  }
+
+  function buildDailyGrouped(daily) {
+    if (!daily.length) return section("Daily Sales", "<p>No daily data.</p>");
+    const months = {};
+    daily.forEach((d) => {
+      const m = new Date(d.day).toLocaleDateString("en-PH", {
+        month: "long",
+        year: "numeric",
+      });
+      (months[m] ||= []).push(d);
+    });
+
+    return section(
+      "Daily Sales (Grouped by Month)",
+      Object.entries(months)
+        .map(
+          ([m, arr]) => `
+          <h3 class="subhead">${m}</h3>
+          <table class="report-table">
+            <thead><tr><th>Date</th><th>Revenue</th><th>Orders</th><th>Units</th></tr></thead>
+            <tbody>
+              ${arr
+                .map(
+                  (r) => `
+                  <tr>
+                    <td>${new Date(r.day).toLocaleDateString("en-PH", {
+                      month: "short",
+                      day: "2-digit",
+                    })}</td>
+                    <td>${fmtPHP(r.revenue)}</td>
+                    <td>${r.orders}</td>
+                    <td>${r.units}</td>
+                  </tr>
+                `
+                )
+                .join("")}
+            </tbody>
+          </table>
+        `
+        )
+        .join("")
+    );
+  }
+
+  /* ---------- Report Assembly ---------- */
+  function generateReportHTML() {
+    const daily = readJSON("dailySalesData");
+    const weekly = readJSON("weeklySalesData");
+    const topProducts = readJSON("topProductsData");
+    const monthNow = readJSON("monthNowData");
+    const summary = readJSON("summaryData");
+    const storeViews = readJSON("storeViewsData");
+    const productViews = readJSON("productViewsData");
+    const transactionsCount = readJSON("transactionsCountData");
+
+    const now = new Date().toLocaleString("en-PH", { hour12: false });
+
+    return `
+      <div class="print-report">
+        <header class="report-header">
+          <h1>Store Analytics</h1>
+          <div class="meta">Generated: ${now}</div>
+          <hr>
+        </header>
+
+        ${buildSummary(summary, monthNow, transactionsCount)}
+        ${buildTopProducts(topProducts)}
+        ${buildViews(storeViews, productViews)}
+        ${buildWeekly(weekly)}
+        ${buildDailyGrouped(daily)}
+
+        <footer class="report-footer">
+          <hr>
+          <div>Report generated by TECHORA Analytics — ${now}</div>
+        </footer>
+      </div>
+    `;
+  }
+
+  /* ---------- Modal-based Print ---------- */
+  function openPrintModal() {
+  const container = document.getElementById("analyticsPrintContent");
+  container.innerHTML = generateReportHTML();
+
+  // add styles for clean print — REPLACE your old small style block with this
+  const style = document.createElement("style");
+  style.id = "analyticsPrintReportStyle";
+  style.innerHTML = `
+    :root { --ink:#111; --muted:#6a737d; --line:#e5e7eb; --bg:#fff; }
+    .print-report { font-family: 'Segoe UI', Roboto, Arial, sans-serif; color: var(--ink); width:100%; max-width:1100px; margin:0 auto; padding:24px 28px; background:var(--bg); }
+    .report-header { text-align:center; margin-bottom:10px; }
+    .report-header h1 { font-size: 24px; font-weight: 700; margin-bottom:2px; }
+    .report-header .meta { font-size:12px; color:var(--muted); }
+    h2 { font-size:18px; margin-top:20px; margin-bottom:8px; border-bottom:2px solid #222; padding-bottom:6px; }
+    .subhead { font-size:15px; margin-top:10px; color:var(--muted); }
+    .report-table { width:100%; border-collapse:collapse; margin-top:6px; font-size:13px; }
+    .report-table th, .report-table td { border:1px solid var(--line); padding:8px 10px; }
+    .report-table th { background:#f7f7f9; text-align:left; font-weight:600; }
+    .report-footer { text-align:center; font-size:11px; margin-top:18px; color:var(--muted); }
+
+    /* Modal preview tweaks */
+    #analyticsPrintModal .modal-body { padding:0 !important; }
+    #analyticsPrintContent { padding:16px; }
+    #analyticsPrintContent > .print-report { box-shadow:none; background:var(--bg); }
+
+    /* ---------- Print-specific rules: show ONLY the report content ---------- */
+    @media print {
+      /* hide everything first */
+      body * { visibility: hidden !important; }
+
+      /* allow only the report inside the modal to be visible */
+      #analyticsPrintContent, #analyticsPrintContent * { visibility: visible !important; }
+
+      /* remove modal chrome and backdrop */
+      .modal-backdrop, #analyticsPrintModal .modal-backdrop { display: none !important; visibility: hidden !important; }
+      #analyticsPrintModal .modal-dialog,
+      #analyticsPrintModal .modal-content,
+      #analyticsPrintModal .modal-body { position: static !important; width: 100% !important; max-width: none !important; height: auto !important; overflow: visible !important; border: 0 !important; box-shadow: none !important; background: transparent !important; }
+
+      /* hide modal header & footer chrome */
+      #analyticsPrintModal .modal-header,
+      #analyticsPrintModal .modal-footer,
+      #analyticsPrintModal .btn-close { display: none !important; }
+
+      /* make printed report fill page and add page padding */
+      #analyticsPrintContent { padding: 0 !important; margin:0 !important; width:100% !important; }
+      #analyticsPrintContent > .print-report { margin: 0 auto !important; padding: 18mm 16mm !important; max-width: 100% !important; box-shadow: none !important; background: #fff !important; }
+
+      /* page sizing + break rules */
+      @page { size: A4 portrait; margin: 0; }
+      .report-table { break-inside: avoid; page-break-inside: avoid; }
+      .report-table thead { display: table-header-group; } /* repeat headers across pages */
+      .report-table tfoot { display: table-footer-group; }
+      html, body { overflow: visible !important; height: auto !important; }
+    }
+  `;
+  document.head.appendChild(style);
+
+  const modalEl = document.getElementById("analyticsPrintModal");
+  const bsModal = new bootstrap.Modal(modalEl, { backdrop: "static", keyboard: false });
+  bsModal.show();
+
+  const modalPrintBtn = document.getElementById("modalPrintBtn");
+  modalPrintBtn.onclick = () => window.print();
+
+  modalEl.addEventListener(
+    "hidden.bs.modal",
+    () => {
+      container.innerHTML = "";
+      // remove the injected style to avoid duplication next time
+      const s = document.getElementById("analyticsPrintReportStyle");
+      if (s) s.remove();
+    },
+    { once: true }
+  );
+}
+
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const btn = document.getElementById("printAnalyticsBtn");
+    if (btn) btn.addEventListener("click", openPrintModal);
+  });
+})();
