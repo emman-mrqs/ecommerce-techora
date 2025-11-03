@@ -53,7 +53,7 @@ router.post("/seller/orders/update-status", ensureAuth, updateOrderStatus); // U
 // Add these in src/routes/sellerRoutes.js
 router.post("/seller/orders/delete", ensureAuth, deleteSellerOrderItems);     // POST fallback (recommended)
 router.delete("/seller/orders/delete", ensureAuth, deleteSellerOrderItems);   // if you keep DELETE with body
-router.delete("/seller/orders/:orderId", ensureAuth, deleteSellerOrderItems); // DELETE without body
+router.post("/seller/orders/delete-item", ensureAuth, deleteSellerOrderItems);
 
 // Earnings
 router.get("/seller/earnings", ensureAuth, renderSellerEarnings);
