@@ -44,6 +44,7 @@ export const renderSellerOrders = async (req, res) => {
     const totalPages = Math.max(1, Math.ceil(totalOrders / perPage));
 
     // --- data page: one row per order_item that belongs to this seller ---
+    // --- data page: one row per order_item that belongs to this seller ---
     const ordersRes = await db.query(
       `
       SELECT
@@ -59,9 +60,16 @@ export const renderSellerOrders = async (req, res) => {
         -- product info (for this order_item)
         p.id AS product_id,
         p.name AS product_name,
-        (SELECT img_url FROM product_images pi WHERE pi.product_id = p.id AND pi.is_primary = true ORDER BY position ASC NULLS LAST LIMIT 1) AS product_image,
+        (SELECT img_url
+           FROM product_images pi
+          WHERE pi.product_id = p.id
+            AND pi.is_primary = true
+          ORDER BY position ASC NULLS LAST
+          LIMIT 1) AS product_image,
 
         oi.quantity,
+        oi.unit_price,
+        oi.item_status AS item_status,
         (oi.unit_price * oi.quantity)::numeric(12,2) AS total_price,
 
         -- latest payment (if any) for whole order
@@ -93,6 +101,7 @@ export const renderSellerOrders = async (req, res) => {
       [sellerId, perPage, offset]
     );
 
+
     // Render: now each row corresponds to a single order_item
     res.render("seller/sellerOrders", {
       activePage: "orders",
@@ -112,6 +121,7 @@ export const renderSellerOrders = async (req, res) => {
 
 // ========== Update order status (and finalize COD payments if needed) ==========
 // Adds an audit row with action 'order_updated'
+// ========== Update order item status (seller) ==========
 export const updateOrderStatus = async (req, res) => {
   const cx = await db.connect();
   try {
@@ -122,130 +132,181 @@ export const updateOrderStatus = async (req, res) => {
     if (!seller) return res.status(403).json({ success: false, message: "Seller not found or not approved." });
     const { sellerId, storeName } = seller;
 
-    const { order_id, order_status } = req.body;
+    // Expect order_item_id (id of order_items) and item_status (new)
+    const { order_item_id, order_status } = req.body;
+    const orderItemId = Number(order_item_id);
+    if (!Number.isFinite(orderItemId)) {
+      return res.status(400).json({ success: false, message: "Invalid order_item_id." });
+    }
 
     await cx.query("BEGIN");
 
-    // capture previous state for audit
-    const before = await cx.query(
-      `SELECT id, order_status, payment_status, payment_method, total_amount
-         FROM orders
-        WHERE id = $1
+    // 1) Verify ownership and fetch current item info
+    const ownershipRes = await cx.query(
+      `SELECT oi.id AS order_item_id,
+              oi.order_id,
+              oi.item_status AS prev_item_status,
+              p.id AS product_id,
+              p.seller_id
+         FROM order_items oi
+         JOIN product_variant v ON v.id = oi.product_variant_id
+         JOIN products p ON p.id = v.product_id
+        WHERE oi.id = $1
         LIMIT 1`,
-      [order_id]
+      [orderItemId]
     );
 
-    const prev = before.rows[0] || null;
+    if (ownershipRes.rowCount === 0) {
+      await cx.query("ROLLBACK");
+      return res.status(404).json({ success: false, message: "Order item not found." });
+    }
 
-    // Update the order status
-    await cx.query(
-      "UPDATE orders SET order_status = $1, updated_at = NOW() WHERE id = $2",
-      [order_status, order_id]
+    const oi = ownershipRes.rows[0];
+    if (Number(oi.seller_id) !== Number(sellerId)) {
+      await cx.query("ROLLBACK");
+      return res.status(403).json({ success: false, message: "You are not allowed to update this item." });
+    }
+
+    const prevItemStatus = oi.prev_item_status || null;
+    const orderId = Number(oi.order_id);
+
+    // 2) Update only this order_items.item_status
+// 2) Update only this order_items.item_status — RETURN the updated row
+const updateRes = await cx.query(
+  `UPDATE order_items
+     SET item_status = $1,
+         updated_at = NOW()
+   WHERE id = $2
+   RETURNING id AS order_item_id, item_status, updated_at, order_id`,
+  [order_status, orderItemId]
+);
+
+if (updateRes.rowCount === 0) {
+  await cx.query("ROLLBACK");
+  return res.status(404).json({ success: false, message: "Failed to update order item." });
+}
+const updatedItem = updateRes.rows[0];
+
+
+    // 3) Check if all items of this order are now completed/delivered
+    const allStatusRes = await cx.query(
+      `SELECT
+         COUNT(*) FILTER (WHERE COALESCE(item_status,'') NOT IN ('completed','delivered'))::int AS pending_count,
+         COUNT(*)::int AS total_items
+       FROM order_items
+       WHERE order_id = $1`,
+      [orderId]
     );
 
-    // If marking as completed/delivered, ensure COD payment is completed too
+    const pendingCount = Number(allStatusRes.rows[0]?.pending_count || 0);
+    const totalItems = Number(allStatusRes.rows[0]?.total_items || 0);
+
+    let orderUpdated = false;
     let codCompleted = false;
     let codTxnId = null;
 
-    const normalized = String(order_status).toLowerCase();
-    if (normalized === "completed" || normalized === "delivered") {
-      const { rows: ordRows } = await cx.query(
-        "SELECT total_amount, payment_status FROM orders WHERE id = $1",
-        [order_id]
+    if (totalItems > 0 && pendingCount === 0) {
+      // 4) If all items complete -> update parent orders status (finalize)
+      await cx.query(
+        `UPDATE orders SET order_status = $1, updated_at = NOW() WHERE id = $2`,
+        [order_status, orderId]
       );
-      const orderTotal = Number(ordRows[0]?.total_amount || 0);
+      orderUpdated = true;
 
-      const { rows: payRows } = await cx.query(
-        `
-        SELECT id, payment_method, payment_status, transaction_id
-        FROM payments
-        WHERE order_id = $1
-        ORDER BY payment_date DESC NULLS LAST, id DESC
-        LIMIT 1
-        `,
-        [order_id]
-      );
-
-      const genTxnId = () => `COD-${order_id}-${Date.now()}`;
-
-      if (payRows.length === 0) {
-        codTxnId = genTxnId();
-        await cx.query(
-          `
-          INSERT INTO payments (order_id, payment_method, payment_status, transaction_id, amount_paid, payment_date)
-          VALUES ($1, 'cod', 'completed', $2, $3, NOW())
-          `,
-          [order_id, codTxnId, orderTotal]
+      // 5) COD finalize logic (keeps your existing behaviour)
+      const normalized = String(order_status).toLowerCase();
+      if (normalized === "completed" || normalized === "delivered") {
+        const { rows: ordRows } = await cx.query(
+          "SELECT total_amount, payment_status FROM orders WHERE id = $1",
+          [orderId]
         );
-        await cx.query(
-          "UPDATE orders SET payment_status = 'paid', updated_at = NOW() WHERE id = $1",
-          [order_id]
+        const orderTotal = Number(ordRows[0]?.total_amount || 0);
+
+        const { rows: payRows } = await cx.query(
+          `SELECT id, payment_method, payment_status, transaction_id
+             FROM payments
+            WHERE order_id = $1
+            ORDER BY payment_date DESC NULLS LAST, id DESC
+            LIMIT 1`,
+          [orderId]
         );
-        codCompleted = true;
-      } else {
-        const pay = payRows[0];
-        if (pay.payment_method === "cod" && pay.payment_status !== "completed") {
-          codTxnId = pay.transaction_id || genTxnId();
+
+        const genTxnId = () => `COD-${orderId}-${Date.now()}`;
+
+        if (payRows.length === 0) {
+          codTxnId = genTxnId();
           await cx.query(
-            `
-            UPDATE payments
-            SET payment_status = 'completed',
-                transaction_id = COALESCE(transaction_id, $2),
-                amount_paid = $3,
-                payment_date = NOW()
-            WHERE id = $1
-            `,
-            [pay.id, codTxnId, orderTotal]
+            `INSERT INTO payments (order_id, payment_method, payment_status, transaction_id, amount_paid, payment_date)
+             VALUES ($1, 'cod', 'completed', $2, $3, NOW())`,
+            [orderId, codTxnId, orderTotal]
           );
-          await cx.query(
-            "UPDATE orders SET payment_status = 'paid', updated_at = NOW() WHERE id = $1",
-            [order_id]
-          );
+          await cx.query("UPDATE orders SET payment_status = 'paid', updated_at = NOW() WHERE id = $1", [orderId]);
           codCompleted = true;
+        } else {
+          const pay = payRows[0];
+          if (pay.payment_method === "cod" && pay.payment_status !== "completed") {
+            codTxnId = pay.transaction_id || genTxnId();
+            await cx.query(
+              `UPDATE payments
+                  SET payment_status = 'completed',
+                      transaction_id = COALESCE(transaction_id, $2),
+                      amount_paid = $3,
+                      payment_date = NOW()
+                WHERE id = $1`,
+              [pay.id, codTxnId, orderTotal]
+            );
+            await cx.query("UPDATE orders SET payment_status = 'paid', updated_at = NOW() WHERE id = $1", [orderId]);
+            codCompleted = true;
+          }
         }
       }
     }
 
     await cx.query("COMMIT");
 
-    // AUDIT: order_updated (seller)
+    // Audit
     try {
       await insertAudit({
         actor_type: "seller",
         actor_id: sellerId,
         actor_name: storeName,
-        action: "order_updated",
-        resource: "orders",
+        action: "order_item_updated",
+        resource: "order_items",
         details: {
           seller_id: sellerId,
-          order_id,
-          old_status: prev?.order_status || null,
-          new_status: order_status,
-          prev_payment_status: prev?.payment_status || null,
-          payment_method: prev?.payment_method || null,
-          cod_completed: codCompleted || false,
+          order_id: orderId,
+          order_item_id: orderItemId,
+          old_item_status: prevItemStatus,
+          new_item_status: order_status,
+          order_row_updated: orderUpdated,
+          cod_completed: codCompleted,
           cod_transaction_id: codTxnId || null
         },
         ip: req.headers["x-forwarded-for"] || req.ip,
         status: "success",
       });
     } catch (e) {
-      console.error("audit(order_updated) failed:", e);
+      console.error("audit(order_item_updated) failed:", e);
     }
 
-    res.json({
-      success: true,
-      message: "Order status updated successfully!",
-      newStatus: order_status
-    });
+return res.json({
+  success: true,
+  message: "Item status updated",
+  orderItemId,
+  newStatus: updatedItem.item_status,   // canonical DB value
+  orderUpdated,
+  codCompleted
+});
+
   } catch (err) {
     try { await cx.query("ROLLBACK"); } catch {}
-    console.error("❌ Error updating order status:", err);
-    res.status(500).json({ success: false, message: "Server error" });
+    console.error("❌ Error updating order item status:", err);
+    return res.status(500).json({ success: false, message: "Server error" });
   } finally {
     cx.release();
   }
 };
+
 
 // Filter orders (unchanged logic; still fine to keep simple list)
 export const filterSellerOrders = async (req, res) => {
@@ -259,9 +320,18 @@ export const filterSellerOrders = async (req, res) => {
 
     let query = `
       SELECT 
-        o.id AS order_id, o.created_at AS order_date, o.order_status, o.shipping_address,
-        u.name AS customer_name, p.name AS product_name,
-        oi.quantity, (oi.unit_price * oi.quantity) AS total_price,
+        oi.id AS order_item_id,
+        o.id AS order_id,
+        o.created_at AS order_date,
+        o.order_status,
+        o.shipping_address,
+        u.name AS customer_name,
+        p.name AS product_name,
+        oi.quantity,
+        oi.unit_price,
+        oi.item_status AS item_status,
+        oi.product_variant_id,
+        (oi.unit_price * oi.quantity) AS total_price,
         img.img_url AS product_image
       FROM orders o
       JOIN users u ON u.id = o.user_id
@@ -271,6 +341,8 @@ export const filterSellerOrders = async (req, res) => {
       LEFT JOIN product_images img ON img.product_id = p.id AND img.is_primary = true
       WHERE p.seller_id = $1
     `;
+
+
     const values = [sellerId];
 
     if (status) {
@@ -300,113 +372,113 @@ export const filterSellerOrders = async (req, res) => {
 
 // ============== delete Orders (for this seller's items) ==============
 // Adds audits: 'seller_order_items_removed' and (if no items left) 'order_deleted'
+// ============== delete a single order item (for this seller) ==============
 export const deleteSellerOrderItems = async (req, res) => {
   const client = await db.connect();
   let inTxn = false;
 
   try {
     const userId = req.session?.user?.id;
-    if (!userId) {
-      return res.status(401).json({ success: false, message: "Login required." });
-    }
+    if (!userId) return res.status(401).json({ success: false, message: "Login required." });
 
     const seller = await getSellerForUser(userId);
-    if (!seller) {
-      return res.status(403).json({ success: false, message: "Seller not found or not approved." });
-    }
+    if (!seller) return res.status(403).json({ success: false, message: "Seller not found or not approved." });
     const { sellerId, storeName } = seller;
 
-    // Accept body (POST) or URL param /seller/orders/:orderId
-    const orderIdRaw = req.body?.order_id ?? req.params?.orderId;
-    const orderId = Number(orderIdRaw);
-    if (!Number.isFinite(orderId)) {
-      return res.status(400).json({ success: false, message: "Invalid order_id." });
+    // Accept order_item_id in body (single id). If you want to accept array in future, expand accordingly.
+    const orderItemIdRaw = req.body?.order_item_id ?? req.body?.orderItemId ?? req.params?.orderItemId;
+    const orderItemId = Number(orderItemIdRaw);
+    if (!Number.isFinite(orderItemId)) {
+      return res.status(400).json({ success: false, message: "Invalid order_item_id." });
     }
 
     await client.query("BEGIN");
     inTxn = true;
 
-    // 1) Which order_items (for THIS seller) are we removing?
+    // 1) Verify this order_item belongs to this seller and fetch order_id + variant + qty
     const toDelRes = await client.query(
       `
       SELECT oi.id AS order_item_id,
+             oi.order_id,
              oi.product_variant_id AS variant_id,
-             oi.quantity AS quantity
+             oi.quantity,
+             p.seller_id
       FROM order_items oi
       JOIN product_variant v ON v.id = oi.product_variant_id
       JOIN products p        ON p.id = v.product_id
-      WHERE oi.order_id = $1
+      WHERE oi.id = $1
         AND p.seller_id = $2
+      LIMIT 1
       `,
-      [orderId, sellerId]
+      [orderItemId, sellerId]
     );
 
     if (toDelRes.rowCount === 0) {
-      await client.query("ROLLBACK"); inTxn = false;
+      await client.query("ROLLBACK");
+      inTxn = false;
       return res.status(404).json({
         success: false,
-        message: "No items from this order belong to your store, or they were already removed."
+        message: "Order item not found or does not belong to your store."
       });
     }
 
-    const orderItemIds = toDelRes.rows.map(r => r.order_item_id);
+    const row = toDelRes.rows[0];
+    const orderId = Number(row.order_id);
 
-    // 2) Delete dependents
+    // 2) Delete dependent review replies & reviews for that order_item
     await client.query(
       `
       DELETE FROM review_replies rr
       USING product_reviews pr
       WHERE rr.review_id = pr.id
-        AND pr.order_item_id = ANY($1::bigint[])
+        AND pr.order_item_id = $1
       `,
-      [orderItemIds]
+      [orderItemId]
     );
 
     await client.query(
       `
       DELETE FROM product_reviews
-      WHERE order_item_id = ANY($1::bigint[])
+      WHERE order_item_id = $1
       `,
-      [orderItemIds]
+      [orderItemId]
     );
 
-    // 3) Delete items (capture what we removed for audit)
+    // 3) Delete the order_item row (capture what we removed)
     const delItemsRes = await client.query(
       `
-      DELETE FROM order_items oi
-      USING (SELECT UNNEST($1::bigint[]) AS id) t
-      WHERE oi.id = t.id
-      RETURNING oi.id AS order_item_id, oi.product_variant_id AS variant_id, oi.quantity
+      DELETE FROM order_items
+      WHERE id = $1
+      RETURNING id AS order_item_id, product_variant_id AS variant_id, quantity
       `,
-      [orderItemIds]
+      [orderItemId]
     );
 
-    const removedItems = delItemsRes.rows.map(r => ({
-      order_item_id: Number(r.order_item_id),
-      variant_id: Number(r.variant_id),
-      qty: Number(r.quantity),
-    }));
-
-    // 4) Restock removed variants
-    const needByVariant = new Map();
-    for (const r of delItemsRes.rows) {
-      const vid = Number(r.variant_id);
-      const qty = Number(r.quantity);
-      needByVariant.set(vid, (needByVariant.get(vid) || 0) + qty);
-    }
-    for (const [vid, qty] of needByVariant.entries()) {
-      await client.query(
-        `
-        UPDATE product_variant
-           SET stock_quantity = stock_quantity + $2,
-               updated_at     = NOW()
-         WHERE id = $1
-        `,
-        [vid, qty]
-      );
+    if (delItemsRes.rowCount === 0) {
+      await client.query("ROLLBACK");
+      inTxn = false;
+      return res.status(500).json({ success: false, message: "Failed to delete order item." });
     }
 
-    // 5) Any items left on the order?
+    const removed = delItemsRes.rows[0];
+    const removedItems = [{
+      order_item_id: Number(removed.order_item_id),
+      variant_id: Number(removed.variant_id),
+      qty: Number(removed.quantity)
+    }];
+
+    // 4) Restock removed variant
+    await client.query(
+      `
+      UPDATE product_variant
+         SET stock_quantity = stock_quantity + $2,
+             updated_at     = NOW()
+       WHERE id = $1
+      `,
+      [removed.variant_id, removed.quantity]
+    );
+
+    // 5) Check remaining items for the order
     const leftRows = await client.query(
       `
       SELECT COALESCE(SUM(unit_price * quantity), 0)::numeric AS subtotal,
@@ -423,9 +495,10 @@ export const deleteSellerOrderItems = async (req, res) => {
       await client.query(`DELETE FROM payments WHERE order_id = $1`, [orderId]);
       await client.query(`DELETE FROM orders   WHERE id       = $1`, [orderId]);
 
-      await client.query("COMMIT"); inTxn = false;
+      await client.query("COMMIT");
+      inTxn = false;
 
-      // AUDIT: order_deleted
+      // AUDIT: order_deleted (only if entire order removed)
       try {
         await insertAudit({
           actor_type: "seller",
@@ -448,13 +521,13 @@ export const deleteSellerOrderItems = async (req, res) => {
 
       return res.json({
         success: true,
-        removedItems: delItemsRes.rowCount,
+        removedItems: removedItems.length,
         orderDeleted: true,
         message: "Order fully removed (no items remaining)."
       });
     }
 
-    // 6) Recompute total (12% tax)
+    // 6) Recompute total (12% tax) and update orders row
     const subtotal = Number(leftRows.rows[0].subtotal || 0);
     const tax = subtotal * 0.12;
     const newTotal = Number((subtotal + tax).toFixed(2));
@@ -469,7 +542,8 @@ export const deleteSellerOrderItems = async (req, res) => {
       [orderId, newTotal]
     );
 
-    await client.query("COMMIT"); inTxn = false;
+    await client.query("COMMIT");
+    inTxn = false;
 
     // AUDIT: seller_order_items_removed
     try {
@@ -477,28 +551,28 @@ export const deleteSellerOrderItems = async (req, res) => {
         actor_type: "seller",
         actor_id: sellerId,
         actor_name: storeName,
-        action: "seller_order_items_removed",
-        resource: "orders",
+        action: "seller_order_item_removed",
+        resource: "order_items",
         details: {
           seller_id: sellerId,
           order_id: orderId,
           removed_items: removedItems,
-          restocked_variants: Array.from(needByVariant, ([variant_id, qty]) => ({ variant_id, qty })),
+          restocked_variants: removedItems.map(x => ({ variant_id: x.variant_id, qty: x.qty })),
           new_total: newTotal
         },
         ip: req.headers["x-forwarded-for"] || req.ip,
         status: "success",
       });
     } catch (e) {
-      console.error("audit(seller_order_items_removed) failed:", e);
+      console.error("audit(seller_order_item_removed) failed:", e);
     }
 
     return res.json({
       success: true,
-      removedItems: delItemsRes.rowCount,
+      removedItems: removedItems.length,
       orderDeleted: false,
       newTotal,
-      message: "Your products in this order have been removed and stock was restored."
+      message: "Your product in this order has been removed and stock was restored."
     });
   } catch (err) {
     if (inTxn) { try { await client.query("ROLLBACK"); } catch {} }
