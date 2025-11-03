@@ -233,25 +233,33 @@ function initOrdersUI(){
   applyFilters();
 
   // ✅ Cancel order
-  listEl.addEventListener('click', (e)=>{
+  // ✅ Cancel a single order item
+  listEl.addEventListener('click', (e) => {
     const btn = e.target.closest('.btn-cancel-order');
     if (!btn) return;
-    const orderId = btn.dataset.orderId;
 
-    openConfirmModal("Cancel Order", "Are you sure you want to cancel this order?", async () => {
+    const orderItemId = btn.dataset.orderItemId || btn.getAttribute('data-order-item-id');
+    if (!orderItemId) return toast('Missing order item id', 'error');
+
+    openConfirmModal("Cancel Item", "Are you sure you want to cancel this item?", async () => {
       try {
         const r = await fetch("/profile/cancel-order", {
           method: "POST",
+          credentials: "same-origin",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ orderId })
+          body: JSON.stringify({ orderItemId })
         });
         const j = await r.json();
         if (!j.success) return toast(j.message || "Cancel failed", "error");
-        toast("Order cancelled successfully");
+        toast("Item cancelled successfully");
         location.reload();
-      } catch { toast("Network error","error"); }
+      } catch (err) {
+        console.error("cancel fetch error", err);
+        toast("Network error", "error");
+      }
     }, "Confirm Cancel", "btn-danger");
   });
+
 
   // ✅ Mark as received
   listEl.addEventListener('click', (e)=>{
