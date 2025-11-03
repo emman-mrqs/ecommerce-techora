@@ -16,9 +16,9 @@ window.addEventListener('resize', function() {
   const soldBy = document.getElementById("soldBy");
 
   const statusModal = new bootstrap.Modal(document.getElementById("statusModal"));
-  const statusForm = document.getElementById("statusForm");
-  const statusOrderId = document.getElementById("statusOrderId");
-  const orderStatus = document.getElementById("orderStatus");
+const statusForm = document.getElementById("statusForm");
+const statusOrderItemInput = document.getElementById("statusOrderItemId");
+const orderStatus = document.getElementById("orderStatus");
 
   const statusFilter = document.getElementById("filterStatus");
   const dateFilter = document.getElementById("filterDate");
@@ -27,18 +27,54 @@ window.addEventListener('resize', function() {
   // 🔹 Rebindable function for invoice + edit buttons
   function bindOrderActions() {
     // Edit button
-    document.querySelectorAll(".action-btn.edit").forEach(btn => {
-      btn.addEventListener("click", () => {
-        const orderRow = btn.closest(".order-row");
-        const orderId = orderRow.querySelector(".order-id").textContent.trim();
-        const currentStatus = orderRow.querySelector(".status-badge").textContent.trim().toLowerCase();
+document.querySelectorAll(".action-btn.edit").forEach(btn => {
+  btn.addEventListener("click", async (ev) => {
+    const orderRow = btn.closest(".order-row");
 
-        statusOrderId.value = orderId;
-        orderStatus.value = currentStatus;
+    const itemId = btn.dataset.orderItemId || orderRow?.dataset?.orderItemId || "";
+    const currentStatus = (orderRow.querySelector(".status-badge")?.textContent || "").trim().toLowerCase();
 
-        statusModal.show();
-      });
-    });
+    // populate modal fields
+    statusOrderItemInput.value = itemId;
+    orderStatus.value = currentStatus;
+
+    // 1) blur the opener (defensive)
+    try {
+      // remove focus from the button itself
+      btn.blur();
+      // also blur any currently focused element (extra safety)
+      if (document.activeElement && typeof document.activeElement.blur === "function") {
+        document.activeElement.blur();
+      }
+    } catch (e) {
+      // ignore any blur errors
+    }
+
+    // 2) small delay to ensure the blur finishes and the browser commits focus state
+    //    increase delay slightly (50ms) so we avoid race conditions on slow devices
+    await new Promise(resolve => setTimeout(resolve, 50));
+
+    // 3) show the modal
+    statusModal.show();
+
+    // 4) after modal is shown, move focus to a sensible element inside it for accessibility.
+    //    Use a short timeout to wait for Bootstrap to finish showing the modal.
+    setTimeout(() => {
+      const modalRoot = document.getElementById("statusModal");
+      // prefer the first focusable element (close button or the select)
+      const focusTarget =
+        modalRoot.querySelector(".btn-close") ||
+        modalRoot.querySelector("#orderStatus") ||
+        modalRoot.querySelector('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+
+      if (focusTarget && typeof focusTarget.focus === "function") {
+        focusTarget.focus({ preventScroll: true });
+      }
+    }, 120);
+  });
+});
+
+
 
     /*===========================
     Download PDF from invoice modal
@@ -306,22 +342,28 @@ window.addEventListener('resize', function() {
       toast.show();
 
       // ✅ Update badge in table instantly
-      const row = [...document.querySelectorAll(".order-row")]
-        .find(r => r.querySelector(".order-id").textContent.trim() === data.order_id);
+const updatedItemId = String(data.order_item_id || data.orderItemId || result.orderItemId);
 
-      if (row) {
-        const badge = row.querySelector(".status-badge");
-        badge.textContent = result.newStatus;
-        badge.className = `status-badge status-${result.newStatus.toLowerCase()}`;
+const row = [...document.querySelectorAll(".order-row")]
+  .find(r => (r.dataset.orderItemId || r.querySelector(".edit")?.dataset?.orderItemId) === updatedItemId);
 
-        // ✅ Update the hidden JSON for invoice modal
-        const viewBtn = row.querySelector(".view-invoice-btn");
-        if (viewBtn) {
-          const orderData = JSON.parse(viewBtn.getAttribute("data-order"));
-          orderData.order_status = result.newStatus; // update field
-          viewBtn.setAttribute("data-order", JSON.stringify(orderData));
-        }
-      }
+
+if (row) {
+  const badge = row.querySelector(".status-badge");
+  badge.textContent = result.newStatus;
+  badge.className = `status-badge status-${result.newStatus.toLowerCase()}`;
+
+  // ✅ Update the hidden JSON for invoice modal — set item_status (and keep/optional-set order_status)
+  const viewBtn = row.querySelector(".view-invoice-btn");
+  if (viewBtn) {
+    const orderData = JSON.parse(viewBtn.getAttribute("data-order") || "{}");
+    orderData.item_status = result.newStatus;
+    // optional: set parent order_status only if missing
+    if (!orderData.order_status) orderData.order_status = result.newStatus;
+    viewBtn.setAttribute("data-order", JSON.stringify(orderData));
+  }
+}
+
     } else {
       toastEl.classList.remove("text-bg-success");
       toastEl.classList.add("text-bg-danger");
@@ -347,29 +389,30 @@ window.addEventListener('resize', function() {
     if (result.success) {
       const table = document.querySelector(".orders-table");
       const rows = result.orders.map(order => `
-        <div class="order-row">
-          <div class="product-img">
-            ${order.product_image 
-              ? `<img src="${order.product_image}" style="width:50px;height:50px;object-fit:cover;border-radius:6px;">`
-              : `<div style="width:50px;height:50px;background:#E0E0E0;display:flex;align-items:center;justify-content:center;border-radius:6px;">
-                   <i class="fas fa-box text-muted"></i>
-                 </div>`}
-          </div>
-          <div class="order-id">${order.order_id}</div>
-          <div class="customer-name">${order.customer_name}</div>
-          <div class="product-name">${order.product_name}</div>
-          <div class="quantity">${order.quantity}</div>
-          <div class="total-price">₱${order.total_price}</div>
-          <div><span class="status-badge status-${order.order_status.toLowerCase()}">${order.order_status}</span></div>
-          <div class="order-date">${new Date(order.order_date).toLocaleDateString()}</div>
-          <div>
-            <button class="action-btn edit"><i class="fas fa-edit"></i></button>
-            <button class="action-btn view-invoice-btn" data-order='${JSON.stringify(order)}'>
-              <i class="fas fa-eye"></i>
-            </button>
-          </div>
-        </div>
-      `).join("");
+  <div class="order-row" data-order-item-id="${order.order_item_id || ''}">
+    <div class="product-img">
+      ${order.product_image 
+        ? `<img src="${order.product_image}" style="width:50px;height:50px;object-fit:cover;border-radius:6px;">`
+        : `<div style="width:50px;height:50px;background:#E0E0E0;display:flex;align-items:center;justify-content:center;border-radius:6px;">
+             <i class="fas fa-box text-muted"></i>
+           </div>`}
+    </div>
+    <div class="order-id">${order.order_id}</div>
+    <div class="customer-name">${order.customer_name}</div>
+    <div class="product-name">${order.product_name}</div>
+    <div class="quantity">${order.quantity}</div>
+    <div class="total-price">₱${order.total_price}</div>
+<div><span class="status-badge status-${(order.item_status || order.order_status || '').toLowerCase()}">${order.item_status || order.order_status || ''}</span></div>
+    <div class="order-date">${order.order_date ? new Date(order.order_date).toLocaleDateString() : ''}</div>
+    <div>
+      <button class="action-btn edit" data-order-item-id="${order.order_item_id || ''}"><i class="fas fa-edit"></i></button>
+      <button class="action-btn view-invoice-btn" data-order='${JSON.stringify(order)}' data-order-item-id="${order.order_item_id || ''}">
+        <i class="fas fa-eye"></i>
+      </button>
+    </div>
+  </div>
+`).join("");
+
 
       table.innerHTML = `
         <div class="table-header">
@@ -405,9 +448,10 @@ window.addEventListener('resize', function() {
 
 
 // ===== Delete seller items from order =====
+// ===== Delete a single seller order item =====
 (function () {
   const deleteModalEl = document.getElementById("deleteOrderModal");
-  const deleteOrderIdInput = document.getElementById("deleteOrderId");
+  const deleteOrderItemInput = document.getElementById("deleteOrderItemId");
   const confirmDeleteBtn = document.getElementById("confirmDeleteOrder");
   const deleteToastEl = document.getElementById("deleteToast");
 
@@ -416,28 +460,28 @@ window.addEventListener('resize', function() {
   const deleteModal = new bootstrap.Modal(deleteModalEl);
   const deleteToast = deleteToastEl ? new bootstrap.Toast(deleteToastEl) : null;
 
-  // open modal
+  // open modal — read data-order-item-id
   document.addEventListener("click", (e) => {
     const btn = e.target.closest(".delete-order-btn");
     if (!btn) return;
-    const orderId = btn.getAttribute("data-order-id");
-    deleteOrderIdInput.value = orderId;
+    const orderItemId = btn.getAttribute("data-order-item-id");
+    deleteOrderItemInput.value = orderItemId;
     deleteModal.show();
   });
 
-  // confirm delete
+  // confirm delete — POST single item id
   confirmDeleteBtn.addEventListener("click", async () => {
-    const orderId = deleteOrderIdInput.value;
-    if (!orderId) return;
+    const orderItemId = deleteOrderItemInput.value;
+    if (!orderItemId) return;
 
     try {
-      const res = await fetch("/seller/orders/delete", {
-        method: "POST", // ← use POST to avoid DELETE+body issues
+      const res = await fetch("/seller/orders/delete-item", {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ order_id: orderId })
+        body: JSON.stringify({ order_item_id: orderItemId })
       });
 
-      // Robust parse: prefer JSON; fallback to text
+      // robust parsing
       let payload;
       const ct = res.headers.get("content-type") || "";
       if (ct.includes("application/json")) {
@@ -452,8 +496,8 @@ window.addEventListener('resize', function() {
         return;
       }
 
-      // Remove the row using the button's data attribute
-      const btn = document.querySelector(`.delete-order-btn[data-order-id="${orderId}"]`);
+      // Remove the specific order-row for that order_item_id
+      const btn = document.querySelector(`.delete-order-btn[data-order-item-id="${orderItemId}"]`);
       const rowEl = btn ? btn.closest(".order-row") : null;
       if (rowEl) rowEl.remove();
 
@@ -462,11 +506,9 @@ window.addEventListener('resize', function() {
         deleteToastEl.querySelector(".toast-body").textContent =
           payload.message || "Deleted successfully.";
         deleteToast.show();
-      } else {
-        alert(payload.message || "Deleted successfully.");
       }
 
-      // If the page is empty now, go back a page (if possible) or reload
+      // If no visible rows remain, reload or navigate page-1
       if (!document.querySelector(".orders-table .order-row")) {
         const url = new URL(window.location.href);
         const page = parseInt(url.searchParams.get("page") || "1", 10);
