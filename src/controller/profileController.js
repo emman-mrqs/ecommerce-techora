@@ -19,12 +19,11 @@ const UI_STATUS = {
 const toUI = s => UI_STATUS[String(s || "").toLowerCase()] || s || "All";
 
 export async function renderProfile(req, res, next) {
-      try {
-        if (!req.session?.user?.id) return res.redirect("/login");
-        const user = req.session.user;
-        const sessionID = req.sessionID;
+  try {
+    if (!req.session?.user?.id) return res.redirect("/login");
+    const user = req.session.user;
+    const sessionID = req.sessionID;
 
-        // --- only the SQL and the sellers left join changed from your previous version ---
     const sql = `
       SELECT
         o.id                      AS order_id,
@@ -39,6 +38,7 @@ export async function renderProfile(req, res, next) {
         oi.quantity,
         oi.unit_price,
         oi.total_price,
+        oi.item_status            AS item_status,
 
         pv.id                     AS variant_id,
         pv.product_id,
@@ -49,7 +49,7 @@ export async function renderProfile(req, res, next) {
 
         p.id                      AS product_id,
         p.name                    AS product_name,
-        p.seller_id               AS seller_id,         -- <- moved to products table
+        p.seller_id               AS seller_id,
 
         COALESCE(vi.img_url, pi.img_url) AS img_url,
 
@@ -80,34 +80,39 @@ export async function renderProfile(req, res, next) {
         ORDER BY is_primary DESC, position ASC, id ASC
         LIMIT 1
       ) AS pi ON TRUE
-
-      -- join sellers using products.seller_id (pv.seller_id caused the error)
       LEFT JOIN sellers s ON s.id = p.seller_id
-
       WHERE o.user_id = $1
       ORDER BY o.created_at DESC, o.id DESC, oi.id ASC;
     `;
 
+    const { rows } = await db.query(sql, [user.id]);
 
-        const { rows } = await db.query(sql, [user.id]);
-
-        // Group rows → virtual orders per item (or modify key for different grouping)
-    // --- build virtual orders per item (or grouping key you prefer) ---
+    // Build virtual orders grouped by order_item (virtualId = orderId-orderItemId).
     const map = new Map();
+
     for (const r of rows) {
       const virtualId = `${r.order_id}-${r.order_item_id}`;
 
-      if (!map.has(virtualId)) {
-        const itemUnit = r.unit_price ?? r.variant_price ?? 0;
-        const itemQty = r.quantity ?? 1;
-        const itemTotal = r.total_price ?? (itemUnit * itemQty);
+      // Defensive seller name fallback:
+      const sellerId = r.seller_id ?? null;
+      const sellerName = (r.seller_name && String(r.seller_name).trim())
+        ? r.seller_name
+        : (sellerId ? `Seller #${sellerId}` : '—');
 
+      // per-item computations
+      const itemUnit = r.unit_price ?? r.variant_price ?? 0;
+      const itemQty = r.quantity ?? 1;
+      const itemTotal = r.total_price ?? (itemUnit * itemQty);
+
+      // create container if it's the first time we see this virtualId
+      if (!map.has(virtualId)) {
         map.set(virtualId, {
           id: virtualId,
           parent_order_id: r.order_id,
           created_at: r.created_at,
           order_status: r.order_status,
-          ui_status: toUI(r.order_status),
+          // prefer item-level status when present; otherwise use order-level status
+          ui_status: toUI(r.item_status || r.order_status),
           total_amount: itemTotal,
           shipping_address: r.shipping_address,
           payment: {
@@ -118,15 +123,11 @@ export async function renderProfile(req, res, next) {
             amount: r.amount_paid || itemTotal || 0,
             payment_date: r.payment_date
           },
-          items: [],
+          items: []
         });
       }
 
-      // Defensive seller name fallback:
-      const sellerId = r.seller_id ?? r.product_seller_id ?? null; // try common names
-      const sellerName = (r.seller_name && String(r.seller_name).trim()) ? r.seller_name
-                        : (sellerId ? `Seller #${sellerId}` : '—');
-
+      // push the item into the container
       map.get(virtualId).items.push({
         order_item_id: r.order_item_id,
         product_id: r.product_id,
@@ -139,13 +140,13 @@ export async function renderProfile(req, res, next) {
         quantity: r.quantity ?? 1,
         total_price: r.total_price ?? ((r.unit_price ?? r.variant_price ?? 0) * (r.quantity ?? 1)),
         img_url: r.img_url,
-        // attach defensive seller info
+        item_status: r.item_status || null,
         seller_id: sellerId,
         seller_name: sellerName
       });
     }
 
-    // Convert to array
+    // Convert map to array
     const allOrders = [...map.values()];
 
     // Compute seller summary for each (virtual) order (single name or comma separated)
@@ -154,7 +155,6 @@ export async function renderProfile(req, res, next) {
       o.sellers = [...names];
       o.seller_display = o.sellers.length === 1 ? o.sellers[0] : o.sellers.join(', ');
     });
-
 
     const ordersByStatus = {
       All: allOrders,
@@ -172,10 +172,12 @@ export async function renderProfile(req, res, next) {
       allOrders,
       ordersByStatus
     });
+
   } catch (err) {
     next(err);
   }
 }
+
 
 
 /* 
@@ -301,64 +303,94 @@ Cancel Order
 ------------------------
 */
 export async function cancelOrder(req, res) {
+  const client = await db.connect();
   try {
-    if (!req.session?.user?.id) {
+    console.log('cancelOrder called, user=', req.session?.user?.id, 'body=', req.body);
+    if (!req.session?.user?.id)
       return res.status(401).json({ success: false, message: "Not authenticated" });
-    }
 
     const userId = req.session.user.id;
-    const { orderId } = req.body;
+    const { orderItemId } = req.body;
+    if (!orderItemId)
+      return res.status(400).json({ success: false, message: "orderItemId is required" });
 
-    if (!orderId) {
-      return res.status(400).json({ success: false, message: "Order ID is required" });
-    }
+    // validate ownership
+    const check = await client.query(
+      `SELECT oi.id AS order_item_id,
+              LOWER(COALESCE(oi.item_status,'')) AS item_status,
+              oi.order_id, o.user_id, o.order_status
+         FROM order_items oi
+         JOIN orders o ON o.id = oi.order_id
+        WHERE oi.id = $1 AND o.user_id = $2
+        LIMIT 1`,
+      [orderItemId, userId]
+    );
+    if (check.rows.length === 0)
+      return res.status(404).json({ success: false, message: "Order item not found" });
 
-    const result = await db.query(
-      "SELECT id, order_status FROM orders WHERE id = $1 AND user_id = $2 LIMIT 1",
-      [orderId, userId]
+    const row = check.rows[0];
+    const itemStatus = row.item_status;
+    const cancellable = ['pending', 'confirmed', ''];
+    if (!cancellable.includes(itemStatus))
+      return res.status(400).json({ success: false, message: "This item cannot be cancelled at this stage." });
+
+    await client.query('BEGIN');
+
+    // cancel only that item
+    const updated = await client.query(
+      `UPDATE order_items
+          SET item_status = 'cancelled', updated_at = NOW()
+        WHERE id = $1
+        RETURNING order_id`,
+      [orderItemId]
     );
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({ success: false, message: "Order not found" });
-    }
-
-    const order = result.rows[0];
-    const status = String(order.order_status || "").toLowerCase();
-
-    if (!(status === "pending" || status === "confirmed")) {
-      return res.status(400).json({
-        success: false,
-        message: "Order cannot be cancelled at this stage."
-      });
-    }
-
-    await db.query(
-      "UPDATE orders SET order_status = 'cancelled', updated_at = NOW() WHERE id = $1",
-      [orderId]
+    // if all items of parent order are now cancelled → mark parent as cancelled
+    const remaining = await client.query(
+      `SELECT COUNT(*)::int AS cnt
+         FROM order_items
+        WHERE order_id = $1
+          AND LOWER(COALESCE(item_status,'')) NOT IN ('cancelled')`,
+      [updated.rows[0].order_id]
     );
+    if (remaining.rows[0].cnt === 0) {
+      await client.query(
+        `UPDATE orders
+            SET order_status = 'cancelled', updated_at = NOW()
+          WHERE id = $1`,
+        [updated.rows[0].order_id]
+      );
+    } else {
+      await client.query(`UPDATE orders SET updated_at = NOW() WHERE id = $1`, [updated.rows[0].order_id]);
+    }
 
-    // AUDIT
+    await client.query('COMMIT');
+
+    // audit (optional)
     try {
       await insertAudit({
         actor_type: "user",
         actor_id: userId,
         actor_name: req.session.user.name || req.session.user.email,
-        action: "order_cancelled_by_user",
-        resource: "orders",
-        details: { order_id: orderId, prev_status: order.order_status, new_status: "cancelled" },
+        action: "order_item_cancelled_by_user",
+        resource: "order_items",
+        details: { order_item_id: orderItemId, order_id: updated.rows[0].order_id, prev_item_status: itemStatus },
         ip: req.headers["x-forwarded-for"] || req.ip,
         status: "success",
       });
-    } catch (e) {
-      console.error("audit(order_cancelled_by_user) failed:", e);
-    }
+    } catch (e) { console.error("audit cancel failed:", e); }
 
-    res.json({ success: true, message: "Order cancelled successfully" });
+    return res.json({ success: true, message: "Item cancelled successfully" });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: "Server error" });
+    await client.query('ROLLBACK').catch(() => {});
+    console.error("cancelOrder error:", err);
+    return res.status(500).json({ success: false, message: "Server error" });
+  } finally {
+    client.release();
   }
 }
+
+
 
 /* 
 ------------------------
@@ -366,41 +398,61 @@ Mark Order as Received
 ------------------------
 */
 export async function markOrderReceived(req, res) {
+  const client = await db.connect();
   try {
     if (!req.session?.user?.id) {
       return res.status(401).json({ success: false, message: "Not authenticated" });
     }
-
     const userId = req.session.user.id;
     const { orderId } = req.body;
+    if (!orderId) return res.status(400).json({ success: false, message: "Order ID is required" });
 
-    if (!orderId) {
-      return res.status(400).json({ success: false, message: "Order ID is required" });
-    }
-
-    const result = await db.query(
+    // validate ownership
+    const orderCheck = await client.query(
       "SELECT id, order_status FROM orders WHERE id = $1 AND user_id = $2 LIMIT 1",
       [orderId, userId]
     );
-
-    if (result.rows.length === 0) {
+    if (orderCheck.rows.length === 0) {
       return res.status(404).json({ success: false, message: "Order not found" });
     }
+    const order = orderCheck.rows[0];
 
-    const order = result.rows[0];
-    const status = String(order.order_status || "").toLowerCase();
+    // Only allow marking received for items that are shipped
+    await client.query("BEGIN");
 
-    if (status !== "shipped") {
-      return res.status(400).json({
-        success: false,
-        message: "Order is not ready to be marked as received."
-      });
-    }
-
-    await db.query(
-      "UPDATE orders SET order_status = 'completed', updated_at = NOW() WHERE id = $1",
+    const updated = await client.query(
+      `UPDATE order_items
+       SET item_status = 'completed', updated_at = NOW()
+       WHERE order_id = $1
+         AND COALESCE(item_status,'') = 'shipped'
+       RETURNING id`,
       [orderId]
     );
+
+    if (updated.rows.length === 0) {
+      await client.query("ROLLBACK");
+      return res.status(400).json({ success: false, message: "No shipped items to mark as received." });
+    }
+
+    // If all items are now completed, update parent order row
+    const remaining = await client.query(
+      `SELECT COUNT(*)::int AS cnt
+       FROM order_items
+       WHERE order_id = $1
+         AND COALESCE(item_status,'') NOT IN ('completed')`,
+      [orderId]
+    );
+    if (remaining.rows[0].cnt === 0) {
+      await client.query(
+        `UPDATE orders SET order_status = 'completed', updated_at = NOW() WHERE id = $1`,
+        [orderId]
+      );
+    } else {
+      // if not all completed, ensure order_status is at least 'shipped'
+      await client.query(`UPDATE orders SET order_status = 'shipped', updated_at = NOW() WHERE id = $1`, [orderId]);
+    }
+
+    await client.query("COMMIT");
 
     // AUDIT
     try {
@@ -409,8 +461,8 @@ export async function markOrderReceived(req, res) {
         actor_id: userId,
         actor_name: req.session.user.name || req.session.user.email,
         action: "order_marked_received",
-        resource: "orders",
-        details: { order_id: orderId, prev_status: order.order_status, new_status: "completed" },
+        resource: "order_items",
+        details: { order_id: orderId, items_updated: updated.rows.length, prev_order_status: order.order_status },
         ip: req.headers["x-forwarded-for"] || req.ip,
         status: "success",
       });
@@ -418,10 +470,13 @@ export async function markOrderReceived(req, res) {
       console.error("audit(order_marked_received) failed:", e);
     }
 
-    res.json({ success: true, message: "Order marked as received." });
+    return res.json({ success: true, message: "Order marked as received.", itemsCompleted: updated.rows.length });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: "Server error" });
+    await client.query("ROLLBACK").catch(()=>{});
+    console.error("markOrderReceived error:", err);
+    return res.status(500).json({ success: false, message: "Server error" });
+  } finally {
+    client.release();
   }
 }
 
@@ -431,41 +486,63 @@ Return and Refund
 ------------------------
 */
 export async function requestRefund(req, res) {
+  const client = await db.connect();
   try {
+    console.log('requestRefund called, user=', req.session?.user?.id, 'body=', req.body);
     if (!req.session?.user?.id) {
       return res.status(401).json({ success: false, message: "Not authenticated" });
     }
 
     const { orderId } = req.body;
     const userId = req.session.user.id;
+    if (!orderId) return res.status(400).json({ success: false, message: "Order ID required" });
 
-    if (!orderId) {
-      return res.status(400).json({ success: false, message: "Order ID required" });
-    }
-
-    const result = await db.query(
+    // validate ownership
+    const orderCheck = await client.query(
       "SELECT id, order_status FROM orders WHERE id = $1 AND user_id = $2 LIMIT 1",
       [orderId, userId]
     );
-
-    if (result.rows.length === 0) {
+    if (orderCheck.rows.length === 0) {
       return res.status(404).json({ success: false, message: "Order not found" });
     }
+    const order = orderCheck.rows[0];
 
-    const order = result.rows[0];
-    const status = String(order.order_status || "").toLowerCase();
+    // Determine refund-eligible item statuses.
+    // If your DB uses 'to_receive' or other words, include them in the array below.
+    const refundableStatuses = ['shipped', 'to_receive', 'to receive'];
 
-    if (status !== "shipped") {
-      return res.status(400).json({
-        success: false,
-        message: "Refund only allowed for orders in To Receive."
-      });
+    // Find items eligible for refund
+    const eligible = await client.query(
+      `SELECT id, item_status
+       FROM order_items
+       WHERE order_id = $1
+         AND LOWER(COALESCE(item_status,'')) = ANY($2::text[])`,
+      [orderId, refundableStatuses]
+    );
+
+    if (eligible.rows.length === 0) {
+      return res.status(400).json({ success: false, message: "No eligible items found for refund." });
     }
 
-    await db.query(
-      "UPDATE orders SET order_status = 'return', updated_at = NOW() WHERE id = $1",
+    await client.query("BEGIN");
+
+    // Update only eligible items
+    const updated = await client.query(
+      `UPDATE order_items
+       SET item_status = 'return', updated_at = NOW()
+       WHERE order_id = $1
+         AND LOWER(COALESCE(item_status,'')) = ANY($2::text[])
+       RETURNING id`,
+      [orderId, refundableStatuses]
+    );
+
+    // After marking returns, mark parent order row to 'return' when appropriate
+    await client.query(
+      `UPDATE orders SET order_status = 'return', updated_at = NOW() WHERE id = $1`,
       [orderId]
     );
+
+    await client.query("COMMIT");
 
     // AUDIT
     try {
@@ -474,8 +551,8 @@ export async function requestRefund(req, res) {
         actor_id: userId,
         actor_name: req.session.user.name || req.session.user.email,
         action: "refund_requested",
-        resource: "orders",
-        details: { order_id: orderId, prev_status: order.order_status, new_status: "return" },
+        resource: "order_items",
+        details: { order_id: orderId, items_affected: updated.rows.length, prev_order_status: order.order_status },
         ip: req.headers["x-forwarded-for"] || req.ip,
         status: "success",
       });
@@ -483,12 +560,16 @@ export async function requestRefund(req, res) {
       console.error("audit(refund_requested) failed:", e);
     }
 
-    res.json({ success: true, message: "Refund requested successfully." });
+    return res.json({ success: true, message: "Refund requested successfully.", items: updated.rows.length });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: "Server error" });
+    await client.query("ROLLBACK").catch(()=>{});
+    console.error("requestRefund error:", err);
+    return res.status(500).json({ success: false, message: "Server error" });
+  } finally {
+    client.release();
   }
 }
+
 
 /* =========================
    Addresses
