@@ -144,14 +144,26 @@
                 <div class="actions">
                   <% if (o.ui_status === 'Pending') { %>
                     <!-- Pay Now intentionally hidden per request -->
-                    <button class="btn outline btn-cancel-order" data-order-id="<%= o.id %>">Cancel</button>
+                    <!-- cancel only this specific order item -->
+                    <button
+                      class="btn outline btn-cancel-order"
+                      data-order-item-id="<%= (o.items && o.items[0]) ? o.items[0].order_item_id : '' %>"
+                    >
+                      Cancel
+                    </button>
                   <% } %>
                   <% if (o.ui_status === 'To Ship') { %>
-                    <button class="btn outline btn-cancel-order" data-order-id="<%= o.id %>">Cancel</button>
+                  <!-- cancel only this specific order item -->
+                  <button
+                    class="btn outline btn-cancel-order"
+                    data-order-item-id="<%= (o.items && o.items[0]) ? o.items[0].order_item_id : '' %>"
+                  >
+                    Cancel
+                  </button>
                   <% } %>
                     <% if (o.ui_status === 'To Receive') { %>
-                      <button class="btn btn-receive-order" data-order-id="<%= o.id %>">Mark Received</button>
-                      <button class="btn outline btn-refund-order" data-order-id="<%= o.id %>">Refund</button>
+                      <button class="btn btn-receive-order" data-order-id="<%= o.parent_order_id %>">Mark Received</button>
+                      <button class="btn outline btn-refund-order" data-order-id="<%= o.parent_order_id %>">Refund</button>
                     <% } %>
                 </div>
               </div>
