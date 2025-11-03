@@ -107,16 +107,18 @@ export const capturePayPalOrder = async (req, res) => {
       }
     }
 
-    // 4) Record payment
-    const paidAmount =
-      capture.result?.purchase_units?.[0]?.payments?.captures?.[0]?.amount?.value ?? null;
+        // 4) Record payment (capture-specific txn id)
+    const captureUnit = capture.result?.purchase_units?.[0];
+    const captureInfo = captureUnit?.payments?.captures?.[0] || null;
+    const paidAmount = captureInfo?.amount?.value ?? captureUnit?.amount?.value ?? null;
+    const transactionId = captureInfo?.id || capture.result?.id || null;
 
     await cx.query(
       `
-      INSERT INTO payments (order_id, payment_method, payment_status, transaction_id, amount_paid)
-      VALUES ($1, 'paypal', 'completed', $2, $3)
+      INSERT INTO payments (order_id, payment_method, payment_status, transaction_id, amount_paid, payment_date)
+      VALUES ($1, 'paypal', 'completed', $2, $3, NOW())
       `,
-      [orderId, capture.result.id, paidAmount]
+      [orderId, transactionId, paidAmount]
     );
 
     // 5) Mark order as paid/confirmed
@@ -129,35 +131,46 @@ export const capturePayPalOrder = async (req, res) => {
       [orderId]
     );
 
-// 6) Clear only the ordered variants from the user's cart
-let userId = req.session?.user?.id;
-if (!userId) {
-  const { rows: orows } = await cx.query(
-    `SELECT user_id FROM orders WHERE id = $1 LIMIT 1`,
-    [orderId]
-  );
-  userId = orows[0]?.user_id;
-}
-
-if (userId) {
-  const variantIds = items.map(i => Number(i.variant_id)).filter(Number.isFinite);
-  if (variantIds.length) {
+    // 5.1) Update per-item statuses (only pending / empty ones) so items move from "Pending" -> "Confirmed"
     await cx.query(
-      `DELETE FROM cart_items
-         WHERE cart_id = (SELECT id FROM cart WHERE user_id = $1)
-           AND variant_id = ANY($2::int[])`,
-      [userId, variantIds]
+      `UPDATE order_items
+         SET item_status = 'confirmed', updated_at = NOW()
+       WHERE order_id = $1
+         AND LOWER(COALESCE(item_status, '')) IN ('pending','')`,
+      [orderId]
     );
-  }
-}
 
-    await cx.query("COMMIT");
-    return res.json({ success: true, message: "Payment captured, stock deducted, order confirmed!" });
-  } catch (err) {
-    try { await cx.query("ROLLBACK"); } catch {}
-    console.error("PayPal capture error:", err);
-    return res.status(500).json({ success: false, error: String(err.message || err) });
-  } finally {
-    cx.release();
-  }
-};
+    // 6) Clear user cart (if we know who they are)
+    // 6) Clear only the ordered variants from the user's cart
+    let userId = req.session?.user?.id;
+    if (!userId) {
+      const { rows: orows } = await cx.query(
+        `SELECT user_id FROM orders WHERE id = $1 LIMIT 1`,
+        [orderId]
+      );
+      userId = orows[0]?.user_id;
+    }
+
+    if (userId) {
+      const variantIds = items.map(i => Number(i.variant_id)).filter(Number.isFinite);
+      if (variantIds.length) {
+        await cx.query(
+          `DELETE FROM cart_items
+            WHERE cart_id = (SELECT id FROM cart WHERE user_id = $1)
+              AND variant_id = ANY($2::int[])`,
+          [userId, variantIds]
+        );
+      }
+    }
+
+
+        await cx.query("COMMIT");
+        return res.json({ success: true, message: "Payment captured, stock deducted, order confirmed!" });
+      } catch (err) {
+        try { await cx.query("ROLLBACK"); } catch {}
+        console.error("PayPal capture error:", err);
+        return res.status(500).json({ success: false, error: String(err.message || err) });
+      } finally {
+        cx.release();
+      }
+    };
