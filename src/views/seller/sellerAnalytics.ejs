@@ -6,6 +6,7 @@
   <title><%= pageTitle || "Store Analytics" %></title>
 
   <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.5/font/bootstrap-icons.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
   <link rel="stylesheet" href="/css/sellerAnalytics.css">
 </head>
@@ -18,7 +19,15 @@
     <div class="page-content">
       <div class="container-fluid anx-wrap py-3">
 
-        <h1 class="h4 mb-3"><%= pageTitle || "Store Analytics" %></h1>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+          <h1 class="h4 mb-0"><%= pageTitle || "Store Analytics" %></h1>
+          <div>
+            <button id="printAnalyticsBtn" class="btn btn-outline-secondary" title="Print analytics report">
+              <i class="bi bi-printer me-1" aria-hidden="true"></i> Print Report
+            </button>
+          </div>
+        </div>
+
 
         <!-- Stat Cards -->
         <div class="row g-3 mb-3 align-items-stretch"><!-- added align-items-stretch -->
@@ -149,13 +158,42 @@
       </div>
     </div>
   </div>
-  
 
+
+  <!-- Print Preview Modal (Bootstrap) -->
+<div class="modal fade" id="analyticsPrintModal" tabindex="-1" aria-labelledby="analyticsPrintModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="analyticsPrintModalLabel">Print Preview — Store Analytics</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <!-- printable content will be injected here -->
+        <div id="analyticsPrintContent"></div>
+      </div>
+      <div class="modal-footer">
+        <button id="modalPrintBtn" class="btn btn-primary">Print</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+  
 
 
 <!-- Data blobs for charts (safe, no execution) -->
 <script type="application/json" id="dailySalesData"><%- JSON.stringify(dailySales || []) %></script>
 <script type="application/json" id="weeklySalesData"><%- JSON.stringify(weeklySales || []) %></script>
+
+<!-- expose more server data for printing -->
+<script type="application/json" id="topProductsData"><%- JSON.stringify(topProducts || []) %></script>
+<script type="application/json" id="monthNowData"><%- JSON.stringify(monthNow || {}) %></script>
+<script type="application/json" id="summaryData"><%- JSON.stringify(summary || {}) %></script>
+<script type="application/json" id="storeViewsData"><%- JSON.stringify(storeViewsDaily || []) %></script>
+<script type="application/json" id="productViewsData"><%- JSON.stringify(productViewsDaily || []) %></script>
+<script type="application/json" id="transactionsCountData"><%- JSON.stringify(transactionsCount || 0) %></script>
 
 <!-- External chart logic -->
 <script src="/js/sellerAnalytics.js"></script>
