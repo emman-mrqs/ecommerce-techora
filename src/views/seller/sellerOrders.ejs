@@ -60,7 +60,7 @@
             </div>
             
             <!-- Orders Table -->
-            <div class="orders-table">
+            <div class="orders-table table-responsive">
             <div class="table-header">
                 <div>Product</div>
                 <div>Order ID</div>
@@ -79,7 +79,7 @@
                 </div>
             <% } else { %>
                 <% orders.forEach(order => { %>
-                <div class="order-row">
+                                <div class="order-row" data-order-item-id="<%= order.order_item_id %>">
                     <!-- Product Image -->
                     <div class="product-img">
                     <% if (order.product_image) { %>
@@ -97,28 +97,32 @@
                     <div class="quantity"><%= order.quantity %></div>
                     <div class="total-price">₱<%= order.total_price %></div>
                     <div>
-                    <span class="status-badge status-<%= order.order_status.toLowerCase() %>">
-                        <%= order.order_status %>
+                    <span class="status-badge status-<%= (order.item_status || order.order_status || '').toLowerCase() %>">
+                    <%= order.item_status || order.order_status || '' %>
                     </span>
+
                     </div>
                     <div class="order-date">
                     <%= new Date(order.order_date).toLocaleDateString() %>
                     </div>
                     <div>
-                    <button class="action-btn edit"><i class="fas fa-edit"></i></button>
+                    <button class="action-btn edit" data-order-item-id="<%= order.order_item_id %>"><i class="fas fa-edit"></i></button>
                     <button 
                     class="action-btn view-invoice-btn"
-                    data-order='<%- JSON.stringify(order) %>'>
+                    data-order='<%- JSON.stringify(order) %>'
+                    data-order-item-id="<%= order.order_item_id %>">
                     <i class="fas fa-eye me-1"></i>
                     </button>
-                    <button 
+                   <button 
                     class="action-btn delete-order-btn" 
                     title="Delete"
-                    data-order-id="<%= order.order_id %>">
+                    data-order-item-id="<%= order.order_item_id %>">
                     <i class="fas fa-trash"></i>
                     </button>
+
                     </div>
                 </div>
+
                 <% }) %>
             <% } %>
             </div>
@@ -163,7 +167,7 @@
                 </div>
                 <form id="statusForm">
                     <div class="modal-body">
-                    <input type="hidden" name="order_id" id="statusOrderId">
+                    <input type="hidden" name="order_item_id" id="statusOrderItemId">
                     <div class="mb-3">
                         <label for="orderStatus" class="form-label">Select Status</label>
                         <select class="form-select" id="orderStatus" name="order_status">
@@ -196,7 +200,7 @@
 
                 <div class="modal-body text-start">
                     <p class="mb-0">Are you sure you want to delete your products from this order?</p>
-                    <input type="hidden" id="deleteOrderId">
+                    <input type="hidden" id="deleteOrderItemId">
                 </div>
 
                 <div class="modal-footer bg-white border-top justify-content-end">
@@ -280,8 +284,6 @@
 
         </div>
     </div>
-
-
 
 
 
